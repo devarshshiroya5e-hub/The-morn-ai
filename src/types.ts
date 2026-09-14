@@ -1,0 +1,149 @@
+export type UserRole = 'founder' | 'employee';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  title: string;
+  bio: string;
+  skills: string[];
+  startupId?: string;
+  hourlyRate?: string;
+  equityPreference?: string;
+  reputationScore?: number;
+  completedMilestones?: number;
+}
+
+export interface StartupHistoryLog {
+  id: string;
+  date: string;
+  type: 'pivot' | 'milestone' | 'tech_choice' | 'traction' | 'funding' | 'bottleneck';
+  title: string;
+  description: string;
+  impact: string;
+}
+
+export interface StartupMember {
+  userId: string;
+  name: string;
+  role: string;
+  avatar: string;
+  joinedDate: string;
+  equityOrStipend: string;
+  status: 'active' | 'invited';
+  skills?: string[];
+}
+
+export interface RoadmapMilestone {
+  id: string;
+  phase: string;
+  title: string;
+  description: string;
+  duration: string;
+  kpiTarget: string;
+  status: 'completed' | 'in_progress' | 'upcoming';
+  talentNeeded: string[];
+  riskFactors?: string;
+}
+
+export interface RolePost {
+  id: string;
+  startupId: string;
+  startupName: string;
+  startupLogo?: string;
+  title: string;
+  type: 'Equity + Stipend' | 'Equity Only' | 'Milestone Stipend';
+  equityRange: string;
+  stipendRange: string;
+  commitment: string;
+  skills: string[];
+  description: string;
+  responsibilities: string[];
+  idealCandidate: string;
+  postedDate: string;
+  applicantCount: number;
+  status: 'open' | 'filled';
+}
+
+export interface Appointment {
+  id: string;
+  startupId: string;
+  startupName: string;
+  founderId: string;
+  founderName: string;
+  talentId: string;
+  talentName: string;
+  talentAvatar: string;
+  talentSkills: string[];
+  roleTitle: string;
+  date: string;
+  time: string;
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
+  meetingLink: string;
+  pitchMessage: string;
+  aiMatchScore: number;
+  aiPreparationBrief?: string;
+  createdDate: string;
+}
+
+export interface TaskItem {
+  id: string;
+  startupId: string;
+  assigneeId: string;
+  assigneeName: string;
+  assigneeAvatar?: string;
+  title: string;
+  priority: 'High' | 'Medium' | 'Low';
+  status: 'todo' | 'in_progress' | 'review' | 'done';
+  estimatedHours: number;
+  deadline: string;
+  description: string;
+  actionItems: string[];
+  aiMentoringTip: string;
+  createdAt: string;
+}
+
+export interface Startup {
+  id: string;
+  name: string;
+  tagline: string;
+  logo: string;
+  coverImage?: string;
+  industry: string;
+  stage: 'Idea' | 'Pre-Seed' | 'Seed' | 'Series A';
+  pitch: string;
+  techStack: string[];
+  website: string;
+  foundedYear: string;
+  founderId: string;
+  founderName: string;
+  founderAvatar: string;
+  historyLogs: StartupHistoryLog[];
+  members: StartupMember[];
+  roadmap: RoadmapMilestone[];
+  openRoles: RolePost[];
+  tasks: TaskItem[];
+  fundingRaised: string;
+  location: string;
+  investorReadinessScore: number;
+  growthVelocityScore: number;
+  verified: boolean;
+}
+
+export interface PredictiveInsights {
+  growthVelocityScore: number;
+  investorReadinessScore: number;
+  timeToMvpAcceleration: string;
+  runwayImpactMonths: string;
+  predictiveObservations: string[];
+  networkSynergies: { name: string; fit: string; reason: string }[];
+}
+
+export interface MatchingAnalysis {
+  matchScore: number;
+  strengths: string[];
+  synergyAnalysis: string;
+  suggestedNextSteps: string;
+}

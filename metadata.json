@@ -1,0 +1,6 @@
+{
+  "name": "SolveEarn AI - Co-Founder & Startup Growth Platform",
+  "description": "An AI-powered co-founder and business strategist platform connecting skilled talent with ongoing startups, featuring automated roadmaps, history-aware sprint task delegation, predictive networking insights, and founder-talent matching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
