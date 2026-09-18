@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { DiscoverStartups } from './components/DiscoverStartups';
 import { StartupDetailModal } from './components/StartupDetailModal';
@@ -35,8 +36,30 @@ export default function App() {
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsLoggedIn(!!user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const savedProfile = await getDoc(doc(db, 'users', user.uid));
+        // A Firebase credential is not a completed MornAI account until onboarding
+        // has created its profile document. This keeps new Google/email users in
+        // the guided flow instead of dropping them into a mock dashboard.
+        setIsLoggedIn(savedProfile.exists());
+        if (savedProfile.exists()) {
+          setCurrentUser(savedProfile.data() as User);
+        } else {
+          setCurrentUser({
+            id: user.uid,
+            name: user.displayName || 'Member',
+            email: user.email || '',
+            role: 'employee',
+            avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Member')}&background=5B5CF0&color=fff`,
+            title: 'Startup builder',
+            bio: '',
+            skills: [],
+          });
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -54,6 +77,7 @@ export default function App() {
 
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
@@ -69,16 +93,6 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
-  };
-
-  // Role switch handler
-  const handleSwitchRole = (newRole: 'founder' | 'talent') => {
-    if (newRole === 'founder') {
-      setCurrentUser(mockFounderUser);
-      setActiveStartupContext(startups.find(s => s.founderId === mockFounderUser.id) || startups[0]);
-    } else {
-      setCurrentUser(mockTalentUsers[0]);
-    }
   };
 
   // Open detailed startup profile
@@ -141,7 +155,9 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onOpenLegal={() => setIsLegalModalOpen(true)}
-        onSuccess={() => {
+        initialMode={authMode}
+        onSuccess={(user) => {
+          setCurrentUser(user);
           setIsLoggedIn(true);
           setIsAuthModalOpen(false);
           showToast('Successfully authenticated!');
@@ -158,7 +174,7 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <>
-        <LandingPage onOpenAuth={(mode) => setIsAuthModalOpen(true)} />
+        <LandingPage onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }} />
         {authModals}
       </>
     );
@@ -181,16 +197,11 @@ export default function App() {
         currentUser={currentUser}
         activeTab={activeView === 'profile' ? 'profile' : activeView === 'appointments' ? 'appointments' : activeView === 'workspace' ? 'workspace' : 'discover'}
         setActiveTab={(tab) => setActiveView(tab === 'profile' ? 'profile' : tab === 'appointments' ? 'appointments' : tab === 'workspace' ? 'workspace' : 'discover')}
-        allUsers={[mockFounderUser, ...mockTalentUsers]}
-        onSwitchUser={(userId) => {
-          const user = [mockFounderUser, ...mockTalentUsers].find(u => u.id === userId);
-          if (user) setCurrentUser(user);
-        }}
         onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
-        onRegisterStartup={() => setIsRegisterModalOpen(true)}
+        onOpenRegisterStartup={() => setIsRegisterModalOpen(true)}
         onOpenPricing={() => {}}
         appointmentCount={appointments.length}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
       />
 
       {/* Main Content View */}
@@ -260,8 +271,8 @@ export default function App() {
           <ProfilePage
             currentUser={currentUser}
             onUpdateUser={setCurrentUser}
-            onLogout={() => {
-              setIsAuthModalOpen(true);
+            onLogout={async () => {
+              await signOut(auth);
               setActiveView('discover');
             }}
           />

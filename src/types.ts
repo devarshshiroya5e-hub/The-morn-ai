@@ -14,6 +14,15 @@ export interface User {
   equityPreference?: string;
   reputationScore?: number;
   completedMilestones?: number;
+  onboarding?: {
+    story?: string;
+    goal?: string;
+    startupName?: string;
+    startupStage?: string;
+    industry?: string;
+    availability?: string;
+    workStyle?: string;
+  };
 }
 
 export interface StartupHistoryLog {
