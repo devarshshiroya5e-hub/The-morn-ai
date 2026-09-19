@@ -149,17 +149,20 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2.5">
               {[
-                [discoveryStats.total, 'Startups', Layers3],
-                [discoveryStats.liveRoles, 'Open roles', Briefcase],
-                [discoveryStats.verified, 'Verified', CheckCircle2],
-                [discoveryStats.memoryLogs, 'Memory logs', BrainCircuit],
-              ].map(([value, label, Icon]) => (
-                <div key={label as string} className="rounded-2xl border border-white/10 bg-white/[.06] p-3">
-                  <Icon className="h-3.5 w-3.5 text-indigo-200" />
-                  <b className="mt-2 block text-lg text-white">{value as number}</b>
-                  <span className="mt-0.5 block text-[10px] font-semibold text-slate-400">{label as string}</span>
-                </div>
-              ))}
+                { value: discoveryStats.total, label: 'Startups', icon: Layers3 },
+                { value: discoveryStats.liveRoles, label: 'Open roles', icon: Briefcase },
+                { value: discoveryStats.verified, label: 'Verified', icon: CheckCircle2 },
+                { value: discoveryStats.memoryLogs, label: 'Memory logs', icon: BrainCircuit },
+              ].map((item) => {
+                const MetricIcon = item.icon;
+                return (
+                  <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[.06] p-3">
+                    <MetricIcon className="h-3.5 w-3.5 text-indigo-200" />
+                    <b className="mt-2 block text-lg text-white">{item.value}</b>
+                    <span className="mt-0.5 block text-[10px] font-semibold text-slate-400">{item.label}</span>
+                  </div>
+                );
+              })}
             </div>
             <div className="mt-3 flex items-center gap-2 rounded-2xl bg-black/15 px-3 py-2.5 text-[11px] text-slate-300">
               <Zap className="h-3.5 w-3.5 text-amber-300" />
@@ -171,21 +174,24 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          [discoveryStats.total, 'Live startups', Layers3, 'mornai-discovery-stat-indigo'],
-          [discoveryStats.liveRoles, 'Open positions', Briefcase, 'mornai-discovery-stat-violet'],
-          [discoveryStats.verified, 'Verified teams', CheckCircle2, 'mornai-discovery-stat-emerald'],
-          [discoveryStats.memoryLogs, 'AI memory events', BrainCircuit, 'mornai-discovery-stat-sky'],
-        ].map(([value, label, Icon, tone]) => (
-          <div key={label as string} className={`mornai-discovery-stat ${tone}`}>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/80 shadow-sm">
-              <Icon className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <b className="block text-lg font-extrabold text-slate-950">{value as number}</b>
-              <span className="block truncate text-[10px] font-bold uppercase tracking-[.12em] text-slate-400">{label as string}</span>
+          { value: discoveryStats.total, label: 'Live startups', icon: Layers3, tone: 'mornai-discovery-stat-indigo' },
+          { value: discoveryStats.liveRoles, label: 'Open positions', icon: Briefcase, tone: 'mornai-discovery-stat-violet' },
+          { value: discoveryStats.verified, label: 'Verified teams', icon: CheckCircle2, tone: 'mornai-discovery-stat-emerald' },
+          { value: discoveryStats.memoryLogs, label: 'AI memory events', icon: BrainCircuit, tone: 'mornai-discovery-stat-sky' },
+        ].map((item) => {
+          const MetricIcon = item.icon;
+          return (
+            <div key={item.label} className={`mornai-discovery-stat ${item.tone}`}>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/80 shadow-sm">
+                <MetricIcon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <b className="block text-lg font-extrabold text-slate-950">{item.value}</b>
+                <span className="block truncate text-[10px] font-bold uppercase tracking-[.12em] text-slate-400">{item.label}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
