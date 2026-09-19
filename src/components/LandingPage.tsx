@@ -42,7 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       <header className="fixed left-0 right-0 top-4 z-50 px-4">
         <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-auto flex max-w-6xl items-center justify-between mornai-glass-nav rounded-full px-5 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <motion.span animate={{ rotate: [0, 6, -6, 0] }} transition={{ duration: 5, repeat: Infinity }} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
+            <motion.span animate={{ rotate: [0, 6, -6, 0] }} transition={{ duration: 2.8, repeat: Infinity }} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
               <Sparkles className="h-5 w-5" />
             </motion.span>
             <div>
@@ -61,12 +61,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
       <main className="relative z-10">
         <section className="px-5 pb-20 pt-36 text-center sm:px-8 sm:pt-44">
-          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .55 }} className="mx-auto max-w-5xl">
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .24 }} className="mx-auto max-w-5xl">
             <span className="mornai-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-indigo-700"><Bot className="h-4 w-4" /> Your startup gets an AI operating layer</span>
-            <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12, duration: .65 }} className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-[-.04em] text-slate-950 sm:text-6xl md:text-7xl">
+            <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04, duration: .28 }} className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-[-.04em] text-slate-950 sm:text-6xl md:text-7xl">
               Build the company.<br /><span className="text-indigo-600">Keep the context.</span>
             </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .22 }} className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-500 sm:text-lg">
+            <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .07 }} className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-500 sm:text-lg">
               MornAI combines an AI Co-Founder, startup memory, living roadmaps, execution tools and human talent discovery in one workspace designed around your company.
             </motion.p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -79,7 +79,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 35, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: .35, duration: .7 }} className="mx-auto mt-16 max-w-5xl mornai-glass-panel rounded-[30px] p-3">
+          <motion.div initial={{ opacity: 0, y: 35, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: .10, duration: .28 }} className="mx-auto mt-16 max-w-5xl mornai-glass-panel rounded-[30px] p-3">
             <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:p-7">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="flex gap-2"><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/></div>
@@ -90,7 +90,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   { icon: BrainCircuit, label: 'AI Co-Founder', value: '12 active decisions' },
                   { icon: Target, label: 'Roadmap', value: '8 milestones in motion' },
                   { icon: UsersRound, label: 'Talent', value: '24 relevant people' },
-                ].map((item, i) => { const Icon = item.icon; return <motion.div key={item.label} animate={{ y: [0, i % 2 ? -4 : 4, 0] }} transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut' }} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Icon className="h-5 w-5"/></span><p className="mt-5 text-xs font-semibold text-slate-400">{item.label}</p><b className="mt-1 block text-base text-slate-900">{item.value}</b></motion.div>; })}
+                ].map((item, i) => { const Icon = item.icon; return <motion.div key={item.label} animate={{ y: [0, i % 2 ? -4 : 4, 0] }} transition={{ duration: 2.4 + i * .25, repeat: Infinity, ease: 'easeInOut' }} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Icon className="h-5 w-5"/></span><p className="mt-5 text-xs font-semibold text-slate-400">{item.label}</p><b className="mt-1 block text-base text-slate-900">{item.value}</b></motion.div>; })}
               </div>
             </div>
           </motion.div>
@@ -127,7 +127,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               [Zap, 'AI-first', 'Your startup context becomes useful input for planning, decisions and execution.'],
               [BarChart3, 'Progress-aware', 'Roadmaps and work can evolve as your startup changes instead of staying static.'],
               [UsersRound, 'Human + AI', 'AI handles context and coordination while real people contribute real skills.'],
-            ].map(([Icon, title, text]) => <motion.div key={title as string} whileInView={{ opacity: [0, 1], y: [18, 0] }} viewport={{ once: true }} transition={{ duration: .5 }} className="mornai-glass-card rounded-2xl p-6 shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white"><Icon className="h-5 w-5"/></span><b className="mt-5 block text-lg text-slate-950">{title as string}</b><p className="mt-2 text-sm leading-6 text-slate-500">{text as string}</p></motion.div>)}
+            ].map(([Icon, title, text]) => <motion.div key={title as string} whileInView={{ opacity: [0, 1], y: [18, 0] }} viewport={{ once: true }} transition={{ duration: .24 }} className="mornai-glass-card rounded-2xl p-6 shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white"><Icon className="h-5 w-5"/></span><b className="mt-5 block text-lg text-slate-950">{title as string}</b><p className="mt-2 text-sm leading-6 text-slate-500">{text as string}</p></motion.div>)}
           </div>
         </section>
 
