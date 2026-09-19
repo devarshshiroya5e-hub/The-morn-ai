@@ -389,9 +389,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="pointer-events-none absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-blue-200/45 blur-3xl" />
                   <div className="relative">
                     <div className="flex items-center gap-3">
-                      <motion.span animate={{ rotate: [0, 7, -7, 0], scale: [1, 1.06, 1] }} transition={{ duration: 2.8, repeat: Infinity }} className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg">
+                      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg">
                         <Sparkles className="h-5 w-5" />
-                      </motion.span>
+                      </span>
                       <div>
                         <b className="text-xl tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
                         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup operating platform</p>
