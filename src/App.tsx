@@ -7,7 +7,7 @@ import { DiscoverStartups } from './components/DiscoverStartups';
 import { StartupDetailModal } from './components/StartupDetailModal';
 import { FounderWorkspace } from './components/FounderWorkspace';
 import { TalentWorkspace } from './components/TalentWorkspace';
-import { AppointmentBookingModal } from './components/AppointmentBookingModal';
+import { AppointmentBookingPage } from './components/AppointmentBookingPage';
 import { AiCoFounderDrawer } from './components/AiCoFounderDrawer';
 import { AuthModal } from './components/AuthModal';
 import { LegalModal } from './components/LegalModal';
@@ -65,7 +65,7 @@ export default function App() {
   }, []);
 
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'profile'>('discover');
+  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile'>('discover');
 
   // Modals & Drawers
   const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
@@ -101,11 +101,11 @@ export default function App() {
     setIsDetailModalOpen(true);
   };
 
-  // Open booking modal
+  // Open dedicated booking page
   const handleOpenBookingModal = (startup: Startup, role?: RolePost) => {
     setBookingModalStartup(startup);
     setBookingModalRole(role);
-    setIsBookingModalOpen(true);
+    setActiveView('booking');
   };
 
   // Confirm appointment
@@ -218,7 +218,19 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 2: WORKSPACE (Founder vs Talent) */}
+        {/* VIEW 2: DEDICATED BOOKING PAGE */}
+        {activeView === 'booking' && (
+          <AppointmentBookingPage
+            startup={bookingModalStartup}
+            selectedRole={bookingModalRole}
+            currentUser={currentUser}
+            onConfirmAppointment={handleConfirmAppointment}
+            onCancel={() => setActiveView('discover')}
+            onDone={() => setActiveView('appointments')}
+          />
+        )}
+
+        {/* VIEW 3: WORKSPACE (Founder vs Talent) */
         {activeView === 'workspace' && (
           currentUser.role === 'founder' ? (
             <FounderWorkspace
@@ -242,7 +254,7 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 3: DIRECT APPOINTMENTS VIEW */}
+        {/* VIEW 4: DIRECT APPOINTMENTS VIEW */
         {activeView === 'appointments' && (
           currentUser.role === 'founder' ? (
             <FounderWorkspace
@@ -266,7 +278,7 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 4: PROFILE PAGE */}
+        {/* VIEW 5: PROFILE PAGE */
         {activeView === 'profile' && (
           <ProfilePage
             currentUser={currentUser}
@@ -294,16 +306,6 @@ export default function App() {
           setIsDetailModalOpen(false);
           setIsAiDrawerOpen(true);
         }}
-      />
-
-      {/* Appointment Booking Modal */}
-      <AppointmentBookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
-        startup={bookingModalStartup}
-        selectedRole={bookingModalRole}
-        currentUser={currentUser}
-        onConfirmAppointment={handleConfirmAppointment}
       />
 
       {/* AI Co-Founder & Strategist Slide-out Drawer */}
