@@ -328,11 +328,11 @@ export default function App() {
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800 font-['Outfit']">SolveEarn AI</span>
-            <span>• The Automated AI Co-Founder & Strategic Talent Platform</span>
+            <span className="font-bold text-slate-800 font-['Outfit']">MornAI</span>
+            <span>• AI Startup Operating Platform</span>
           </div>
           <div className="text-slate-400">
-            Inspired by Solvearn • Continuous AI Strategic Memory Engine
+            AI Co-Founder • Startup Memory • Roadmaps • Talent • Execution
           </div>
           <button 
             onClick={() => setIsLegalModalOpen(true)}
