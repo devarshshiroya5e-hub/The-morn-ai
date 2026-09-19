@@ -347,7 +347,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          ref={scrollRef}\n          className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
+          ref={scrollRef}\n          onWheel={(event) => {\n            if (event.ctrlKey || !scrollRef.current) return;\n            event.preventDefault();\n            scrollRef.current.scrollTop += event.deltaY * 2.15;\n          }}\n          className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
         >
           <div className="mornai-ambient mornai-auth-ambient pointer-events-none absolute inset-0" aria-hidden="true">
             <span className="mornai-orb mornai-orb-one" />
