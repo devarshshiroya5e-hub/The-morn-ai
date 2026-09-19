@@ -37,7 +37,7 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8fafc] font-['Plus_Jakarta_Sans'] text-slate-900">
-      <div className="pointer-events-none fixed inset-0 -z-0 bg-[radial-gradient(circle_at_10%_10%,rgba(99,102,241,.10),transparent_28%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.08),transparent_30%),linear-gradient(to_bottom,#f8fafc,#ffffff_45%,#f8fafc)]" />
+      <div className="mornai-ambient pointer-events-none fixed inset-0 -z-0" aria-hidden="true"><span className="mornai-orb mornai-orb-one" /><span className="mornai-orb mornai-orb-two" /><span className="mornai-orb mornai-orb-three" /></div>
 
       <header className="fixed left-0 right-0 top-4 z-50 px-4">
         <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-auto flex max-w-6xl items-center justify-between mornai-glass-nav rounded-full px-5 py-3 sm:px-6">
@@ -144,7 +144,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         </section>
 
         <section className="px-5 py-24 text-center sm:px-8">
-          <motion.div initial={{ opacity: 0, scale: .97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="mornai-glow-card mx-auto max-w-4xl rounded-[34px] bg-white/55 p-10 shadow-xl shadow-indigo-100/50 backdrop-blur-xl sm:p-14">
+          <motion.div initial={{ opacity: 0, scale: .97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="mornai-glow-card mx-auto max-w-4xl rounded-[34px] bg-white/[0.55] p-10 shadow-xl shadow-indigo-100/50 backdrop-blur-xl sm:p-14">
             <h2 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">Your startup has enough tabs open.</h2>
             <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-500">Give the work one operating layer that remembers the company, organizes the next move and helps you find the people to execute it.</p>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('signup')} className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-bold text-white hover:bg-indigo-700">Create your MornAI workspace <ArrowRight className="h-4 w-4"/></motion.button>
