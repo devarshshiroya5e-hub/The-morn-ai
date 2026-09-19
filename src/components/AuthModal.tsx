@@ -397,13 +397,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup operating platform</p>
                       </div>
                     </motion.div>
-                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .05, duration: .55 }} className="mt-16 text-xs font-bold uppercase tracking-[.22em] text-indigo-600">
+                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .03, duration: .20 }} className="mt-16 text-xs font-bold uppercase tracking-[.22em] text-indigo-600">
                       Your context becomes your advantage
                     </motion.p>
-                    <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08, duration: .65 }} className="mt-4 text-4xl font-extrabold leading-[1.06] tracking-tight text-slate-950">
+                    <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04, duration: .24 }} className="mt-4 text-4xl font-extrabold leading-[1.06] tracking-tight text-slate-950">
                       Build a profile your future team can actually use.
                     </motion.h1>
-                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .05, duration: .6 }} className="mt-5 max-w-md text-sm leading-7 text-slate-500">
+                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .03, duration: .20 }} className="mt-5 max-w-md text-sm leading-7 text-slate-500">
                       Your answers become searchable profile context for AI strategy, startup matching, team discovery and better conversations. Humans finally gave the profile form a job.
                     </motion.p>
 
@@ -415,7 +415,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             key={item.title}
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: .16 + i * .04, duration: .5 }}
+                            transition={{ delay: .08 + i * .02, duration: .20 }}
                             whileHover={{ y: -4 }}
                             className="mornai-auth-card group flex items-start gap-3 rounded-2xl p-3.5"
                           >
@@ -435,7 +435,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <motion.div
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: .24, duration: .5 }}
+                    transition={{ delay: .10, duration: .20 }}
                     className="mornai-auth-card rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
