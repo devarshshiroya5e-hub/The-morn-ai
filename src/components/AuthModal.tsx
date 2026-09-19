@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'motion/react';
@@ -72,7 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [story, setStory] = useState('');
   const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);\n  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -82,7 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   }, [isOpen, initialMode]);
 
-  const progressSteps = 5;
+  const progressSteps = 5;\n\n  useEffect(() => {\n    if (!isOpen) return;\n    const frame = requestAnimationFrame(() => {\n      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });\n    });\n    return () => cancelAnimationFrame(frame);\n  }, [isOpen, mode, step]);
   const matches = useMemo(
     () => skillsList
       .filter((x) => x.toLowerCase().includes(query.toLowerCase()) && !skills.includes(x))
@@ -347,21 +347,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          className="fixed inset-0 z-50 h-[100dvh] overflow-y-auto overscroll-contain bg-white/[0.78] backdrop-blur-2xl"
+          ref={scrollRef}\n          className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
         >
-          <div className="mornai-ambient pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="mornai-ambient mornai-auth-ambient pointer-events-none absolute inset-0" aria-hidden="true">
             <span className="mornai-orb mornai-orb-one" />
             <span className="mornai-orb mornai-orb-two" />
             <span className="mornai-orb mornai-orb-three" />
           </div>
 
-          <div className="relative min-h-full px-3 py-3 sm:px-5 sm:py-5">
+          <div className="relative min-h-[calc(100dvh-1.5rem)] px-3 py-3 sm:min-h-[calc(100dvh-2.5rem)] sm:px-5 sm:py-5">
             <motion.div
               initial={{ opacity: 0, y: 24, scale: .985 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ duration: .68, ease: [0.22, 1, 0.36, 1] }}
-              className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/85 bg-white/[0.68] shadow-[0_35px_120px_rgba(15,23,42,.14)] backdrop-blur-3xl"
+              className="mornai-auth-surface relative mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/85 bg-white/[0.62] shadow-[0_35px_120px_rgba(15,23,42,.14)] backdrop-blur-3xl"
             >
               <div className="mornai-auth-nav">
                 <div className="flex items-center gap-3">
@@ -384,7 +384,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="grid lg:grid-cols-[1fr_1.08fr]">
-                <aside className="relative hidden min-h-[760px] overflow-hidden border-r border-white/70 bg-white/[0.38] p-10 lg:flex lg:flex-col lg:justify-between">
+                <aside className="mornai-auth-glass-side relative hidden min-h-[760px] overflow-hidden border-r border-white/70 p-10 lg:flex lg:flex-col lg:justify-between">
                   <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-violet-200/45 blur-3xl" />
                   <div className="pointer-events-none absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-blue-200/45 blur-3xl" />
                   <div className="relative">
@@ -417,7 +417,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: .34 + i * .07, duration: .5 }}
                             whileHover={{ y: -4 }}
-                            className={`mornai-glass-card group flex items-start gap-3 rounded-2xl p-3.5`}
+                            className="mornai-auth-card group flex items-start gap-3 rounded-2xl p-3.5"
                           >
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
                               <Icon className="h-4.5 w-4.5" />
@@ -436,7 +436,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: .72, duration: .5 }}
-                    className="mornai-glass-card rounded-2xl p-4"
+                    className="mornai-auth-card rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
                       <Zap className="h-4 w-4 text-indigo-600" />
@@ -448,7 +448,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </motion.div>
                 </aside>
 
-                <section className="relative min-h-[760px] bg-white/[0.62] p-6 sm:p-10">
+                <section className="mornai-auth-content relative min-h-[760px] bg-white/[0.48] p-6 sm:p-10">
                   <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/65 to-transparent pointer-events-none" />
                   {mode === 'signup' && (
                     <div className="relative z-10 mb-8">
@@ -493,7 +493,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: .12 + i * .07 }}
-                              className="mornai-glass-card rounded-2xl p-3 text-center"
+                              className="mornai-auth-feature mornai-glass-card rounded-2xl p-3 text-center"
                             >
                               <Icon className="mx-auto h-4 w-4 text-indigo-600" />
                               <span className="mt-1 block text-[10px] font-bold text-slate-500">{label as string}</span>
@@ -682,7 +682,7 @@ const Field = ({ icon, type, placeholder, value, set, disabled, minLength }: any
       placeholder={placeholder}
       value={value}
       onChange={(e) => set(e.target.value)}
-      className="w-full rounded-2xl border border-white/80 bg-white/[0.64] py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50 disabled:opacity-60"
+      className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50 disabled:opacity-60"
     />
   </motion.div>
 );
@@ -694,7 +694,7 @@ const Text = ({ p, v, s, min = 0 }: any) => (
     value={v}
     onChange={(e) => s(e.target.value)}
     placeholder={p}
-    className="w-full rounded-2xl border border-white/80 bg-white/[0.64] px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+    className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50"
   />
 );
 
@@ -707,7 +707,7 @@ const TextArea = ({ label, value, set, min, rows }: any) => (
       value={value}
       onChange={(e) => set(e.target.value)}
       rows={rows}
-      className="w-full rounded-2xl border border-white/80 bg-white/[0.64] px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+      className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50"
     />
   </label>
 );
@@ -719,7 +719,7 @@ const Select = ({ p, value, set, options }: any) => (
       required
       value={value}
       onChange={(e) => set(e.target.value)}
-      className="w-full rounded-2xl border border-white/80 bg-white/[0.64] px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-xl transition-all hover:border-indigo-200 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+      className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-2xl transition-all hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50"
     >
       <option value="">Select...</option>
       {options.map((option: string) => <option key={option}>{option}</option>)}
@@ -774,7 +774,7 @@ const Role = ({ selected, click, icon, title, text }: any) => (
     whileHover={{ y: -3 }}
     whileTap={{ scale: .99 }}
     onClick={click}
-    className={`w-full rounded-3xl border p-5 text-left transition-all ${
+    className={`mornai-auth-role-card w-full rounded-3xl border p-5 text-left transition-all ${
       selected
         ? 'border-indigo-300 bg-indigo-50/80 shadow-md shadow-indigo-100'
         : 'mornai-glass-button border-slate-200/70'
