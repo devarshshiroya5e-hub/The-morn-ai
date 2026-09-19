@@ -144,7 +144,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         </section>
 
         <section className="px-5 py-24 text-center sm:px-8">
-          <motion.div initial={{ opacity: 0, scale: .97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="mornai-glow-card mx-auto max-w-4xl rounded-[34px] bg-white/[0.55] p-10 shadow-xl shadow-indigo-100/50 backdrop-blur-xl sm:p-14">
+          <motion.div initial={{ opacity: 0, scale: .97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="mornai-glass-panel mx-auto max-w-4xl rounded-[34px] bg-white/[0.55] p-10 shadow-xl shadow-indigo-100/50 backdrop-blur-xl sm:p-14">
             <h2 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">Your startup has enough tabs open.</h2>
             <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-500">Give the work one operating layer that remembers the company, organizes the next move and helps you find the people to execute it.</p>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('signup')} className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-bold text-white hover:bg-indigo-700">Create your MornAI workspace <ArrowRight className="h-4 w-4"/></motion.button>
