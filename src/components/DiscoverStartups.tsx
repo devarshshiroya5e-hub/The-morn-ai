@@ -68,10 +68,21 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="mornai-discover-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 space-y-7">
+      <div className="mornai-page-intro flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <span className="mornai-section-kicker">Startup discovery</span>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Find the next company to build with.</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Explore live startups, inspect their context, and connect your skills to the work that needs doing.</p>
+        </div>
+        <div className="mornai-inline-stat">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span>{filteredStartups.length} startups visible</span>
+        </div>
+      </div>
       
       {/* Solvearn-Inspired Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white p-6 sm:p-10 overflow-hidden shadow-lg border border-indigo-950/20">
+      <div className="mornai-discover-hero relative overflow-hidden rounded-[28px] border border-white/10 p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,.18)] sm:p-10">
         <div className="absolute -right-12 -top-12 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-20 -bottom-16 w-56 h-56 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -98,14 +109,14 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
             </button>
             <div className="flex items-center gap-2 text-xs text-indigo-200">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>4 Startups actively hiring via SolveEarn</span>
+              <span>4 Startups actively hiring via MornAI</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+      <div className="mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
         <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
           
           {/* Search Input */}
@@ -174,7 +185,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
             <div
               key={startup.id}
               id={`startup-card-${startup.id}`}
-              className="bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-200 flex flex-col overflow-hidden group"
+              className="mornai-startup-card bg-white rounded-[22px] border border-slate-200/80 hover:border-indigo-300 hover:shadow-[0_24px_60px_rgba(79,70,229,.12)] transition-all duration-200 flex flex-col overflow-hidden group"
             >
               {/* Cover Image or Header Bar */}
               <div className="h-28 bg-slate-100 relative overflow-hidden">
@@ -300,14 +311,14 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                     <button
                       id={`view-startup-btn-${startup.id}`}
                       onClick={() => onSelectStartup(startup)}
-                      className="w-full py-2 px-3 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-center"
+                      className="mornai-secondary-action w-full py-2.5 px-3 text-xs font-semibold rounded-xl transition-all text-center"
                     >
                       View Details
                     </button>
                     <button
                       id={`book-appointment-btn-${startup.id}`}
                       onClick={() => onBookAppointment(startup, startup.openRoles[0])}
-                      className="w-full py-2 px-3 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors text-center flex items-center justify-center gap-1"
+                      className="mornai-primary-action w-full py-2.5 px-3 text-xs font-semibold text-white rounded-xl shadow-sm transition-all text-center flex items-center justify-center gap-1"
                     >
                       <Calendar className="w-3.5 h-3.5" />
                       Book Sync
