@@ -19,12 +19,103 @@ interface AuthModalProps {
 }
 
 const skillsList = [
-  'AI & Machine Learning','Android Development','Analytics','Brand Strategy','Business Development',
-  'Community Building','Content Writing','Copywriting','Customer Success','Data Science','DevOps',
-  'Email Marketing','Finance','Frontend Development','Full-stack Development','Graphic Design',
-  'Growth Marketing','HR & Recruiting','Influencer Marketing','iOS Development','Legal','Motion Design',
-  'No-code','Operations','Product Design','Product Management','Public Relations','Python','React',
-  'Sales','SEO','Social Media','UI/UX Design','User Research','Video Editing','Web Development',
+  // Software, engineering & data
+  'Coder','Programmer','Software Engineering','Frontend Development','Backend Development','Full-stack Development',
+  'Web Development','Mobile Development','Android Development','iOS Development','React','React Native','Next.js',
+  'Vue.js','Angular','Node.js','TypeScript','JavaScript','Python','Java','C++','C#','Go','Rust','PHP','Ruby',
+  'Swift','Kotlin','Dart','Flutter','SQL','NoSQL','MongoDB','PostgreSQL','MySQL','Firebase','Supabase','AWS',
+  'Microsoft Azure','Google Cloud','Cloud Architecture','DevOps','DevSecOps','Site Reliability Engineering',
+  'Cybersecurity','Ethical Hacking','Network Engineering','Systems Administration','QA Testing','Manual Testing',
+  'Test Automation','Selenium','Playwright','API Development','API Integration','Microservices','Blockchain Development',
+  'Smart Contracts','Embedded Systems','IoT','Robotics','Game Development','Unity','Unreal Engine','AR/VR Development',
+
+  // AI & automation
+  'AI & Machine Learning','Artificial Intelligence','Machine Learning','Deep Learning','Generative AI',
+  'AI Manager','AI Product Manager','AI Engineer','AI Developer','AI Research','AI Strategy','AI Operations',
+  'AI Automation','AI Agent Development','AI Workflow Automation','Prompt Engineer','Prompting','Prompt Design',
+  'Prompt Optimization','LLM Application Development','LLM Evaluation','RAG','Vector Databases','Computer Vision',
+  'Natural Language Processing','Speech AI','Multimodal AI','AI Safety','AI Governance','MLOps','Model Evaluation',
+  'Data Labeling','Knowledge Management','Chatbot Development','Voice AI','No-code AI','Automation Builder',
+  'OpenAI API','Gemini API','Claude API','OpenRouter','N8N','Zapier','Make Automation','Airtable Automation',
+
+  // Product, startup & strategy
+  'Entrepreneurship','Startup Building','Co-founder','Startup Operations','Business Strategy','Business Planning',
+  'Product Strategy','Product Management','Product Operations','Product Marketing','Product Research','Product Analytics',
+  'Project Management','Program Management','Program Operations','Operations','Business Operations','Chief of Staff',
+  'Strategy Consulting','Management Consulting','Market Research','Competitive Research','Business Analysis',
+  'Process Improvement','Workflow Design','Systems Thinking','Decision Making','Problem Solving','Innovation',
+  'Venture Building','Fundraising','Investor Relations','Pitch Deck Design','Startup Finance','Financial Modeling',
+  'Unit Economics','Business Model Design','Go-to-Market Strategy','Growth Strategy','Revenue Operations',
+
+  // Marketing, growth & communications
+  'Marketing','Digital Marketing','Growth Marketing','Performance Marketing','Content Marketing','Product Marketing',
+  'Brand Strategy','Brand Management','Brand Design','Brand Identity','Copywriting','Content Writing','Technical Writing',
+  'Creative Writing','Storytelling','Script Writing','SEO','Technical SEO','Local SEO','ASO','SEM','Paid Advertising',
+  'Google Ads','Meta Ads','LinkedIn Ads','Email Marketing','Lifecycle Marketing','CRM Marketing','Marketing Automation',
+  'Social Media','Social Media Management','Social Media Marketing','Community Building','Community Management',
+  'Influencer Marketing','Creator Partnerships','Affiliate Marketing','Public Relations','Media Relations','Communications',
+  'Corporate Communications','Event Marketing','Experiential Marketing','Lead Generation','Demand Generation',
+  'Conversion Rate Optimization','CRO','Sales Enablement','Marketing Analytics','Web Analytics','Google Analytics',
+
+  // Sales & customer
+  'Sales','B2B Sales','B2C Sales','Enterprise Sales','Inside Sales','Outside Sales','Consultative Sales','Account Executive',
+  'Account Management','Key Account Management','Business Development','Partnerships','Channel Partnerships','Recruitment Sales',
+  'Sales Development','Lead Qualification','Prospecting','Cold Calling','Cold Email','Negotiation','Closing','Sales Operations',
+  'Revenue Operations','Customer Success','Customer Support','Technical Support','Customer Experience','User Onboarding',
+  'Retention Strategy','Customer Research','User Research','User Interviews','Community Support',
+
+  // Design & creative
+  'Graphic Design','UI/UX Design','UX Design','UI Design','Product Design','Interaction Design','Visual Design',
+  'Web Design','Mobile Design','Design Systems','UX Research','Service Design','Information Architecture','Wireframing',
+  'Prototyping','Figma','Adobe Photoshop','Adobe Illustrator','Adobe XD','Canva','Framer','Webflow','Motion Design',
+  'Motion Graphics','3D Design','3D Modeling','3D Rendering','Animation','VFX','Video Editing','Short-form Video Editing',
+  'Long-form Video Editing','Video Production','Filmmaking','Color Grading','Sound Design','Audio Editing','Voice Over',
+  'Photography','Product Photography','UI Animation','Presentation Design','Thumbnail Design','Logo Design','Illustration',
+  'Art Direction','Creative Direction','Fashion Design','Interior Design',
+
+  // HR, people & talent
+  'HR & Recruiting','Human Resources','Talent Acquisition','Technical Recruiting','Executive Recruiting','Recruitment',
+  'Sourcing','Interviewing','People Operations','People Management','Performance Management','Learning & Development',
+  'Employee Engagement','Employer Branding','Compensation & Benefits','HR Analytics','Career Coaching','Leadership Coaching',
+  'Team Building','Team Leadership','Mentoring','Training','Facilitation','Conflict Resolution','Organizational Development',
+
+  // Finance, accounting & legal
+  'Finance','Financial Analysis','Financial Planning','FP&A','Accounting','Bookkeeping','Auditing','Taxation','Tax Planning',
+  'GST','Corporate Finance','Investment Analysis','Portfolio Management','Risk Management','Treasury','Credit Analysis',
+  'Financial Reporting','Budgeting','Cost Accounting','Forensic Accounting','Payroll','Legal','Corporate Law','Contract Law',
+  'Commercial Law','Intellectual Property','Patent Research','Trademark Management','Compliance','Privacy Compliance',
+  'Data Protection','Regulatory Affairs','Legal Research','Contract Drafting','Contract Management','Policy Writing',
+
+  // Operations, supply chain & research
+  'Operations Management','Operations Research','Procurement','Purchasing','Supply Chain Management','Logistics',
+  'Inventory Management','Vendor Management','Quality Management','Quality Assurance','Business Process Management',
+  'Process Mapping','Six Sigma','Lean Management','Project Coordination','Virtual Assistance','Executive Assistance',
+  'Data Entry','Documentation','Knowledge Base Management','Research','Academic Research','Market Research','Desk Research',
+  'Survey Design','Data Collection','Data Analysis','Data Visualization','Statistics','Excel','Power BI','Tableau','Looker Studio',
+
+  // Healthcare, science & education
+  'Healthcare Management','Healthcare Administration','Medical Research','Clinical Research','Public Health','Health Education',
+  'Nutrition','Fitness Coaching','Mental Health Support','Pharmaceutical Research','Biotechnology','Life Sciences',
+  'Laboratory Skills','Scientific Writing','STEM Education','Teaching','Tutoring','Course Creation','Instructional Design',
+  'E-learning','Curriculum Design','Educational Technology','Language Teaching','Translation','Localization','Proofreading',
+  'Editing','Technical Documentation',
+
+  // Professional, communication & general skills
+  'Leadership','People Leadership','Public Speaking','Presentation Skills','Communication','Written Communication',
+  'Verbal Communication','Critical Thinking','Analytical Thinking','Creative Thinking','Strategic Thinking','Time Management',
+  'Project Coordination','Organization','Attention to Detail','Decision Making','Research Skills','Documentation',
+  'Remote Collaboration','Team Collaboration','Cross-functional Collaboration','Client Management','Relationship Building',
+  'Networking','Mentoring','Coaching','Training','Customer Relations','Professional Writing','Resume Writing',
+  'Interview Coaching','Language Skills','English','Hindi','Gujarati','Spanish','French','German','Japanese','Mandarin Chinese',
+  'Arabic','Russian',
+
+  // Trades, practical & creator skills
+  'Electrical Work','Mechanical Engineering','Civil Engineering','Architecture','Construction Management','CAD',
+  'AutoCAD','3D Printing','Machine Operation','Automotive Repair','Drone Operations','Video Streaming','Podcasting',
+  'Content Creation','YouTube Management','Instagram Management','TikTok Management','Newsletter Writing','Blogging',
+  'Personal Branding','Creator Strategy','Digital Products','Online Course Creation','Community Moderation','Gaming',
+  'Esports','Music Production','Music Composition','DJing','Acting','Voice Acting','Event Management','Hospitality Management',
+  'Travel Planning','Real Estate','Property Management','Interior Styling','Customer Service','Retail Management'
 ];
 
 const avatar = (name: string) =>
@@ -95,7 +186,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const matches = useMemo(
     () => skillsList
       .filter((x) => x.toLowerCase().includes(query.toLowerCase()) && !skills.includes(x))
-      .slice(0, 6),
+      .slice(0, 12),
     [query, skills],
   );
 
@@ -566,7 +657,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                                 onChange={(e) => setQuery(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(query); } }}
                                 placeholder="Search skills — product design, Python, sales..."
-                                className={`w-full rounded-2xl border bg-white/75 py-4 pl-12 pr-4 text-slate-900 outline-none backdrop-blur-xl transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50 ${query ? 'border-indigo-200' : 'border-slate-200'}`}
+                                className={`mornai-signup-field w-full rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80 ${query ? 'is-typing' : ''}`}
                               />
                               {query && (
                                 <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-2xl backdrop-blur-2xl">
@@ -695,7 +786,7 @@ const Text = ({ p, v, s, min = 0 }: any) => (
     value={v}
     onChange={(e) => s(e.target.value)}
     placeholder={p}
-    className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50"
+    className="mornai-signup-field w-full rounded-2xl px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
   />
 );
 
@@ -708,7 +799,7 @@ const TextArea = ({ label, value, set, min, rows }: any) => (
       value={value}
       onChange={(e) => set(e.target.value)}
       rows={rows}
-      className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50"
+      className="mornai-signup-field w-full rounded-2xl px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
     />
   </label>
 );
@@ -720,7 +811,7 @@ const Select = ({ p, value, set, options }: any) => (
       required
       value={value}
       onChange={(e) => set(e.target.value)}
-      className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-2xl transition-all hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50"
+      className="mornai-signup-field w-full rounded-2xl px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-2xl transition-all focus:bg-white/80"
     >
       <option value="">Select...</option>
       {options.map((option: string) => <option key={option}>{option}</option>)}
@@ -772,22 +863,38 @@ const Google = ({ onClick, loading }: any) => (
 const Role = ({ selected, click, icon, title, text }: any) => (
   <motion.button
     type="button"
-    whileHover={{ y: -3 }}
-    whileTap={{ scale: .99 }}
+    whileHover={{ y: -2 }}
+    whileTap={{ scale: .985 }}
+    animate={{ y: selected ? -2 : 0, scale: selected ? 1.01 : 1 }}
+    transition={{ duration: .18, ease: [0.22, 1, 0.36, 1] }}
     onClick={click}
-    className={`mornai-auth-role-card w-full rounded-3xl border p-5 text-left transition-all ${
+    className={`mornai-auth-role-card relative w-full rounded-3xl border p-5 text-left transition-colors ${
       selected
-        ? 'border-indigo-300 bg-indigo-50/80 shadow-md shadow-indigo-100'
+        ? 'border-indigo-300 bg-indigo-50/80 shadow-[0_12px_36px_rgba(79,70,229,.16)]'
         : 'mornai-glass-button border-slate-200/70'
     }`}
   >
-    <span className={`mb-7 grid h-11 w-11 place-items-center rounded-2xl ${selected ? 'bg-indigo-600 text-white' : 'bg-white/70 text-slate-600'}`}>
+    {selected && (
+      <motion.span
+        initial={{ opacity: 0, scale: .7 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: .16 }}
+        className="absolute right-4 top-4 grid h-6 w-6 place-items-center rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-200"
+      >
+        <Check className="h-3.5 w-3.5" />
+      </motion.span>
+    )}
+    <motion.span
+      animate={{ scale: selected ? 1.05 : 1 }}
+      transition={{ duration: .16 }}
+      className={`mb-7 grid h-11 w-11 place-items-center rounded-2xl ${selected ? 'bg-indigo-600 text-white' : 'bg-white/70 text-slate-600'}`}
+    >
       {icon}
-    </span>
+    </motion.span>
     <b className="block text-slate-900">{title}</b>
     <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
     {selected && (
-      <motion.span initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-indigo-600">
+      <motion.span initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .16 }} className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-indigo-600">
         <Check className="h-3.5 w-3.5" /> Selected
       </motion.span>
     )}
