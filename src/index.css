@@ -54,6 +54,6 @@
 .mornai-auth-nav>*{position:relative;z-index:1;}
 .mornai-glass-nav,.mornai-glass-card,.mornai-glass-button,.mornai-glass-panel{position:relative;}
 @media (prefers-reduced-motion: reduce){
-  .mornai-orb,.mornai-glow-card::before{animation:none!important;}
+  .mornai-orb{animation:none!important;}
   .mornai-scroll-shell{scroll-behavior:auto;}
 }
