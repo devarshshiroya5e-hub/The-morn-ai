@@ -181,7 +181,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
+    <div className="mornai-app-shell min-h-screen text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
       {authModals}
       
       {/* Toast Banner */}
@@ -205,7 +205,7 @@ export default function App() {
       />
 
       {/* Main Content View */}
-      <main className="flex-1 pb-16">
+      <main className="mornai-main flex-1 pb-16">
         
         {/* VIEW 1: DISCOVER ONGOING STARTUPS */}
         {activeView === 'discover' && (
