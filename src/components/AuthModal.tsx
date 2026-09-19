@@ -388,7 +388,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-violet-200/45 blur-3xl" />
                   <div className="pointer-events-none absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-blue-200/45 blur-3xl" />
                   <div className="relative">
-                    <motion.div initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .24, ease: [0.22, 1, 0.36, 1] }} className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
                       <motion.span animate={{ rotate: [0, 7, -7, 0], scale: [1, 1.06, 1] }} transition={{ duration: 2.8, repeat: Infinity }} className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg">
                         <Sparkles className="h-5 w-5" />
                       </motion.span>
@@ -396,27 +396,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         <b className="text-xl tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
                         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup operating platform</p>
                       </div>
-                    </motion.div>
-                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .03, duration: .20 }} className="mt-16 text-xs font-bold uppercase tracking-[.22em] text-indigo-600">
+                    </div>
+                    <p className="mt-16 text-xs font-bold uppercase tracking-[.22em] text-indigo-600">
                       Your context becomes your advantage
-                    </motion.p>
-                    <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04, duration: .24 }} className="mt-4 text-4xl font-extrabold leading-[1.06] tracking-tight text-slate-950">
+                    </p>
+                    <h1 className="mt-4 text-4xl font-extrabold leading-[1.06] tracking-tight text-slate-950">
                       Build a profile your future team can actually use.
-                    </motion.h1>
-                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .03, duration: .20 }} className="mt-5 max-w-md text-sm leading-7 text-slate-500">
+                    </h1>
+                    <p className="mt-5 max-w-md text-sm leading-7 text-slate-500">
                       Your answers become searchable profile context for AI strategy, startup matching, team discovery and better conversations. Humans finally gave the profile form a job.
-                    </motion.p>
+                    </p>
 
                     <div className="mt-8 grid gap-3">
                       {productPoints.map((item, i) => {
                         const Icon = item.icon;
                         return (
-                          <motion.div
+                          <div
                             key={item.title}
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: .08 + i * .02, duration: .20 }}
-                            whileHover={{ y: -4 }}
                             className="mornai-auth-card group flex items-start gap-3 rounded-2xl p-3.5"
                           >
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -426,18 +422,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                               <b className="text-sm text-slate-900">{item.title}</b>
                               <p className="mt-1 text-xs leading-5 text-slate-500">{item.text}</p>
                             </div>
-                          </motion.div>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: .10, duration: .20 }}
-                    className="mornai-auth-card rounded-2xl p-4"
-                  >
+                  <div className="mornai-auth-card rounded-2xl p-4">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
                       <Zap className="h-4 w-4 text-indigo-600" />
                       Better answers create better matching.
@@ -445,7 +436,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <p className="mt-2 text-xs leading-5 text-slate-500">
                       Every useful answer becomes structured context that can improve your profile, recommendations and AI workspace.
                     </p>
-                  </motion.div>
+                  </div>
                 </aside>
 
                 <section className="mornai-auth-content relative min-h-[760px] bg-white/[0.48] p-6 sm:p-10">
