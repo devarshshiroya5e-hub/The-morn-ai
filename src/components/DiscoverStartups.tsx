@@ -276,7 +276,6 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStartups.map((startup) => {
           const fit = computeSkillFit(startup);
           const totalOpenRoles = (startup.openRoles || []).filter(r => r.status === 'open').length;
@@ -403,6 +402,22 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                     <p className="mt-1 text-[11px] text-indigo-700/90 line-clamp-1">
                       Latest: {startup.historyLogs[startup.historyLogs.length - 1]?.title || 'Sprint setup'}
                     </p>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50/60 p-3">
+                    <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">
+                      <span>Team signal</span>
+                      <span className="text-indigo-500">{totalOpenRoles} open</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400"
+                          style={{ width: `${Math.min(100, 32 + totalOpenRoles * 18)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-extrabold text-slate-600">{startup.members.length} members</span>
+                    </div>
                   </div>
                 </div>
 
