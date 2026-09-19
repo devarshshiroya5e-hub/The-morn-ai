@@ -438,7 +438,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="mornai-auth-card rounded-2xl p-4">
+                  <div className="mornai-auth-card rounded-2xl p-4 pb-[18px]">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
                       <Zap className="h-4 w-4 text-indigo-600" />
                       Better answers create better matching.
