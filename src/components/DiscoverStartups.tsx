@@ -12,7 +12,10 @@ import {
   Briefcase,
   TrendingUp,
   BrainCircuit,
-  Users
+  Users,
+  Activity,
+  Layers3,
+  Zap
 } from 'lucide-react';
 
 interface DiscoverStartupsProps {
@@ -58,14 +61,31 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
     const userSkills = currentUser.skills || [];
     const startupTech = startup.techStack || [];
     const common = (userSkills || []).filter(s => startupTech.some(t => t.toLowerCase() === s.toLowerCase()));
-    
-    // Heuristic base score
+
     const base = Math.min(98, Math.max(70, Math.round((common.length / Math.max(1, userSkills.length)) * 35 + 63)));
     return {
       score: base,
       matchingSkills: common,
     };
   };
+
+  const discoveryStats = useMemo(() => {
+    const liveRoles = (startups || []).reduce(
+      (sum, startup) => sum + (startup.openRoles || []).filter(role => role.status === 'open').length,
+      0,
+    );
+    const memoryLogs = (startups || []).reduce(
+      (sum, startup) => sum + (startup.historyLogs || []).length,
+      0,
+    );
+    const verified = (startups || []).filter((startup) => startup.verified).length;
+    return {
+      total: (startups || []).length,
+      liveRoles,
+      memoryLogs,
+      verified,
+    };
+  }, [startups]);
 
   return (
     <div className="mornai-discover-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 space-y-7">
@@ -81,46 +101,108 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
         </div>
       </div>
       
-      {/* Solvearn-Inspired Banner */}
       <div className="mornai-discover-hero relative overflow-hidden rounded-[28px] border border-white/10 p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,.18)] sm:p-10">
-        <div className="absolute -right-12 -top-12 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute right-20 -bottom-16 w-56 h-56 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute right-20 -bottom-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(129,140,248,.15),transparent_24%),radial-gradient(circle_at_20%_90%,rgba(56,189,248,.10),transparent_22%)] pointer-events-none" />
 
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-indigo-200 mb-4 backdrop-blur">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            Vetted Startups with Real-Time AI Co-Founders
+        <div className="relative z-10 grid gap-8 lg:grid-cols-[1.2fr_.8fr] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-indigo-200 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              MornAI live startup network
+            </div>
+            <h2 className="mt-5 max-w-3xl text-3xl font-extrabold tracking-tight font-['Outfit'] sm:text-5xl">
+              Find a startup where your skills actually matter.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              Explore active companies, inspect their roadmap context, see where your skills fit, and move from browsing to a founder conversation without leaving the workspace.
+            </p>
+
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <button
+                id="hero-ai-consult-btn"
+                onClick={onOpenAiDrawer}
+                className="mornai-discovery-hero-button inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-50 active:scale-[.985] sm:text-sm"
+              >
+                <BrainCircuit className="h-4 w-4 text-indigo-600" />
+                Ask AI Co-Founder
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+              <div className="flex items-center gap-2 text-xs font-semibold text-indigo-200">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+                  <span className="relative h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                </span>
+                {discoveryStats.liveRoles} open roles across the network
+              </div>
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-['Outfit']">
-            Join High-Growth Startups & Earn Equity with AI Strategy
-          </h1>
-          <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-            Discover ongoing startups registered by ambitious founders. Connect your skills, book appointments to join, and let our embedded AI Co-Founder delegate sprint tasks with continuous roadmap memory.
-          </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              id="hero-ai-consult-btn"
-              onClick={onOpenAiDrawer}
-              className="px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-900/30 transition-all flex items-center gap-2 active:scale-95"
-            >
-              <BrainCircuit className="w-4 h-4" />
-              Ask AI Co-Founder & Strategist
-            </button>
-            <div className="flex items-center gap-2 text-xs text-indigo-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>4 Startups actively hiring via MornAI</span>
+          <div className="mornai-discovery-signal rounded-[24px] border border-white/10 bg-white/[.07] p-4 backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-indigo-200">Live signal</p>
+                <p className="mt-1 text-sm font-bold text-white">The network is moving.</p>
+              </div>
+              <Activity className="h-4 w-4 text-emerald-300" />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              {[
+                [discoveryStats.total, 'Startups', Layers3],
+                [discoveryStats.liveRoles, 'Open roles', Briefcase],
+                [discoveryStats.verified, 'Verified', CheckCircle2],
+                [discoveryStats.memoryLogs, 'Memory logs', BrainCircuit],
+              ].map(([value, label, Icon]) => (
+                <div key={label as string} className="rounded-2xl border border-white/10 bg-white/[.06] p-3">
+                  <Icon className="h-3.5 w-3.5 text-indigo-200" />
+                  <b className="mt-2 block text-lg text-white">{value as number}</b>
+                  <span className="mt-0.5 block text-[10px] font-semibold text-slate-400">{label as string}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2 rounded-2xl bg-black/15 px-3 py-2.5 text-[11px] text-slate-300">
+              <Zap className="h-3.5 w-3.5 text-amber-300" />
+              Every startup card keeps its roadmap context attached.
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          [discoveryStats.total, 'Live startups', Layers3, 'mornai-discovery-stat-indigo'],
+          [discoveryStats.liveRoles, 'Open positions', Briefcase, 'mornai-discovery-stat-violet'],
+          [discoveryStats.verified, 'Verified teams', CheckCircle2, 'mornai-discovery-stat-emerald'],
+          [discoveryStats.memoryLogs, 'AI memory events', BrainCircuit, 'mornai-discovery-stat-sky'],
+        ].map(([value, label, Icon, tone]) => (
+          <div key={label as string} className={`mornai-discovery-stat ${tone}`}>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/80 shadow-sm">
+              <Icon className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <b className="block text-lg font-extrabold text-slate-950">{value as number}</b>
+              <span className="block truncate text-[10px] font-bold uppercase tracking-[.12em] text-slate-400">{label as string}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
-        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Search className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-slate-900">Find your fit</p>
+              <p className="text-[11px] text-slate-400">{filteredStartups.length} matches your current filters</p>
+            </div>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-3 lg:ml-6 lg:flex-row lg:items-center lg:justify-end">
           
-          {/* Search Input */}
-          <div className="relative w-full md:w-96">
+          <div className="relative w-full lg:max-w-md">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -128,7 +210,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
               placeholder="Search startup name, tech stack, or mission..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+              className="mornai-discovery-search w-full pl-10 pr-4 py-3 text-sm rounded-xl focus:outline-none"
             />
           </div>
 
@@ -172,10 +254,22 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
             </select>
           </div>
 
+          </div>
         </div>
       </div>
 
-      {/* Startups List Grid */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-[.18em] text-slate-400">Explore</p>
+          <h2 className="mt-1 text-xl font-extrabold tracking-tight text-slate-950">Startups worth a closer look.</h2>
+        </div>
+        <div className="hidden items-center gap-2 text-xs font-bold text-slate-400 sm:flex">
+          <TrendingUp className="h-3.5 w-3.5 text-indigo-500" />
+          Context-first discovery
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStartups.map((startup) => {
           const fit = computeSkillFit(startup);
@@ -250,6 +344,17 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                   <p className="mt-2 text-xs text-slate-500 line-clamp-2 leading-relaxed">
                     {startup.pitch}
                   </p>
+
+                  <div className="mt-4 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-[10px] font-extrabold text-emerald-700">
+                      <TrendingUp className="h-3 w-3" />
+                      {startup.stage} momentum
+                    </div>
+                    <div className="flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1.5 text-[10px] font-bold text-slate-500">
+                      <MapPin className="h-3 w-3" />
+                      {startup.location}
+                    </div>
+                  </div>
 
                   {/* Funding & Founder snippet */}
                   <div className="mt-3 flex items-center justify-between text-xs text-slate-600 py-2 border-y border-slate-100">
