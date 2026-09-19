@@ -72,7 +72,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [story, setStory] = useState('');
   const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);\n  const scrollRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -82,7 +83,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   }, [isOpen, initialMode]);
 
-  const progressSteps = 5;\n\n  useEffect(() => {\n    if (!isOpen) return;\n    const frame = requestAnimationFrame(() => {\n      scrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });\n    });\n    return () => cancelAnimationFrame(frame);\n  }, [isOpen, mode, step]);
+  const progressSteps = 5;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen, mode, step]);
   const matches = useMemo(
     () => skillsList
       .filter((x) => x.toLowerCase().includes(query.toLowerCase()) && !skills.includes(x))
@@ -347,7 +356,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          ref={scrollRef}\n          onWheel={(event) => {\n            if (event.ctrlKey || !scrollRef.current) return;\n            event.preventDefault();\n            scrollRef.current.scrollTop += event.deltaY * 2.15;\n          }}\n          className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
+          ref={scrollRef}
+          onWheel={(event) => {
+            if (event.ctrlKey || !scrollRef.current) return;
+            event.preventDefault();
+            scrollRef.current.scrollTop += event.deltaY * 2.15;
+          }}
+          className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
         >
           <div className="mornai-ambient mornai-auth-ambient pointer-events-none absolute inset-0" aria-hidden="true">
             <span className="mornai-orb mornai-orb-one" />
