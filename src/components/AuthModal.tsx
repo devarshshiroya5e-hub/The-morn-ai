@@ -82,7 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   }, [isOpen, initialMode]);
 
-  const progressSteps = 5;\n\n  useEffect(() => {\n    if (!isOpen) return;\n    const frame = requestAnimationFrame(() => {\n      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });\n    });\n    return () => cancelAnimationFrame(frame);\n  }, [isOpen, mode, step]);
+  const progressSteps = 5;\n\n  useEffect(() => {\n    if (!isOpen) return;\n    const frame = requestAnimationFrame(() => {\n      scrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });\n    });\n    return () => cancelAnimationFrame(frame);\n  }, [isOpen, mode, step]);
   const matches = useMemo(
     () => skillsList
       .filter((x) => x.toLowerCase().includes(query.toLowerCase()) && !skills.includes(x))
@@ -360,7 +360,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               initial={{ opacity: 0, y: 24, scale: .985 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: .68, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: .28, ease: [0.22, 1, 0.36, 1] }}
               className="mornai-auth-surface relative mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/85 bg-white/[0.62] shadow-[0_35px_120px_rgba(15,23,42,.14)] backdrop-blur-3xl"
             >
               <div className="mornai-auth-nav">
@@ -388,8 +388,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-violet-200/45 blur-3xl" />
                   <div className="pointer-events-none absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-blue-200/45 blur-3xl" />
                   <div className="relative">
-                    <motion.div initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }} className="flex items-center gap-3">
-                      <motion.span animate={{ rotate: [0, 7, -7, 0], scale: [1, 1.06, 1] }} transition={{ duration: 5, repeat: Infinity }} className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg">
+                    <motion.div initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .24, ease: [0.22, 1, 0.36, 1] }} className="flex items-center gap-3">
+                      <motion.span animate={{ rotate: [0, 7, -7, 0], scale: [1, 1.06, 1] }} transition={{ duration: 2.8, repeat: Infinity }} className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg">
                         <Sparkles className="h-5 w-5" />
                       </motion.span>
                       <div>
@@ -397,13 +397,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup operating platform</p>
                       </div>
                     </motion.div>
-                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12, duration: .55 }} className="mt-16 text-xs font-bold uppercase tracking-[.22em] text-indigo-600">
+                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .05, duration: .55 }} className="mt-16 text-xs font-bold uppercase tracking-[.22em] text-indigo-600">
                       Your context becomes your advantage
                     </motion.p>
-                    <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .18, duration: .65 }} className="mt-4 text-4xl font-extrabold leading-[1.06] tracking-tight text-slate-950">
+                    <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08, duration: .65 }} className="mt-4 text-4xl font-extrabold leading-[1.06] tracking-tight text-slate-950">
                       Build a profile your future team can actually use.
                     </motion.h1>
-                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .26, duration: .6 }} className="mt-5 max-w-md text-sm leading-7 text-slate-500">
+                    <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .05, duration: .6 }} className="mt-5 max-w-md text-sm leading-7 text-slate-500">
                       Your answers become searchable profile context for AI strategy, startup matching, team discovery and better conversations. Humans finally gave the profile form a job.
                     </motion.p>
 
@@ -415,7 +415,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             key={item.title}
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: .34 + i * .07, duration: .5 }}
+                            transition={{ delay: .16 + i * .04, duration: .5 }}
                             whileHover={{ y: -4 }}
                             className="mornai-auth-card group flex items-start gap-3 rounded-2xl p-3.5"
                           >
@@ -435,7 +435,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <motion.div
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: .72, duration: .5 }}
+                    transition={{ delay: .24, duration: .5 }}
                     className="mornai-auth-card rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -459,7 +459,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <div className="h-2 overflow-hidden rounded-full bg-slate-100/90">
                         <motion.div
                           animate={{ width: `${(step / progressSteps) * 100}%` }}
-                          transition={{ duration: .5, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{ duration: .22, ease: [0.22, 1, 0.36, 1] }}
                           className="h-full rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-400"
                         />
                       </div>
@@ -473,7 +473,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         initial={{ opacity: 0, y: 14 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: .24, ease: [0.22, 1, 0.36, 1] }}
                         className="mx-auto max-w-md pt-10 pb-10"
                       >
                         <Pill icon={<Sparkles className="h-3.5 w-3.5" />}>Welcome back</Pill>
@@ -492,7 +492,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                               key={label as string}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: .12 + i * .07 }}
+                              transition={{ delay: .05 + i * .07 }}
                               className="mornai-auth-feature mornai-glass-card rounded-2xl p-3 text-center"
                             >
                               <Icon className="mx-auto h-4 w-4 text-indigo-600" />
@@ -525,7 +525,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: .5, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: .22, ease: [0.22, 1, 0.36, 1] }}
                         className="mx-auto max-w-xl pb-10"
                       >
                         {step === 1 && (
