@@ -82,7 +82,7 @@
   radial-gradient(circle at 78% 70%,rgba(14,165,233,.035),transparent 24%);}
 .mornai-app-nav-wrap{pointer-events:none;}
 .mornai-app-nav-wrap>*{pointer-events:auto;}
-.mornai-app-nav{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.92);box-shadow:0 18px 55px rgba(15,23,42,.08),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(18px) saturate(165%);-webkit-backdrop-filter:blur(18px) saturate(165%);}
+.mornai-app-nav{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.96);box-shadow:0 18px 55px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(99,102,241,.05);backdrop-filter:blur(28px) saturate(175%) contrast(108%);-webkit-backdrop-filter:blur(28px) saturate(175%) contrast(108%);}
 .mornai-app-nav-pills{background:rgba(248,250,252,.72);border:1px solid rgba(226,232,240,.7);}
 .mornai-app-nav-item-active{color:#312e81;background:rgba(255,255,255,.92);box-shadow:0 8px 24px rgba(79,70,229,.10),inset 0 1px 0 rgba(255,255,255,1);}
 .mornai-app-ghost-btn,.mornai-user-trigger{border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.62);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);}
