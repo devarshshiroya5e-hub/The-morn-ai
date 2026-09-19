@@ -1,105 +1,163 @@
 import React, { useState } from 'react';
-import { Sparkles, BrainCircuit, Rocket, Code2, ArrowRight, PlusCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles, BrainCircuit, Rocket, UsersRound, Target, BriefcaseBusiness, ArrowRight, ChevronDown, ChevronUp, ShieldCheck, Zap, Bot, BarChart3 } from 'lucide-react';
 
 interface LandingPageProps {
   onOpenAuth: (mode: 'login' | 'signup') => void;
 }
 
+const features = [
+  { icon: BrainCircuit, title: 'AI Co-Founder', desc: 'Use your startup context to get strategy, priorities, decisions and next actions without starting every conversation from zero.' },
+  { icon: Target, title: 'Living Roadmap', desc: 'Turn goals into milestones, tasks and priorities that evolve with your startup instead of sitting in a forgotten document.' },
+  { icon: UsersRound, title: 'Build the Right Team', desc: 'Find people by skills, goals and startup needs, then connect work to the roles your company actually requires.' },
+  { icon: BriefcaseBusiness, title: 'Execution Workspace', desc: 'Keep startup memory, work, appointments, people and progress in one operating layer built around the company.' },
+];
+
+const steps = [
+  ['01', 'Create your startup context', 'Tell MornAI what you are building, where you are today and what matters next.'],
+  ['02', 'Let the AI organize the work', 'Your context becomes a living strategy, roadmap and set of actionable priorities.'],
+  ['03', 'Bring in the right humans', 'Discover talent and connect skills to the problems your startup needs solved.'],
+];
+
 const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="bg-white/5 border border-indigo-500/30 rounded-2xl p-6 shadow-[0_0_20px_rgba(99,102,241,0.15)] hover:shadow-[0_0_25px_rgba(99,102,241,0.25)] transition-shadow duration-300">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex justify-between items-center text-left font-bold text-lg text-white"
-      >
-        {question}
-        {isOpen ? <ChevronUp className="w-5 h-5 text-indigo-400" /> : <ChevronDown className="w-5 h-5 text-indigo-400" />}
+    <motion.div layout className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <button onClick={() => setIsOpen(!isOpen)} className="flex w-full items-center justify-between p-5 text-left">
+        <span className="font-bold text-slate-900">{question}</span>
+        {isOpen ? <ChevronUp className="h-5 w-5 text-indigo-600" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
       </button>
-      {isOpen && <p className="mt-4 text-slate-200 leading-relaxed">{answer}</p>}
-    </div>
+      <AnimatePresence initial={false}>
+        {isOpen && <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-5 pb-5 text-sm leading-6 text-slate-500">{answer}</motion.p>}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-['Plus_Jakarta_Sans']">
-      
-      {/* Background Video */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0 opacity-20"
-      >
-        <source src="https://player.vimeo.com/external/467819973.sd.mp4?s=18c505f039d5e317cc773e34b82d334057868846&profile_id=165&oauth2_token_id=57447761" type="video/mp4" />
-      </video>
-      <div className="fixed inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-slate-950 z-0" />
+    <div className="min-h-screen overflow-x-hidden bg-[#f8fafc] font-['Plus_Jakarta_Sans'] text-slate-900">
+      <div className="pointer-events-none fixed inset-0 -z-0 bg-[radial-gradient(circle_at_10%_10%,rgba(99,102,241,.10),transparent_28%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.08),transparent_30%),linear-gradient(to_bottom,#f8fafc,#ffffff_45%,#f8fafc)]" />
 
-      {/* Floating Navbar */}
-      <header className="fixed top-4 left-0 right-0 z-50 px-4">
-        <nav className="max-w-5xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-6 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-indigo-400" />
-            <span className="text-xl font-bold tracking-tight">SOLVEARN</span>
+      <header className="fixed left-0 right-0 top-4 z-50 px-4">
+        <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-slate-200 bg-white/85 px-5 py-3 shadow-lg shadow-slate-200/50 backdrop-blur-xl sm:px-6">
+          <div className="flex items-center gap-3">
+            <motion.span animate={{ rotate: [0, 6, -6, 0] }} transition={{ duration: 5, repeat: Infinity }} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
+              <Sparkles className="h-5 w-5" />
+            </motion.span>
+            <div>
+              <b className="text-lg tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
+              <p className="hidden text-[9px] font-bold uppercase tracking-[.18em] text-slate-400 sm:block">Startup operating platform</p>
+            </div>
           </div>
-          <button 
-            onClick={() => onOpenAuth('login')}
-            className="px-5 py-2 bg-white/10 hover:bg-white/20 active:scale-95 rounded-full text-sm font-semibold transition-all duration-300"
-          >
-            Log In
-          </button>
-        </nav>
+          <div className="hidden items-center gap-7 text-xs font-semibold text-slate-500 md:flex">
+            <a href="#features" className="transition-colors hover:text-slate-900">Platform</a>
+            <a href="#how-it-works" className="transition-colors hover:text-slate-900">How it works</a>
+            <a href="#faq" className="transition-colors hover:text-slate-900">FAQ</a>
+          </div>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('login')} className="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700">Log in</motion.button>
+        </motion.nav>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 flex flex-col items-center justify-center text-center [perspective:1000px]">
-        <div className="max-w-3xl space-y-6 [transform-style:preserve-3d]">
-          <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight leading-tight translate-z-20">
-            Find your <span className="text-indigo-400">Team Members</span> and Grow your <span className="text-indigo-400">Startup Idea</span>
-          </h1>
-          <button 
-            onClick={() => onOpenAuth('signup')}
-            className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-lg font-bold rounded-full shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:scale-105 translate-z-20"
-          >
-            Sign Up
-          </button>
-        </div>
-      </section>
+      <main className="relative z-10">
+        <section className="px-5 pb-20 pt-36 text-center sm:px-8 sm:pt-44">
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .55 }} className="mx-auto max-w-5xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-4 py-2 text-xs font-bold text-indigo-700 shadow-sm"><Bot className="h-4 w-4" /> Your startup gets an AI operating layer</span>
+            <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12, duration: .65 }} className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-[-.04em] text-slate-950 sm:text-6xl md:text-7xl">
+              Build the company.<br /><span className="text-indigo-600">Keep the context.</span>
+            </motion.h1>
+            <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .22 }} className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-500 sm:text-lg">
+              MornAI combines an AI Co-Founder, startup memory, living roadmaps, execution tools and human talent discovery in one workspace designed around your company.
+            </motion.p>
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('signup')} className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-bold text-white shadow-xl shadow-slate-300/50 transition-colors hover:bg-indigo-700">
+                Start building <ArrowRight className="h-4 w-4" />
+              </motion.button>
+              <motion.button whileHover={{ y: -2 }} onClick={() => onOpenAuth('login')} className="rounded-full border border-slate-200 bg-white px-7 py-4 text-sm font-bold text-slate-700 shadow-sm hover:border-indigo-200 hover:text-indigo-700">
+                I already have an account
+              </motion.button>
+            </div>
+          </motion.div>
 
-      {/* Features Grid */}
-      <section className="py-20 px-6 max-w-5xl mx-auto grid md:grid-cols-3 gap-6 [perspective:1000px]">
-        {[
-          { icon: BrainCircuit, title: 'Work on cool projects', desc: 'We will match you to cool projects where you can make a real impact.' },
-          { icon: Rocket, title: 'Find your dream team', desc: 'Unique AI Matching system to find the perfect talent.' },
-          { icon: Code2, title: 'Bring your ideas to life', desc: 'We will find the right person for your project job.' },
-        ].map((feat, i) => (
-          <div key={i} className="bg-white/5 border border-white/10 p-8 rounded-3xl space-y-4 [transform-style:preserve-3d] translate-z-10 hover:translate-z-20 transition-transform duration-300">
-            <feat.icon className="w-10 h-10 text-indigo-400" />
-            <h3 className="text-xl font-bold">{feat.title}</h3>
-            <p className="text-slate-400">{feat.desc}</p>
+          <motion.div initial={{ opacity: 0, y: 35, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: .35, duration: .7 }} className="mx-auto mt-16 max-w-5xl rounded-[30px] border border-slate-200 bg-white p-3 shadow-[0_30px_100px_rgba(15,23,42,.12)]">
+            <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:p-7">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div className="flex gap-2"><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/></div>
+                <span className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup command center</span>
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {[
+                  { icon: BrainCircuit, label: 'AI Co-Founder', value: '12 active decisions' },
+                  { icon: Target, label: 'Roadmap', value: '8 milestones in motion' },
+                  { icon: UsersRound, label: 'Talent', value: '24 relevant people' },
+                ].map((item, i) => { const Icon = item.icon; return <motion.div key={item.label} animate={{ y: [0, i % 2 ? -4 : 4, 0] }} transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut' }} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Icon className="h-5 w-5"/></span><p className="mt-5 text-xs font-semibold text-slate-400">{item.label}</p><b className="mt-1 block text-base text-slate-900">{item.value}</b></motion.div>; })}
+              </div>
+            </div>
+          </motion.div>
+        </section>
+
+        <section id="features" className="px-5 py-20 sm:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="max-w-2xl">
+              <span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">What MornAI does</span>
+              <h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">One system for the messy middle between idea and company.</h2>
+              <p className="mt-4 leading-7 text-slate-500">Instead of scattering strategy across chats, task managers and spreadsheets, MornAI keeps the company context connected to decisions, people and execution.</p>
+            </div>
+            <div className="mt-10 grid gap-5 md:grid-cols-2">
+              {features.map((feature, i) => { const Icon = feature.icon; return <motion.div key={feature.title} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ delay: i * .06 }} whileHover={{ y: -5 }} className="rounded-[26px] border border-slate-200 bg-white p-7 shadow-sm transition-shadow hover:shadow-xl"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600"><Icon className="h-6 w-6"/></span><h3 className="mt-6 text-xl font-extrabold text-slate-950">{feature.title}</h3><p className="mt-3 leading-7 text-slate-500">{feature.desc}</p></motion.div>; })}
+            </div>
           </div>
-        ))}
-      </section>
+        </section>
 
-      {/* FAQ */}
-      <section className="py-20 px-6 max-w-3xl mx-auto space-y-6">
-        <h2 className="text-3xl font-bold text-center mb-10">Frequently Asked Questions</h2>
-        <FAQItem question="How fast can I find a team?" answer="Typically within a few days using our AI matching system." />
-        <FAQItem question="How does the matching work?" answer="We analyze your project needs and match you with talent based on skills, experience, and working style." />
-      </section>
-      
-      {/* Footer / Join */}
-      <section className="py-20 text-center space-y-6">
-        <h2 className="text-4xl font-bold">Ready to join us?</h2>
-        <button 
-          onClick={() => onOpenAuth('signup')}
-          className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-bold rounded-full shadow-lg shadow-indigo-500/20 transition-transform hover:scale-105"
-        >
-          Sign Up
-        </button>
-      </section>
+        <section id="how-it-works" className="bg-white px-5 py-20 sm:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div><span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">How it works</span><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950">From context to coordinated action.</h2></div>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-500"/> Built around your startup context</div>
+            </div>
+            <div className="mt-12 grid gap-5 md:grid-cols-3">
+              {steps.map(([num, title, text], i) => <motion.div key={num} whileHover={{ y: -5 }} className="relative rounded-[26px] border border-slate-200 bg-slate-50 p-7"><span className="text-xs font-black tracking-[.2em] text-indigo-600">{num}</span><h3 className="mt-5 text-xl font-extrabold text-slate-950">{title}</h3><p className="mt-3 leading-7 text-slate-500">{text}</p>{i < steps.length - 1 && <span className="absolute right-[-18px] top-1/2 hidden h-px w-9 bg-slate-200 md:block"/>}</motion.div>)}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 py-20 sm:px-8">
+          <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-3">
+            {[
+              [Zap, 'AI-first', 'Your startup context becomes useful input for planning, decisions and execution.'],
+              [BarChart3, 'Progress-aware', 'Roadmaps and work can evolve as your startup changes instead of staying static.'],
+              [UsersRound, 'Human + AI', 'AI handles context and coordination while real people contribute real skills.'],
+            ].map(([Icon, title, text]) => <motion.div key={title as string} whileInView={{ opacity: [0, 1], y: [18, 0] }} viewport={{ once: true }} transition={{ duration: .5 }} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white"><Icon className="h-5 w-5"/></span><b className="mt-5 block text-lg text-slate-950">{title as string}</b><p className="mt-2 text-sm leading-6 text-slate-500">{text as string}</p></motion.div>)}
+          </div>
+        </section>
+
+        <section id="faq" className="bg-white px-5 py-20 sm:px-8">
+          <div className="mx-auto max-w-3xl">
+            <div className="text-center"><span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">FAQ</span><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950">Questions founders usually ask.</h2></div>
+            <div className="mt-10 space-y-3">
+              <FAQItem question="What is MornAI?" answer="MornAI is a startup operating platform that combines persistent startup context, AI strategy, roadmaps, work coordination and talent discovery." />
+              <FAQItem question="Is it only an AI chatbot?" answer="No. The goal is to connect the AI with startup memory, decisions, roadmap items, people and execution rather than keeping everything inside a chat window." />
+              <FAQItem question="Who is it for?" answer="It is designed for founders and startup builders who need help turning an idea or growing company into coordinated work with the right people." />
+              <FAQItem question="Can human team members join?" answer="Yes. Talent can create a profile, add skills and discover startups or opportunities that match the kind of work they want to do." />
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 py-24 text-center sm:px-8">
+          <motion.div initial={{ opacity: 0, scale: .97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="mx-auto max-w-4xl rounded-[34px] border border-indigo-100 bg-gradient-to-br from-white to-indigo-50 p-10 shadow-xl shadow-indigo-100/50 sm:p-14">
+            <h2 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">Your startup has enough tabs open.</h2>
+            <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-500">Give the work one operating layer that remembers the company, organizes the next move and helps you find the people to execute it.</p>
+            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('signup')} className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-bold text-white hover:bg-indigo-700">Create your MornAI workspace <ArrowRight className="h-4 w-4"/></motion.button>
+          </motion.div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-white px-5 py-8 text-xs text-slate-500 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">
+          <div><b className="text-slate-800">MORN<span className="text-indigo-600">AI</span></b><span className="ml-2">AI startup operating platform</span></div>
+          <button onClick={() => onOpenAuth('login')} className="font-semibold text-slate-500 hover:text-indigo-600">Log in</button>
+        </div>
+      </footer>
     </div>
   );
 };
