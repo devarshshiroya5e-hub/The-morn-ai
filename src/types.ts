@@ -22,6 +22,18 @@ export interface User {
     industry?: string;
     availability?: string;
     workStyle?: string;
+    experienceLevel?: string;
+    profileTitle?: string;
+    contribution?: string;
+    motivation?: string;
+    problem?: string;
+    targetCustomer?: string;
+    traction?: string;
+    previousWins?: string;
+    desiredRole?: string;
+    focusAreas?: string;
+    achievements?: string;
+    idealStartup?: string;
   };
 }
 
