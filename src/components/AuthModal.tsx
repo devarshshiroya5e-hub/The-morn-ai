@@ -79,11 +79,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setMode(initialMode);
       setStep(1);
       setError('');
-      const previousOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = previousOverflow;
-      };
     }
   }, [isOpen, initialMode]);
 
@@ -352,7 +347,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          className="fixed inset-0 z-50 h-[100dvh] overflow-hidden bg-white/[0.78] backdrop-blur-2xl"
+          className="fixed inset-0 z-50 h-[100dvh] overflow-y-auto overscroll-contain bg-white/[0.78] backdrop-blur-2xl"
         >
           <div className="mornai-ambient pointer-events-none absolute inset-0" aria-hidden="true">
             <span className="mornai-orb mornai-orb-one" />
@@ -360,7 +355,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <span className="mornai-orb mornai-orb-three" />
           </div>
 
-          <div className="mornai-scroll-shell relative px-3 py-3 sm:px-5 sm:py-5">
+          <div className="relative min-h-full px-3 py-3 sm:px-5 sm:py-5">
             <motion.div
               initial={{ opacity: 0, y: 24, scale: .985 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
