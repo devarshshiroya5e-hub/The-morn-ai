@@ -2,7 +2,7 @@
 
 @layer base {
   body {
-    background-color: #f8fafc;
+    background-color: #ffffff;
     color: #0f172a;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
@@ -26,13 +26,13 @@
 
 
 /* MornAI animated ambient gradient + morphing glass UI */
-.mornai-ambient{overflow:hidden;background:radial-gradient(circle at 12% 12%,rgba(124,58,237,.10),transparent 30%),radial-gradient(circle at 88% 22%,rgba(59,130,246,.10),transparent 32%),linear-gradient(135deg,#f8fafc 0%,#fff 48%,#f8fafc 100%);}
-.mornai-orb{position:absolute;width:34rem;height:34rem;border-radius:9999px;filter:blur(90px);opacity:.34;will-change:transform;animation:mornaiOrbFloat 18s ease-in-out infinite;}
+.mornai-ambient{overflow:hidden;background:radial-gradient(circle at 10% 8%,rgba(124,58,237,.16),transparent 31%),radial-gradient(circle at 90% 18%,rgba(59,130,246,.14),transparent 33%),radial-gradient(circle at 45% 92%,rgba(14,165,233,.08),transparent 28%),linear-gradient(135deg,#fff 0%,#fbfdff 46%,#fff 100%);}
+.mornai-orb{position:absolute;width:34rem;height:34rem;border-radius:9999px;filter:blur(105px);opacity:.42;will-change:transform;animation:mornaiOrbFloat 18s ease-in-out infinite;}
 .mornai-orb-one{left:-9rem;top:4rem;background:rgba(124,58,237,.22);}
 .mornai-orb-two{right:-10rem;top:24rem;background:rgba(37,99,235,.19);animation-duration:22s;animation-delay:-6s;}
 .mornai-orb-three{left:36%;bottom:-18rem;background:rgba(14,165,233,.12);animation-duration:26s;animation-delay:-11s;}
 @keyframes mornaiOrbFloat{0%,100%{transform:translate3d(0,0,0) scale(1)}35%{transform:translate3d(35px,-25px,0) scale(1.04)}70%{transform:translate3d(-25px,30px,0) scale(.96)}}
-.mornai-glass-nav,.mornai-glass-panel,.mornai-glass-card,.mornai-glass-button,.mornai-glass-pill,.mornai-auth-nav{background:rgba(255,255,255,.44);border:1px solid rgba(255,255,255,.80);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 18px 55px rgba(15,23,42,.07);backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%);}
+.mornai-glass-nav,.mornai-glass-panel,.mornai-glass-card,.mornai-glass-button,.mornai-glass-pill,.mornai-auth-nav{background:linear-gradient(135deg,rgba(255,255,255,.64),rgba(255,255,255,.34));border:1px solid rgba(255,255,255,.92);box-shadow:inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(99,102,241,.06),0 22px 70px rgba(15,23,42,.08);backdrop-filter:blur(32px) saturate(180%) contrast(112%);-webkit-backdrop-filter:blur(32px) saturate(180%) contrast(112%);}
 .mornai-glass-nav{position:relative;}
 .mornai-glass-nav::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.42),transparent 42%,rgba(99,102,241,.07) 70%,rgba(255,255,255,.28));}
 .mornai-glass-nav>*{position:relative;z-index:1;}
@@ -47,3 +47,13 @@
 .mornai-glow-card{position:relative;isolation:isolate;}
 .mornai-glow-card::before{content:"";position:absolute;inset:-1px;z-index:-1;padding:2px;border-radius:inherit;background:conic-gradient(from 0deg,rgba(124,58,237,.10),rgba(59,130,246,.95),rgba(168,85,247,.82),rgba(14,165,233,.92),rgba(124,58,237,.10));animation:mornaiBorderFlow 7s linear infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;}
 @keyframes mornaiBorderFlow{to{transform:rotate(360deg);}}
+
+.mornai-scroll-shell{height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;}
+.mornai-auth-nav{background:rgba(255,255,255,.62);backdrop-filter:blur(34px) saturate(190%) contrast(114%);-webkit-backdrop-filter:blur(34px) saturate(190%) contrast(114%);}
+.mornai-auth-nav::before,.mornai-glass-nav::before,.mornai-glass-card::before,.mornai-glass-button::before,.mornai-glass-panel::before{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.65),rgba(255,255,255,0) 38%,rgba(129,140,248,.055) 68%,rgba(255,255,255,.42));opacity:.72;}
+.mornai-auth-nav>*{position:relative;z-index:1;}
+.mornai-glass-nav,.mornai-glass-card,.mornai-glass-button,.mornai-glass-panel{position:relative;}
+@media (prefers-reduced-motion: reduce){
+  .mornai-orb,.mornai-glow-card::before{animation:none!important;}
+  .mornai-scroll-shell{scroll-behavior:auto;}
+}
