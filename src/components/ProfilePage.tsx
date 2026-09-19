@@ -57,6 +57,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
     if (name.trim().length < 2) return setError('Name must be at least 2 characters.');
     if (bio.trim().length < 60) return setError('Profile story must be at least 60 characters.');
     if (skills.length < 3) return setError('Keep at least 3 skills on your profile.');
+    if (!onboardingState.experienceLevel) return setError('Experience level is required.');
+    if (!onboardingState.availability) return setError('Availability is required.');
+    if (!onboardingState.workStyle) return setError('Work style is required.');
+    if ((onboardingState.goal || '').trim().length < 30) return setError('Your 90-day goal must be at least 30 characters.');
+    if ((onboardingState.motivation || '').trim().length < 30) return setError('Your motivation must be at least 30 characters.');
+    if ((onboardingState.contribution || '').trim().length < 40) return setError('Your contribution must be at least 40 characters.');
+    if (currentUser.role === 'founder') {
+      if ((onboardingState.startupName || '').trim().length < 2) return setError('Startup name is required.');
+      if ((onboardingState.industry || '').trim().length < 2) return setError('Industry is required.');
+      if ((onboardingState.problem || '').trim().length < 40) return setError('Problem must be at least 40 characters.');
+      if ((onboardingState.targetCustomer || '').trim().length < 25) return setError('Target customer must be at least 25 characters.');
+      if ((onboardingState.previousWins || '').trim().length < 40) return setError('Previous wins must be at least 40 characters.');
+      if (!onboardingState.traction) return setError('Traction is required.');
+    } else {
+      if ((onboardingState.desiredRole || '').trim().length < 3) return setError('Desired role is required.');
+      if ((onboardingState.focusAreas || '').trim().length < 25) return setError('Focus areas must be at least 25 characters.');
+      if ((onboardingState.achievements || '').trim().length < 40) return setError('Achievements must be at least 40 characters.');
+      if ((onboardingState.idealStartup || '').trim().length < 25) return setError('Ideal startup must be at least 25 characters.');
+    }
     setSaving(true);
     setError('');
     setSaved(false);
