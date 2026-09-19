@@ -230,7 +230,7 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 3: WORKSPACE (Founder vs Talent) */
+        {/* VIEW 3: WORKSPACE (Founder vs Talent) */}
         {activeView === 'workspace' && (
           currentUser.role === 'founder' ? (
             <FounderWorkspace
@@ -254,7 +254,7 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 4: DIRECT APPOINTMENTS VIEW */
+        {/* VIEW 4: DIRECT APPOINTMENTS VIEW */}
         {activeView === 'appointments' && (
           currentUser.role === 'founder' ? (
             <FounderWorkspace
@@ -278,7 +278,7 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 5: PROFILE PAGE */
+        {/* VIEW 5: PROFILE PAGE */}
         {activeView === 'profile' && (
           <ProfilePage
             currentUser={currentUser}
