@@ -404,70 +404,41 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                     </p>
                   </div>
 
-                  <div className="mornai-job-list mt-4 rounded-[20px] border border-violet-100 bg-violet-50/55 p-3">
+                                    <div className="mornai-job-list mt-4">
                     <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-[9px] font-extrabold uppercase tracking-[.16em] text-violet-500">Hiring now</p>
-                        <p className="mt-0.5 text-xs font-extrabold text-slate-900">Open roles at {startup.name}</p>
-                      </div>
-                      <span className="rounded-full bg-white/80 px-2 py-1 text-[9px] font-extrabold text-violet-700">
-                        {totalOpenRoles} open
-                      </span>
+                      <p className="text-[9px] font-extrabold uppercase tracking-[.16em] text-violet-500">Available jobs</p>
+                      <span className="text-[9px] font-extrabold text-violet-700">{totalOpenRoles} open</span>
                     </div>
 
-                    <div className="mt-3 space-y-2.5">
-                      {(startup.openRoles || []).filter((role) => role.status === 'open').slice(0, 2).map((role) => (
-                        <div key={role.id} className="mornai-job-card rounded-2xl border border-white/90 bg-white/82 p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <h4 className="truncate text-xs font-extrabold text-slate-900">{role.title}</h4>
-                              <p className="mt-1 text-[10px] font-semibold text-slate-400">
-                                {role.type} • {role.commitment}
-                              </p>
-                            </div>
-                            <span className="shrink-0 rounded-full bg-violet-50 px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.12em] text-violet-700">
-                              Open
-                            </span>
-                          </div>
-
-                          <p className="mt-2 text-[10px] leading-5 text-slate-500 line-clamp-2">{role.description}</p>
-
-                          <div className="mt-2.5 flex flex-wrap gap-1.5">
-                            {(role.skills || []).slice(0, 4).map((skill) => (
-                              <span key={skill} className="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-bold text-slate-600">{skill}</span>
-                            ))}
-                          </div>
-
-                          <div className="mt-3 flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <span className="block text-[9px] font-bold text-slate-400">Compensation</span>
-                              <span className="block truncate text-[10px] font-extrabold text-slate-700">{role.equityRange || role.stipendRange || 'Discuss with founder'}</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => onBookAppointment(startup, role)}
-                              className="mornai-job-cta inline-flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-extrabold text-white"
-                            >
-                              <Calendar className="h-3 w-3" />
-                              Book sync
-                            </button>
-                          </div>
-                        </div>
+                    <div className="mt-2.5 space-y-2">
+                      {(startup.openRoles || []).filter((role) => role.status === 'open').slice(0, 3).map((role) => (
+                        <button
+                          key={role.id}
+                          type="button"
+                          onClick={() => onBookAppointment(startup, role)}
+                          className="mornai-job-card group flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white/75 px-2.5 py-2 text-left transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white"
+                        >
+                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-violet-200 bg-violet-50 text-violet-600">
+                            <span className="text-base font-medium leading-none">+</span>
+                          </span>
+                          <span className="min-w-0 truncate text-[11px] font-extrabold text-violet-700 group-hover:text-violet-800">
+                            {role.title}
+                          </span>
+                        </button>
                       ))}
 
-                      {totalOpenRoles > 2 && (
+                      {totalOpenRoles > 3 && (
                         <button
                           type="button"
                           onClick={() => onSelectStartup(startup)}
-                          className="w-full rounded-xl border border-dashed border-violet-200 bg-white/55 px-3 py-2 text-[9px] font-extrabold text-violet-700 transition hover:bg-white"
+                          className="px-1 text-[9px] font-extrabold text-violet-600 transition hover:text-violet-800"
                         >
-                          View {totalOpenRoles - 2} more open {totalOpenRoles - 2 === 1 ? 'role' : 'roles'}
+                          + {totalOpenRoles - 3} more
                         </button>
                       )}
                     </div>
                   </div>
-
-                  <div className="mt-4 rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50/60 p-3">
+<div className="mt-4 rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50/60 p-3">
                     <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">
                       <span>Team signal</span>
                       <span className="text-indigo-500">{totalOpenRoles} open</span>
