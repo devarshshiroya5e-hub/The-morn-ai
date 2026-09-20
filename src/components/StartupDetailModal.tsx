@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Startup, User, RolePost } from '../types';
+import { Startup, User, RolePost, StartupMember } from '../types';
 import { 
   X, 
   Sparkles, 
@@ -35,12 +35,13 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
   onConsultAi,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'memory' | 'roadmap' | 'roles' | 'team'>('overview');
+  const [selectedTeamMember, setSelectedTeamMember] = useState<StartupMember | null>(null);
 
   if (!isOpen || !startup) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-y-auto max-h-[92vh] animate-in fade-in zoom-in-95 duration-150">
         
         {/* Close Button */}
         <button
@@ -75,14 +76,14 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
         </div>
 
         {/* Profile Card Header Info */}
-        <div className="px-6 pb-4 pt-0 border-b border-slate-200 bg-white relative flex-shrink-0">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-12 sm:-mt-14 mb-4">
+        <div className="px-6 pb-4 pt-5 border-b border-slate-200 bg-white relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mt-0 mb-4">
             
-            <div className="flex items-end gap-3.5">
+            <div className="flex items-center gap-3.5">
               <img
                 src={startup.logo}
                 alt={startup.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-4 border-white shadow-md bg-white flex-shrink-0"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border border-slate-200 shadow-md bg-white flex-shrink-0"
               />
               <div className="mb-1">
                 <div className="flex items-center gap-2">
@@ -203,7 +204,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
         </div>
 
         {/* Tab Content Body (Scrollable) */}
-        <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50 space-y-6">
+        <div className="p-6 bg-slate-50/50 space-y-6">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
@@ -259,6 +260,46 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
                   <Calendar className="w-3.5 h-3.5" />
                   Schedule Sync
                 </button>
+              </div>
+
+              {/* People currently working on this startup */}
+              <div className="bg-white p-5 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">People working on this project</h3>
+                    <p className="mt-1 text-xs text-slate-500">See the active contributors and open a compact profile for each person.</p>
+                  </div>
+                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-extrabold text-indigo-700">{startup.members?.length || 0} people</span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(startup.members || []).slice(0, 4).map((member) => (
+                    <div key={member.userId} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+                      <img src={member.avatar} alt={member.name} className="h-10 w-10 rounded-xl object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-extrabold text-slate-900">{member.name}</p>
+                        <p className="truncate text-[11px] text-slate-500">{member.role}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTeamMember(member)}
+                        className="shrink-0 rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                      >
+                        View Profile
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {startup.members?.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('team')}
+                    className="mt-3 text-[10px] font-extrabold text-indigo-700 hover:text-indigo-900"
+                  >
+                    View all {startup.members.length} team members
+                  </button>
+                )}
               </div>
 
             </div>
@@ -445,11 +486,18 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
                       alt={member.name}
                       className="w-11 h-11 rounded-xl object-cover"
                     />
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{member.name}</h4>
-                      <p className="text-xs text-slate-500">{member.role}</p>
-                      <p className="text-[11px] text-indigo-600 font-medium mt-0.5">{member.equityOrStipend}</p>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-slate-900 text-sm truncate">{member.name}</h4>
+                      <p className="text-xs text-slate-500 truncate">{member.role}</p>
+                      <p className="text-[11px] text-indigo-600 font-medium mt-0.5 truncate">{member.equityOrStipend}</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeamMember(member)}
+                      className="shrink-0 rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                    >
+                      View Profile
+                    </button>
                   </div>
                 ))}
               </div>
@@ -457,6 +505,59 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
           )}
 
         </div>
+
+        {selectedTeamMember && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/35 p-5 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-white/80 bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={selectedTeamMember.avatar}
+                    alt={selectedTeamMember.name}
+                    className="h-14 w-14 rounded-2xl object-cover border border-slate-200"
+                  />
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-950">{selectedTeamMember.name}</h3>
+                    <p className="text-xs font-semibold text-indigo-600">{selectedTeamMember.role}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeamMember(null)}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100"
+                  aria-label="Close profile"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-slate-400">Profile ID</p>
+                  <p className="mt-1 break-all text-sm font-extrabold text-slate-900">{selectedTeamMember.userId}</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-slate-400">Joined</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800">{selectedTeamMember.joinedDate}</p>
+                </div>
+                {selectedTeamMember.skills?.length ? (
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-slate-400">Skills</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {selectedTeamMember.skills.map((skill) => (
+                        <span key={skill} className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-600 border border-slate-200">{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-indigo-500">Contribution</p>
+                  <p className="mt-1 text-sm font-semibold text-indigo-900">{selectedTeamMember.equityOrStipend}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal Footer */}
         <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
