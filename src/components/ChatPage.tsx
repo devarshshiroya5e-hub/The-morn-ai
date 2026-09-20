@@ -354,21 +354,32 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     setShowScrollToLatest(false);
   };
 
-  const sendMessage = async () => {
-    const text = draft.trim();
+  const sendMessage = async (existingMessage?: ChatMessage) => {
+    const text = existingMessage?.text?.trim() || draft.trim();
     if (!text || !activeRoom || isSending) return;
+
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      setChatError(`Messages are limited to ${MAX_MESSAGE_LENGTH.toLocaleString()} characters.`);
+      return;
+    }
 
     setIsSending(true);
     setChatError(null);
 
-    const localId = `local-${Date.now()}`;
-    const optimisticMessage: ChatMessage = {
-      id: localId,
+    const clientId =
+      existingMessage?.clientId ||
+      `${currentUser.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const localMessage: ChatMessage = existingMessage || {
+      id: `local-${clientId}`,
       senderId: currentUser.id,
       senderName: currentUser.name,
       senderAvatar: currentUser.avatar,
       text,
       createdAt: new Date().toISOString(),
+      createdAtClient: Date.now(),
+      clientId,
+      status: 'sending',
       ...(activeRoom.kind === 'private'
         ? {
             startupId: activeRoom.startup!.id,
@@ -377,27 +388,30 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
         : {}),
     };
 
-    setMessages((prev) => [...prev, optimisticMessage]);
-    setDraft('');
+    if (!existingMessage) {
+      setMessages((previous) => [...previous, localMessage]);
+      setDraft('');
+    } else {
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.id === existingMessage.id
+            ? { ...message, status: 'sending' }
+            : message,
+        ),
+      );
+    }
+
+    requestAnimationFrame(() =>
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
+    );
 
     try {
-      const targetCollection =
-        activeRoom.kind === 'world'
-          ? collection(db, 'worldChat', 'messages')
-          : collection(
-              db,
-              'startups',
-              activeRoom.startup!.id,
-              'privateChats',
-              currentUser.role === 'founder' ? activeRoom.contact!.id : currentUser.id,
-              'messages',
-            );
-
-      await addDoc(targetCollection, {
+      await addDoc(messagesRefForRoom(activeRoom), {
         senderId: currentUser.id,
         senderName: currentUser.name,
         senderAvatar: currentUser.avatar || null,
         text,
+        clientId,
         createdAt: serverTimestamp(),
         createdAtClient: Date.now(),
         ...(activeRoom.kind === 'private'
@@ -408,14 +422,27 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
           : {}),
       });
 
-      setChatError(null);
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.clientId === clientId ? { ...message, status: 'sent' } : message,
+        ),
+      );
     } catch (error: any) {
       console.error('Message send error:', error);
-      setMessages((prev) => prev.filter((message) => message.id !== localId));
-      setDraft(text);
+
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.clientId === clientId ? { ...message, status: 'failed' } : message,
+        ),
+      );
+
+      if (!existingMessage) {
+        setDraft(text);
+      }
+
       setChatError(
         error?.code === 'permission-denied'
-          ? 'Messaging is connected, but Firebase is rejecting this message. Deploy the current Firestore rules to the MornAI project.'
+          ? 'You no longer have permission to send messages in this room.'
           : error?.message || 'Unable to send the message. Please try again.',
       );
     } finally {
