@@ -797,7 +797,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                   className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  Publish to SolveEarn Feed
+                  Publish to THE MORN AI Feed
                 </button>
               </div>
             </div>
@@ -982,7 +982,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                  SolveEarn AI Predictive Analytics
+                  THE MORN AI Predictive Analytics
                 </span>
                 <h3 className="text-lg font-bold text-slate-900 mt-1">
                   Predictive Growth & Investor Networking Engine
