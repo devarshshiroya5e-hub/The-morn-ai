@@ -4,7 +4,13 @@ import App from './App.tsx';
 import './index.css';
 
 class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  private readonly children: ReactNode;
   state: { error: Error | null } = { error: null };
+
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.children = props.children;
+  }
 
   static getDerivedStateFromError(error: Error) {
     return { error };
@@ -43,7 +49,7 @@ class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { error: E
       );
     }
 
-    return this.props.children;
+    return this.children;
   }
 }
 
