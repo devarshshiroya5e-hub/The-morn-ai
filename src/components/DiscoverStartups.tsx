@@ -15,7 +15,10 @@ import {
   Users,
   Activity,
   Layers3,
-  Zap
+  Zap,
+  MessageCircle,
+  Globe2,
+  ArrowUpRight
 } from 'lucide-react';
 
 interface DiscoverStartupsProps {
