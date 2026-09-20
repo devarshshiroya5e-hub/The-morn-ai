@@ -230,6 +230,7 @@ export default function App() {
         const remoteStartups = snapshot.docs
           .map((startupDoc) => normalizeStartup({ ...(startupDoc.data() as Partial<Startup>), id: startupDoc.id }))
           .map((startup) => {
+            startup.persisted = true;
             const activeMemberIds = Array.from(new Set([
               startup.founderId,
               ...(startup.members || [])
