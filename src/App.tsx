@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
@@ -58,6 +58,9 @@ const normalizeStartup = (raw: Partial<Startup>): Startup => {
     investorReadinessScore: typeof raw.investorReadinessScore === 'number' ? raw.investorReadinessScore : 0,
     growthVelocityScore: typeof raw.growthVelocityScore === 'number' ? raw.growthVelocityScore : 0,
     verified: raw.verified === true,
+    memberIds: Array.isArray((raw as any).memberIds)
+      ? (raw as any).memberIds.filter((value: unknown): value is string => typeof value === 'string')
+      : undefined,
   };
 };
 
@@ -227,10 +230,36 @@ export default function App() {
         const remoteStartups = snapshot.docs
           .map((startupDoc) => normalizeStartup({ ...(startupDoc.data() as Partial<Startup>), id: startupDoc.id }))
           .map((startup) => {
-            if (startup.founderId !== currentUser.id || !currentUser.onboarding) return startup;
+            const activeMemberIds = Array.from(new Set([
+              startup.founderId,
+              ...(startup.members || [])
+                .filter((member) => member.status === 'active')
+                .map((member) => member.userId),
+            ].filter(Boolean)));
+
+            // Backfill a compact membership index so chat authorization does not
+            // depend on a nested member document existing on an older startup.
+            if (
+              startup.founderId === currentUser.id &&
+              JSON.stringify(startup.memberIds || []) !== JSON.stringify(activeMemberIds)
+            ) {
+              void setDoc(
+                doc(db, 'startups', startup.id),
+                { memberIds: activeMemberIds },
+                { merge: true },
+              ).catch((error) => {
+                console.error('Failed to sync startup membership index:', error);
+              });
+            }
+
+            if (startup.founderId !== currentUser.id || !currentUser.onboarding) return {
+              ...startup,
+              memberIds: activeMemberIds,
+            };
 
             return {
               ...startup,
+              memberIds: activeMemberIds,
               members: (startup.members || []).map((member) =>
                 member.userId === currentUser.id
                   ? { ...member, profileDetails: currentUser.onboarding }
@@ -415,7 +444,17 @@ export default function App() {
   // Register a new ongoing startup and persist it for this founder.
   const handleRegisterStartup = async (newStartup: Startup) => {
     // Save the startup first so relationship documents can safely reference it.
-    await setDoc(doc(db, 'startups', newStartup.id), newStartup);
+    const memberIds = Array.from(new Set([
+      newStartup.founderId,
+      ...(newStartup.members || [])
+        .filter((member) => member.status === 'active')
+        .map((member) => member.userId),
+    ].filter(Boolean)));
+
+    await setDoc(doc(db, 'startups', newStartup.id), {
+      ...newStartup,
+      memberIds,
+    });
 
     const founderMember = newStartup.members.find((member) => member.userId === currentUser.id);
     if (founderMember) {
@@ -553,7 +592,16 @@ export default function App() {
 
       {/* Main Content View */}
       <main className="mornai-main flex-1 pb-16">
-        
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeView}
+            initial={{ opacity: 0, y: 10, scale: 0.998 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.998 }}
+            transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+            className="min-h-full"
+          >
+
         {/* VIEW 1: DISCOVER ONGOING STARTUPS */}
         {activeView === 'discover' && (
           <DiscoverStartups
@@ -664,6 +712,8 @@ export default function App() {
           />
         )}
 
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* MODALS */}
