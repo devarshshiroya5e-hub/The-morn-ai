@@ -32,8 +32,28 @@ service cloud.firestore {
 
     function isActiveMember(startupId) {
       return signedIn()
-        && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid))
-        && get(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid)).data.status == 'active';
+        && startupExists(startupId)
+        && (
+          (
+            exists(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid))
+            && get(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid)).data.status == 'active'
+          )
+          ||
+          request.auth.uid in get(/databases/$(database)/documents/startups/$(startupId)).data.get('memberIds', [])
+        );
+    }
+
+    function isActiveMemberForUser(startupId, userId) {
+      return
+        startupExists(startupId)
+        && (
+          (
+            exists(/databases/$(database)/documents/startups/$(startupId)/members/$(userId))
+            && get(/databases/$(database)/documents/startups/$(startupId)/members/$(userId)).data.status == 'active'
+          )
+          ||
+          userId in get(/databases/$(database)/documents/startups/$(startupId)).data.get('memberIds', [])
+        );
     }
 
     // ---------------------------------------------------------
@@ -105,7 +125,7 @@ service cloud.firestore {
         && request.resource.data.clientId.size() > 0
         && request.resource.data.clientId.size() <= 128
         && request.resource.data.createdAtClient is number
-        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt == request.time
         && (
           (
             request.resource.data.roomType == 'world'
@@ -127,8 +147,7 @@ service cloud.firestore {
               (
                 isFounder(request.resource.data.startupId)
                 && request.resource.data.recipientId != get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
-                && exists(/databases/$(database)/documents/startups/$(request.resource.data.startupId)/members/$(request.resource.data.recipientId))
-                && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)/members/$(request.resource.data.recipientId)).data.status == 'active'
+                && isActiveMemberForUser(request.resource.data.startupId, request.resource.data.recipientId)
               )
               ||
               (
