@@ -125,7 +125,7 @@ service cloud.firestore {
         && request.resource.data.clientId.size() > 0
         && request.resource.data.clientId.size() <= 128
         && request.resource.data.createdAtClient is number
-        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdAt is timestamp
         && (
           (
             request.resource.data.roomType == 'world'
