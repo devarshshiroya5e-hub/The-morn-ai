@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { DiscoverStartups } from './components/DiscoverStartups';
@@ -64,6 +64,36 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Persisted startups are the source of truth for anything created inside the product.
+  // Mock startups remain available for the demo network, while Firestore startups survive refreshes.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const unsubscribe = onSnapshot(
+      collection(db, 'startups'),
+      (snapshot) => {
+        const remoteStartups = snapshot.docs.map((startupDoc) => startupDoc.data() as Startup);
+        const remoteIds = new Set(remoteStartups.map((startup) => startup.id));
+        const demoStartups = initialStartups.filter((startup) => !remoteIds.has(startup.id));
+        setStartups([...remoteStartups, ...demoStartups]);
+      },
+      (error) => {
+        console.error('Failed to load startups from Firestore:', error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [isLoggedIn]);
+
+  // Keep the active workspace attached to a startup that still exists.
+  useEffect(() => {
+    if (!startups.length) return;
+    if (startups.some((startup) => startup.id === activeStartupContext.id)) return;
+
+    const preferred = startups.find((startup) => startup.founderId === currentUser.id) || startups[0];
+    setActiveStartupContext(preferred);
+  }, [startups, currentUser.id]);
+
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
   const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile'>('discover');
 
@@ -122,21 +152,50 @@ export default function App() {
     showToast(`Appointment marked as ${status}.`);
   };
 
-  // Update a startup (roadmap, tasks, memory logs, roles)
-  const handleUpdateStartup = (updatedStartup: Startup) => {
+  // Update a startup (roadmap, tasks, memory logs, roles) in local state and Firestore.
+  const handleUpdateStartup = async (updatedStartup: Startup) => {
+    await setDoc(doc(db, 'startups', updatedStartup.id), updatedStartup);
     setStartups(prev => prev.map(s => s.id === updatedStartup.id ? updatedStartup : s));
     if (activeStartupContext.id === updatedStartup.id) {
       setActiveStartupContext(updatedStartup);
     }
-    showToast(`Startup "${updatedStartup.name}" updated with AI Co-Founder memory.`);
+    showToast(`Startup "${updatedStartup.name}" saved with AI Co-Founder memory.`);
   };
 
-  // Register a new ongoing startup
-  const handleRegisterStartup = (newStartup: Startup) => {
-    setStartups(prev => [newStartup, ...prev]);
+  // Register a new ongoing startup and persist it for this founder.
+  const handleRegisterStartup = async (newStartup: Startup) => {
+    // Save the startup first so relationship documents can safely reference it.
+    await setDoc(doc(db, 'startups', newStartup.id), newStartup);
+
+    const founderMember = newStartup.members.find((member) => member.userId === currentUser.id);
+    if (founderMember) {
+      await setDoc(
+        doc(db, 'startups', newStartup.id, 'members', currentUser.id),
+        {
+          ...founderMember,
+          userId: currentUser.id,
+          startupId: newStartup.id,
+        },
+      );
+    }
+
+    // Do not overwrite the user's global role or startupId. Each startup gets its own context.
+    await setDoc(
+      doc(db, 'users', currentUser.id, 'startupContexts', newStartup.id),
+      {
+        userId: currentUser.id,
+        startupId: newStartup.id,
+        role: 'founder',
+        joinedDate: new Date().toISOString().split('T')[0],
+        startupName: newStartup.name,
+      },
+      { merge: true },
+    );
+
+    setStartups((prev) => [newStartup, ...prev.filter((startup) => startup.id !== newStartup.id)]);
     setActiveStartupContext(newStartup);
     setActiveView('workspace');
-    showToast(`"${newStartup.name}" registered! AI Co-Founder memory vault and roadmap activated.`);
+    showToast(`"${newStartup.name}" registered and saved to your MornAI account.`);
   };
 
   // Update task status from Talent workspace
