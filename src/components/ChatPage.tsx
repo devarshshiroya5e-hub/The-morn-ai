@@ -1,0 +1,305 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { addDoc, collection, limit, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { ArrowUp, Globe2, LockKeyhole, MessageCircle, Search, UsersRound } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { ChatMessage, Startup, User } from '../types';
+
+interface ChatPageProps {
+  currentUser: User;
+  startups: Startup[];
+}
+
+interface Room {
+  id: string;
+  title: string;
+  subtitle: string;
+  kind: 'world' | 'private';
+  startup?: Startup;
+  contact?: { id: string; name: string; avatar?: string; role?: string };
+}
+
+const toMessage = (docSnap: any): ChatMessage => {
+  const data = docSnap.data();
+  const timestamp = data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || new Date().toISOString();
+  return {
+    id: docSnap.id,
+    senderId: data.senderId || '',
+    senderName: data.senderName || 'MornAI member',
+    senderAvatar: data.senderAvatar,
+    text: data.text || '',
+    createdAt: timestamp,
+    startupId: data.startupId,
+    recipientId: data.recipientId,
+  };
+};
+
+export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => {
+  const [activeRoomId, setActiveRoomId] = useState('world');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [draft, setDraft] = useState('');
+  const [search, setSearch] = useState('');
+  const [worldOnline] = useState(1247);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const rooms = useMemo<Room[]>(() => {
+    const privateRooms: Room[] = [];
+
+    if (currentUser.role === 'founder') {
+      startups
+        .filter((startup) => startup.founderId === currentUser.id)
+        .forEach((startup) => {
+          (startup.members || [])
+            .filter((member) => member.userId !== currentUser.id && member.status === 'active')
+            .forEach((member) => {
+              privateRooms.push({
+                id: `private-${startup.id}-${member.userId}`,
+                title: member.name,
+                subtitle: `${startup.name} • ${member.role}`,
+                kind: 'private',
+                startup,
+                contact: { id: member.userId, name: member.name, avatar: member.avatar, role: member.role },
+              });
+            });
+        });
+    } else {
+      startups
+        .filter((startup) => startup.members?.some((member) => member.userId === currentUser.id && member.status === 'active'))
+        .forEach((startup) => {
+          privateRooms.push({
+            id: `private-${startup.id}-${currentUser.id}`,
+            title: startup.founderName,
+            subtitle: `${startup.name} • Founder`,
+            kind: 'private',
+            startup,
+            contact: { id: startup.founderId, name: startup.founderName, avatar: startup.founderAvatar, role: 'Founder' },
+          });
+        });
+    }
+
+    return [
+      {
+        id: 'world',
+        title: 'World Chat',
+        subtitle: 'Everyone on THE MORN AI',
+        kind: 'world',
+      },
+      ...privateRooms,
+    ];
+  }, [currentUser, startups]);
+
+  const visibleRooms = rooms.filter((room) =>
+    `${room.title} ${room.subtitle}`.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const activeRoom = rooms.find((room) => room.id === activeRoomId) || rooms[0];
+
+  useEffect(() => {
+    if (!activeRoom) return;
+
+    setMessages([]);
+    const messagesRef = activeRoom.kind === 'world'
+      ? collection(db, 'worldChat', 'messages')
+      : collection(
+          db,
+          'startups',
+          activeRoom.startup!.id,
+          'privateChats',
+          activeRoom.kind === 'private'
+            ? (currentUser.role === 'founder' ? activeRoom.contact!.id : currentUser.id)
+            : currentUser.id,
+          'messages',
+        );
+
+    const q = query(messagesRef, orderBy('createdAt', 'asc'), limit(150));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setMessages(snapshot.docs.map(toMessage));
+    }, (error) => {
+      console.error('Chat subscription error:', error);
+      setMessages([]);
+    });
+
+    return () => unsubscribe();
+  }, [activeRoom?.id, activeRoom?.kind, activeRoom?.startup?.id, activeRoom?.contact?.id, currentUser.id, currentUser.role]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    const text = draft.trim();
+    if (!text || !activeRoom) return;
+
+    const targetCollection = activeRoom.kind === 'world'
+      ? collection(db, 'worldChat', 'messages')
+      : collection(
+          db,
+          'startups',
+          activeRoom.startup!.id,
+          'privateChats',
+          activeRoom.kind === 'private'
+            ? (currentUser.role === 'founder' ? activeRoom.contact!.id : currentUser.id)
+            : currentUser.id,
+          'messages',
+        );
+
+    await addDoc(targetCollection, {
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      text,
+      createdAt: serverTimestamp(),
+      ...(activeRoom.kind === 'private'
+        ? { startupId: activeRoom.startup!.id, recipientId: activeRoom.contact!.id }
+        : {}),
+    });
+    setDraft('');
+  };
+
+  return (
+    <div className="mornai-chat-page mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="overflow-hidden rounded-[32px] border border-white/90 bg-white/70 shadow-[0_30px_90px_rgba(15,23,42,.10)] backdrop-blur-2xl">
+        <div className="border-b border-white/80 bg-[linear-gradient(135deg,#111827_0%,#25133f_48%,#6d28d9_100%)] px-5 py-6 text-white sm:px-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-100">
+                <MessageCircle className="h-3.5 w-3.5" /> MornAI Message Network
+              </span>
+              <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Talk to the network.</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-violet-100/80">
+                World Chat is open to everyone on THE MORN AI. Private startup rooms appear only after a founder selects you for their team.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" /> {worldOnline.toLocaleString()} online</div>
+                <div className="mt-1 text-[10px] text-violet-100/65">Global conversation</div>
+              </div>
+              <div className="hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-3 sm:block">
+                <UsersRound className="h-4 w-4 text-violet-200" />
+                <div className="mt-1 text-[10px] font-bold text-violet-100/70">World + private rooms</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid min-h-[620px] lg:grid-cols-[290px_1fr]">
+          <aside className="border-b border-slate-200/80 bg-white/65 p-4 lg:border-b-0 lg:border-r">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search chats..."
+                className="w-full rounded-2xl border border-indigo-100 bg-white px-10 py-3 text-xs font-semibold text-slate-800 outline-none shadow-[0_0_22px_rgba(99,102,241,.08)] focus:border-indigo-300"
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {visibleRooms.map((room) => {
+                const active = room.id === activeRoom?.id;
+                return (
+                  <button
+                    key={room.id}
+                    type="button"
+                    onClick={() => setActiveRoomId(room.id)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${active ? 'border-violet-200 bg-violet-50 shadow-[0_0_24px_rgba(124,58,237,.10)]' : 'border-transparent hover:border-slate-200 hover:bg-white'}`}
+                  >
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${room.kind === 'world' ? 'bg-slate-950 text-white' : 'bg-violet-100 text-violet-700'}`}>
+                      {room.kind === 'world' ? <Globe2 className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-extrabold text-slate-900">{room.title}</span>
+                      <span className="mt-0.5 block truncate text-[10px] font-semibold text-slate-400">{room.subtitle}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {currentUser.role === 'employee' && !rooms.some((room) => room.kind === 'private') && (
+              <div className="mt-5 rounded-2xl border border-dashed border-violet-200 bg-violet-50/60 p-4">
+                <LockKeyhole className="h-4 w-4 text-violet-600" />
+                <p className="mt-2 text-xs font-extrabold text-slate-900">Private chat locked</p>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                  A startup owner must select you before a private room appears here.
+                </p>
+              </div>
+            )}
+          </aside>
+
+          <section className="flex min-h-[620px] flex-col bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,.07),transparent_30%),#fff]">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-5 py-4 sm:px-7">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-violet-700">
+                  {activeRoom?.kind === 'world' ? <Globe2 className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
+                </span>
+                <div>
+                  <h2 className="text-sm font-extrabold text-slate-950">{activeRoom?.title || 'World Chat'}</h2>
+                  <p className="text-[10px] font-semibold text-slate-400">{activeRoom?.subtitle || ''}</p>
+                </div>
+              </div>
+              {activeRoom?.kind === 'private' && (
+                <span className="rounded-full bg-violet-50 px-3 py-1.5 text-[10px] font-extrabold text-violet-700">Selected team member</span>
+              )}
+            </div>
+
+            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-7">
+              {messages.length === 0 && (
+                <div className="mx-auto max-w-md rounded-3xl border border-dashed border-slate-200 bg-white/75 p-8 text-center">
+                  {activeRoom?.kind === 'world' ? <Globe2 className="mx-auto h-9 w-9 text-violet-300" /> : <LockKeyhole className="mx-auto h-9 w-9 text-violet-300" />}
+                  <h3 className="mt-3 text-sm font-extrabold text-slate-900">Start the conversation</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {activeRoom?.kind === 'world' ? 'Say something useful, interesting, or at least not “hi”.' : 'This private room is unlocked for your startup selection.'}
+                  </p>
+                </div>
+              )}
+
+              {messages.map((message) => {
+                const mine = message.senderId === currentUser.id;
+                return (
+                  <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${mine ? 'bg-violet-600 text-white' : 'border border-slate-200 bg-white text-slate-800 shadow-sm'}`}>
+                      {!mine && <div className="mb-1 text-[10px] font-extrabold text-violet-600">{message.senderName}</div>}
+                      <p className="whitespace-pre-wrap text-xs leading-6">{message.text}</p>
+                      <span className={`mt-1 block text-[9px] ${mine ? 'text-violet-100' : 'text-slate-400'}`}>
+                        {new Date(message.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            <div className="border-t border-slate-200/70 bg-white/85 p-4 backdrop-blur-xl sm:p-5">
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void sendMessage();
+                    }
+                  }}
+                  rows={1}
+                  placeholder={activeRoom?.kind === 'world' ? 'Message everyone...' : 'Message your startup contact...'}
+                  className="min-h-12 flex-1 resize-none rounded-2xl border border-indigo-100 bg-white px-4 py-3.5 text-xs text-slate-900 outline-none shadow-[0_0_20px_rgba(99,102,241,.07)] focus:border-indigo-300 focus:shadow-[0_0_28px_rgba(99,102,241,.12)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => void sendMessage()}
+                  disabled={!draft.trim() || !activeRoom}
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-2 text-[10px] font-semibold text-slate-400">Enter sends • Shift + Enter adds a new line</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
