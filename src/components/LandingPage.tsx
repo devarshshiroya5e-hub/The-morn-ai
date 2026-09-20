@@ -4,6 +4,7 @@ import { Sparkles, BrainCircuit, Rocket, UsersRound, Target, BriefcaseBusiness, 
 
 interface LandingPageProps {
   onOpenAuth: (mode: 'login' | 'signup') => void;
+  onOpenPrivacy: () => void;
 }
 
 const features = [
@@ -34,7 +35,7 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
   );
 };
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPrivacy }) => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8fafc] font-['Plus_Jakarta_Sans'] text-slate-900">
       <div className="mornai-ambient pointer-events-none fixed inset-0 -z-0" aria-hidden="true"><span className="mornai-orb mornai-orb-one" /><span className="mornai-orb mornai-orb-two" /><span className="mornai-orb mornai-orb-three" /></div>
@@ -155,7 +156,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       <footer className="border-t border-white/70 bg-white/55 px-5 py-8 text-xs text-slate-500 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">
           <div><b className="text-slate-800">MORN<span className="text-indigo-600">AI</span></b><span className="ml-2">AI startup operating platform</span></div>
-          <button onClick={() => onOpenAuth('login')} className="font-semibold text-slate-500 hover:text-indigo-600">Log in</button>
+          <div className="flex items-center gap-4">
+            <button onClick={onOpenPrivacy} className="font-semibold text-slate-500 hover:text-indigo-600">Privacy Policy</button>
+            <button onClick={() => onOpenAuth('login')} className="font-semibold text-slate-500 hover:text-indigo-600">Log in</button>
+          </div>
         </div>
       </footer>
     </div>
