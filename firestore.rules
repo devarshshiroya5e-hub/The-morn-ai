@@ -11,8 +11,13 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function startupExists(startupId) {
+      return exists(/databases/$(database)/documents/startups/$(startupId));
+    }
+
     function isFounder(startupId) {
       return signedIn()
+        && startupExists(startupId)
         && get(/databases/$(database)/documents/startups/$(startupId)).data.founderId == request.auth.uid;
     }
 
@@ -32,21 +37,18 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------
-    // USER PROFILE
+    // GLOBAL USER PROFILE
     // ---------------------------------------------------------
 
     match /users/{userId} {
       allow read, create, update, delete: if isUser(userId);
 
-      // One independent context per startup.
-      // A founder can own startup A and be a worker in startup B
-      // without overwriting the global user profile.
       match /startupContexts/{startupId} {
         allow read: if isUser(userId);
 
         allow create, update: if
           isUser(userId)
-          && exists(/databases/$(database)/documents/startups/$(startupId))
+          && startupExists(startupId)
           && request.resource.data.userId == userId
           && request.resource.data.startupId == startupId
           && (
@@ -63,33 +65,82 @@ service cloud.firestore {
 
         allow delete: if isUser(userId);
       }
+
+      // UI-only preferences can survive across devices without becoming
+      // part of the authoritative profile fields.
+      match /preferences/{preferenceId} {
+        allow read, create, update, delete: if isUser(userId);
+      }
     }
 
-
-
     // ---------------------------------------------------------
-    // GLOBAL WORLD CHAT
-    // Every authenticated MornAI member can read and send messages.
+    // CENTRAL MESSAGE STORE
+    // One collection for World Chat and every private conversation.
     // ---------------------------------------------------------
 
-    match /worldChat/messages/{messageId} {
-      allow read: if signedIn();
+    match /messages/{messageId} {
+      allow read: if
+        signedIn()
+        && (
+          resource.data.roomType == 'world'
+          ||
+          (
+            resource.data.roomType == 'private'
+            && resource.data.participants is list
+            && request.auth.uid in resource.data.participants
+          )
+        );
 
       allow create: if
         signedIn()
+        && request.resource.data.roomId is string
         && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.senderName is string
+        && request.resource.data.senderName.size() > 0
+        && request.resource.data.senderName.size() <= 120
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000
         && request.resource.data.clientId is string
+        && request.resource.data.clientId.size() > 0
         && request.resource.data.clientId.size() <= 128
         && request.resource.data.createdAtClient is number
-        && request.resource.data.senderName is string
-        && request.resource.data.senderName.size() <= 120;
+        && request.resource.data.createdAt is timestamp
+        && (
+          (
+            request.resource.data.roomType == 'world'
+            && request.resource.data.roomId == 'world'
+          )
+          ||
+          (
+            request.resource.data.roomType == 'private'
+            && request.resource.data.startupId is string
+            && startupExists(request.resource.data.startupId)
+            && request.resource.data.recipientId is string
+            && request.resource.data.participants is list
+            && request.resource.data.participants.size() == 2
+            && request.auth.uid in request.resource.data.participants
+            && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId in request.resource.data.participants
+            && request.resource.data.recipientId in request.resource.data.participants
+            && request.resource.data.recipientId != request.auth.uid
+            && (
+              (
+                isFounder(request.resource.data.startupId)
+                && request.resource.data.recipientId != get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
+                && exists(/databases/$(database)/documents/startups/$(request.resource.data.startupId)/members/$(request.resource.data.recipientId))
+                && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)/members/$(request.resource.data.recipientId)).data.status == 'active'
+              )
+              ||
+              (
+                isActiveMember(request.resource.data.startupId)
+                && request.resource.data.recipientId == get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
+              )
+            )
+          )
+        );
 
-      allow update, delete: if
-        signedIn()
-        && resource.data.senderId == request.auth.uid;
+      // Messages are immutable. Delivery state is UI state, not a database mutation.
+      allow update, delete: if false;
     }
 
     // ---------------------------------------------------------
@@ -99,13 +150,10 @@ service cloud.firestore {
     match /startups/{startupId} {
       allow read: if signedIn();
 
-      // A user can only create a startup for themselves.
       allow create: if
         signedIn()
         && request.resource.data.founderId == request.auth.uid;
 
-      // Only the founder can edit the startup.
-      // Founder ownership cannot be transferred accidentally.
       allow update: if
         signedIn()
         && resource.data.founderId == request.auth.uid
@@ -115,14 +163,9 @@ service cloud.firestore {
         signedIn()
         && resource.data.founderId == request.auth.uid;
 
-      // -------------------------------------------------------
-      // STARTUP MEMBERS
-      // -------------------------------------------------------
-
       match /members/{memberId} {
         allow read: if isMember(startupId);
 
-        // Founder can add/manage members.
         allow create: if
           isFounder(startupId)
           && request.resource.data.userId == memberId
@@ -136,70 +179,10 @@ service cloud.firestore {
         allow delete: if isFounder(startupId);
       }
 
-
-      // -------------------------------------------------------
-      // PRIVATE STARTUP CHAT
-      // Only the startup founder and officially selected/active
-      // members can access the conversation with that startup.
-      // -------------------------------------------------------
-
-      match /privateChats/{memberId}/messages/{messageId} {
-        allow read: if
-          isFounder(startupId)
-          ||
-          (
-            signedIn()
-            && request.auth.uid == memberId
-            && isActiveMember(startupId)
-          );
-
-        allow create: if
-          (
-            isFounder(startupId)
-            ||
-            (
-              signedIn()
-              && request.auth.uid == memberId
-              && isActiveMember(startupId)
-            )
-          )
-          && request.resource.data.senderId == request.auth.uid
-          && request.resource.data.startupId == startupId
-          && request.resource.data.recipientId == memberId
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 2000
-          && request.resource.data.clientId is string
-          && request.resource.data.clientId.size() <= 128
-          && request.resource.data.createdAtClient is number
-          && request.resource.data.senderName is string
-          && request.resource.data.senderName.size() <= 120;
-
-        allow update, delete: if
-          signedIn()
-          && resource.data.senderId == request.auth.uid
-          && (
-            isFounder(startupId)
-            ||
-            (
-              request.auth.uid == memberId
-              && isActiveMember(startupId)
-            )
-          );
-      }
-
-      // -------------------------------------------------------
-      // OPEN ROLES
-      // -------------------------------------------------------
-
       match /roles/{roleId} {
         allow read: if signedIn();
         allow create, update, delete: if isFounder(startupId);
       }
-
-      // -------------------------------------------------------
-      // TASKS
-      // -------------------------------------------------------
 
       match /tasks/{taskId} {
         allow read: if isMember(startupId);
@@ -226,58 +209,17 @@ service cloud.firestore {
         allow delete: if isFounder(startupId);
       }
 
-      // -------------------------------------------------------
-      // AI MEMORY / HISTORY
-      // -------------------------------------------------------
-
       match /historyLogs/{logId} {
         allow read: if isMember(startupId);
         allow create, update, delete: if isFounder(startupId);
       }
 
-      // -------------------------------------------------------
-      // APPOINTMENTS / SYNC REQUESTS
-      // -------------------------------------------------------
-
+      // Legacy path kept read-only so old records are not silently destroyed.
+      // New appointments are stored in /appointments.
       match /appointments/{appointmentId} {
-        allow read: if
-          isFounder(startupId)
-          ||
-          (
-            signedIn()
-            && resource.data.talentId == request.auth.uid
-          );
-
-        allow create: if
-          signedIn()
-          && request.resource.data.startupId == startupId
-          && request.resource.data.talentId == request.auth.uid;
-
-        allow update: if
-          (
-            isFounder(startupId)
-            ||
-            (
-              signedIn()
-              && resource.data.talentId == request.auth.uid
-            )
-          )
-          && request.resource.data.startupId == startupId
-          && request.resource.data.founderId == resource.data.founderId
-          && request.resource.data.talentId == resource.data.talentId;
-
-        allow delete: if
-          isFounder(startupId)
-          ||
-          (
-            signedIn()
-            && resource.data.talentId == request.auth.uid
-          );
+        allow read: if isMember(startupId);
+        allow create, update, delete: if false;
       }
-
-      // -------------------------------------------------------
-      // IMMUTABLE ACTIVITY HISTORY
-      // -------------------------------------------------------
 
       match /activityLogs/{logId} {
         allow read: if isMember(startupId);
@@ -289,6 +231,73 @@ service cloud.firestore {
 
         allow update, delete: if false;
       }
+
+      // Legacy private chat path is read-only during migration.
+      match /privateChats/{memberId}/messages/{messageId} {
+        allow read: if
+          isFounder(startupId)
+          ||
+          (
+            signedIn()
+            && request.auth.uid == memberId
+            && isActiveMember(startupId)
+          );
+
+        allow create, update, delete: if false;
+      }
+    }
+
+    // Legacy World Chat path is read-only during migration.
+    match /worldChat/messages/{messageId} {
+      allow read: if signedIn();
+      allow create, update, delete: if false;
+    }
+
+    // ---------------------------------------------------------
+    // CENTRAL APPOINTMENTS
+    // One appointment document is visible only to its two participants.
+    // ---------------------------------------------------------
+
+    match /appointments/{appointmentId} {
+      allow read: if
+        signedIn()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
+
+      allow create: if
+        signedIn()
+        && request.resource.data.startupId is string
+        && startupExists(request.resource.data.startupId)
+        && request.resource.data.founderId is string
+        && request.resource.data.talentId == request.auth.uid
+        && request.resource.data.talentId is string
+        && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId == request.resource.data.founderId
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.founderId in request.resource.data.participants
+        && request.resource.data.talentId in request.resource.data.participants
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.status in ['confirmed', 'pending', 'completed', 'cancelled']
+        && request.resource.data.roleTitle is string
+        && request.resource.data.roleTitle.size() > 0
+        && request.resource.data.roleTitle.size() <= 160
+        && request.resource.data.date is string
+        && request.resource.data.time is string;
+
+      allow update: if
+        signedIn()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.startupId == resource.data.startupId
+        && request.resource.data.founderId == resource.data.founderId
+        && request.resource.data.talentId == resource.data.talentId
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.status in ['confirmed', 'pending', 'completed', 'cancelled'];
+
+      allow delete: if
+        signedIn()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
     }
   }
 }
