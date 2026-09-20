@@ -601,7 +601,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                       View Details
                     </button>
                     <button
-                      id={`book-appointment-btn-${startup.id}`}
+                      id={`message-startup-btn-${startup.id}`}
                       onClick={onOpenWorldChat}
                       className="mornai-primary-action w-full py-2.5 px-3 text-xs font-semibold text-white rounded-xl shadow-sm transition-all text-center flex items-center justify-center gap-1"
                     >
