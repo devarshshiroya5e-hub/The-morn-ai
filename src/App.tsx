@@ -24,12 +24,84 @@ import {
   mockAppointments 
 } from './data/mockData';
 import { Startup, User, RolePost, Appointment, TaskItem } from './types';
+
+const normalizeStartup = (raw: Partial<Startup>): Startup => {
+  const safeName = typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Untitled startup';
+  const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=111827&color=fff`;
+
+  const stage = raw.stage === 'Idea' || raw.stage === 'Pre-Seed' || raw.stage === 'Seed' || raw.stage === 'Series A'
+    ? raw.stage
+    : 'Idea';
+
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : `startup-${Date.now()}`,
+    name: safeName,
+    tagline: typeof raw.tagline === 'string' ? raw.tagline : '',
+    logo: typeof raw.logo === 'string' && raw.logo ? raw.logo : fallbackAvatar,
+    coverImage: typeof raw.coverImage === 'string' ? raw.coverImage : undefined,
+    industry: typeof raw.industry === 'string' ? raw.industry : 'General',
+    stage,
+    pitch: typeof raw.pitch === 'string' ? raw.pitch : '',
+    techStack: Array.isArray(raw.techStack) ? raw.techStack.filter((value): value is string => typeof value === 'string') : [],
+    website: typeof raw.website === 'string' ? raw.website : '',
+    foundedYear: typeof raw.foundedYear === 'string' ? raw.foundedYear : new Date().getFullYear().toString(),
+    founderId: typeof raw.founderId === 'string' ? raw.founderId : '',
+    founderName: typeof raw.founderName === 'string' ? raw.founderName : 'Founder',
+    founderAvatar: typeof raw.founderAvatar === 'string' && raw.founderAvatar ? raw.founderAvatar : fallbackAvatar,
+    historyLogs: Array.isArray(raw.historyLogs) ? raw.historyLogs : [],
+    members: Array.isArray(raw.members) ? raw.members : [],
+    roadmap: Array.isArray(raw.roadmap) ? raw.roadmap : [],
+    openRoles: Array.isArray(raw.openRoles) ? raw.openRoles : [],
+    tasks: Array.isArray(raw.tasks) ? raw.tasks : [],
+    fundingRaised: typeof raw.fundingRaised === 'string' ? raw.fundingRaised : 'Bootstrapped',
+    location: typeof raw.location === 'string' ? raw.location : 'Remote',
+    investorReadinessScore: typeof raw.investorReadinessScore === 'number' ? raw.investorReadinessScore : 0,
+    growthVelocityScore: typeof raw.growthVelocityScore === 'number' ? raw.growthVelocityScore : 0,
+    verified: raw.verified === true,
+  };
+};
+
+const normalizeUser = (raw: User): User => ({
+  id: typeof raw.id === 'string' ? raw.id : '',
+  name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Member',
+  email: typeof raw.email === 'string' ? raw.email : '',
+  role: raw.role === 'founder' || raw.role === 'employee' ? raw.role : 'employee',
+  avatar: typeof raw.avatar === 'string' && raw.avatar
+    ? raw.avatar
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(typeof raw.name === 'string' && raw.name ? raw.name : 'Member')}&background=5B5CF0&color=fff`,
+  title: typeof raw.title === 'string' ? raw.title : 'Startup builder',
+  bio: typeof raw.bio === 'string' ? raw.bio : '',
+  skills: Array.isArray(raw.skills) ? raw.skills.filter((value): value is string => typeof value === 'string') : [],
+  startupId: typeof raw.startupId === 'string' ? raw.startupId : undefined,
+  hourlyRate: typeof raw.hourlyRate === 'string' ? raw.hourlyRate : undefined,
+  equityPreference: typeof raw.equityPreference === 'string' ? raw.equityPreference : undefined,
+  reputationScore: typeof raw.reputationScore === 'number' ? raw.reputationScore : undefined,
+  completedMilestones: typeof raw.completedMilestones === 'number' ? raw.completedMilestones : undefined,
+  onboarding: raw.onboarding && typeof raw.onboarding === 'object' ? raw.onboarding : undefined,
+});
+
+const buildFallbackUser = (firebaseUser: {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+}): User => ({
+  id: firebaseUser.uid,
+  name: firebaseUser.displayName || 'Member',
+  email: firebaseUser.email || '',
+  role: 'employee',
+  avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.displayName || 'Member')}&background=5B5CF0&color=fff`,
+  title: 'Startup builder',
+  bio: '',
+  skills: [],
+});
 import { Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
   // State: current logged-in user (Founder vs Talent/Employee)
   const [currentUser, setCurrentUser] = useState<User>(mockFounderUser);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   // State: all startups in the platform
   const [startups, setStartups] = useState<Startup[]>(initialStartups);
@@ -39,30 +111,35 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const savedProfile = await getDoc(doc(db, 'users', user.uid));
-        // A Firebase credential is not a completed MornAI account until onboarding
-        // has created its profile document. This keeps new Google/email users in
-        // the guided flow instead of dropping them into a mock dashboard.
-        setIsLoggedIn(savedProfile.exists());
-        if (savedProfile.exists()) {
-          setCurrentUser(savedProfile.data() as User);
-        } else {
-          setCurrentUser({
-            id: user.uid,
-            name: user.displayName || 'Member',
-            email: user.email || '',
-            role: 'employee',
-            avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Member')}&background=5B5CF0&color=fff`,
-            title: 'Startup builder',
-            bio: '',
-            skills: [],
-          });
+      try {
+        if (!user) {
+          setIsLoggedIn(false);
+          return;
         }
-      } else {
-        setIsLoggedIn(false);
+
+        try {
+          const savedProfile = await getDoc(doc(db, 'users', user.uid));
+          if (savedProfile.exists()) {
+            setCurrentUser(normalizeUser(savedProfile.data() as User));
+            setIsLoggedIn(true);
+          } else {
+            // A Firebase credential is not a completed MornAI account until
+            // onboarding has created its profile document.
+            setCurrentUser(buildFallbackUser(user));
+            setIsLoggedIn(false);
+          }
+        } catch (error) {
+          // Firestore can briefly fail during auth restoration. Keep the
+          // authenticated shell alive instead of turning the whole page white.
+          console.error('Failed to restore MornAI profile:', error);
+          setCurrentUser(buildFallbackUser(user));
+          setIsLoggedIn(true);
+        }
+      } finally {
+        setAuthReady(true);
       }
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -104,7 +181,7 @@ export default function App() {
       collection(db, 'startups'),
       (snapshot) => {
         const remoteStartups = snapshot.docs
-          .map((startupDoc) => startupDoc.data() as Startup)
+          .map((startupDoc) => normalizeStartup({ ...(startupDoc.data() as Partial<Startup>), id: startupDoc.id }))
           .map((startup) => {
             if (startup.founderId !== currentUser.id || !currentUser.onboarding) return startup;
 
@@ -169,12 +246,16 @@ export default function App() {
       savedStartup ||
       startups.find((startup) => startup.founderId === userId) ||
       startups.find((startup) => startup.members?.some((member) => member.userId === userId)) ||
-      startups[0];
+      null;
 
     setActiveStartupContext(preferred);
 
-    if (typeof window !== 'undefined' && preferred) {
-      window.localStorage.setItem(`mornai-active-startup:${userId}`, preferred.id);
+    if (typeof window !== 'undefined') {
+      if (preferred) {
+        window.localStorage.setItem(`mornai-active-startup:${userId}`, preferred.id);
+      } else {
+        window.localStorage.removeItem(`mornai-active-startup:${userId}`);
+      }
     }
   }, [isLoggedIn, startups, currentUser.id, activeStartupContext]);
 
@@ -312,6 +393,18 @@ export default function App() {
       />
     </>
   );
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
+        <div className="w-full max-w-md rounded-3xl border border-white bg-white/90 p-8 text-center shadow-[0_24px_80px_rgba(15,23,42,.10)] backdrop-blur-xl">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white text-sm font-extrabold">M</div>
+          <h1 className="mt-4 text-lg font-extrabold text-slate-950">Restoring your MornAI session</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Checking authentication and workspace context. The app will continue automatically.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (activeView === 'privacy') {
     return (
