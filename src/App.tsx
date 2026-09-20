@@ -410,18 +410,18 @@ export default function App() {
   );
 
   // Firebase restores an existing session in the background.
-  // New visitors simply stay on the authentication page.
+  // New visitors see the public platform page. Existing authenticated sessions
+  // automatically enter the app after a short session-restore delay.
   if (!authReady && !isLoggedIn) {
     return (
       <>
-        <div className="min-h-screen bg-slate-50" />
-            onChoose={(mode) => {
-              setAuthMode(mode);
-              setIsAuthModalOpen(true);
-            }}
-            onOpenPrivacy={() => setActiveView('privacy')}
-          />
-        )}
+        <LandingPage
+          onOpenAuth={(mode) => {
+            setAuthMode(mode);
+            setIsAuthModalOpen(true);
+          }}
+          onOpenPrivacy={() => setActiveView('privacy')}
+        />
         {authModals}
       </>
     );
@@ -438,13 +438,13 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <>
-            onChoose={(mode) => {
-              setAuthMode(mode);
-              setIsAuthModalOpen(true);
-            }}
-            onOpenPrivacy={() => setActiveView('privacy')}
-          />
-        )}
+        <LandingPage
+          onOpenAuth={(mode) => {
+            setAuthMode(mode);
+            setIsAuthModalOpen(true);
+          }}
+          onOpenPrivacy={() => setActiveView('privacy')}
+        />
         {authModals}
       </>
     );
