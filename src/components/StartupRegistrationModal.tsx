@@ -260,19 +260,19 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-2 backdrop-blur-sm sm:p-4">
+      <div className="relative flex h-[calc(100dvh-1rem)] max-h-[920px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-[calc(100dvh-2rem)]">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors z-10"
+          className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-white/10 p-2 text-white/80 backdrop-blur-md transition-colors hover:bg-white/20 hover:text-white sm:right-4 sm:top-4"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white p-6">
+        <div className="shrink-0 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-5 text-white sm:p-6">
           <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-1">
             <Rocket className="w-4 h-4" />
             Founder Onboarding
@@ -286,7 +286,10 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 pb-7 space-y-4 sm:p-6 sm:pb-8"
+        >
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
