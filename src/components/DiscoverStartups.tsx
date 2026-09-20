@@ -5,7 +5,6 @@ import {
   Sparkles, 
   MapPin, 
   DollarSign, 
-  Calendar, 
   CheckCircle2, 
   ArrowRight, 
   Filter, 
@@ -249,6 +248,77 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
         </div>
       </section>
 
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr_.8fr]">
+        <div className="relative overflow-hidden rounded-[28px] border border-violet-100 bg-gradient-to-br from-white via-violet-50/70 to-indigo-50/80 p-6 shadow-[0_22px_55px_rgba(79,70,229,.08)]">
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-violet-300/25 blur-3xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-violet-500">Personalized signal</p>
+                <h3 className="mt-1 text-lg font-extrabold text-slate-950">
+                  {currentUser.role === 'employee' ? 'Your next best startup match' : 'Your startup network'}
+                </h3>
+              </div>
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
+                <Sparkles className="h-4 w-4 text-violet-200" />
+              </span>
+            </div>
+            {filteredStartups[0] ? (
+              <div className="mt-5 flex items-center gap-3">
+                <img src={filteredStartups[0].logo} alt={filteredStartups[0].name} className="h-12 w-12 rounded-2xl object-cover shadow-sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-slate-950">{filteredStartups[0].name}</p>
+                  <p className="mt-0.5 line-clamp-1 text-xs font-semibold text-slate-500">{filteredStartups[0].tagline}</p>
+                </div>
+                {computeSkillFit(filteredStartups[0]) && (
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">
+                    {computeSkillFit(filteredStartups[0])?.score}% fit
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="mt-5 text-sm text-slate-500">Adjust your filters to discover more companies.</p>
+            )}
+            <button
+              type="button"
+              onClick={() => filteredStartups[0] && onSelectStartup(filteredStartups[0])}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-violet-700 disabled:opacity-40"
+              disabled={!filteredStartups[0]}
+            >
+              Explore signal <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/65 p-6 shadow-[0_18px_45px_rgba(16,185,129,.06)]">
+          <div className="flex items-center justify-between">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-emerald-600 shadow-sm">
+              <Briefcase className="h-4 w-4" />
+            </span>
+            <span className="text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-600">Hiring pulse</span>
+          </div>
+          <b className="mt-5 block text-3xl font-extrabold text-slate-950">{discoveryStats.liveRoles}</b>
+          <p className="mt-1 text-sm font-bold text-slate-800">open roles right now</p>
+          <p className="mt-2 text-xs leading-5 text-slate-500">Jump into a role, inspect the startup context, then talk to the wider network.</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenWorldChat}
+          className="group rounded-[28px] border border-sky-100 bg-sky-50/75 p-6 text-left shadow-[0_18px_45px_rgba(14,165,233,.06)] transition hover:-translate-y-1 hover:border-sky-200"
+        >
+          <div className="flex items-center justify-between">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
+              <Globe2 className="h-4 w-4" />
+            </span>
+            <ArrowUpRight className="h-4 w-4 text-sky-400 transition group-hover:text-sky-700" />
+          </div>
+          <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[.18em] text-sky-600">Global room</p>
+          <h3 className="mt-1 text-lg font-extrabold text-slate-950">Message the world.</h3>
+          <p className="mt-2 text-xs leading-5 text-slate-500">One shared room for founders and contributors across THE MORN AI network.</p>
+        </button>
+      </section>
+
       <div className="mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
@@ -473,8 +543,8 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                           onClick={() => onBookAppointment(startup, role)}
                           className="mornai-job-card group flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white/75 px-2.5 py-2 text-left transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white"
                         >
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-violet-200 bg-violet-50 text-violet-600">
-                            <span className="block text-base font-medium leading-none">+</span>
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-violet-200 bg-violet-50 text-violet-600">
+                            <span className="grid h-full w-full place-items-center text-sm font-medium leading-none">+</span>
                           </span>
                           <span className="min-w-0 truncate text-[11px] font-extrabold text-violet-700 group-hover:text-violet-800">
                             {role.title}
@@ -532,11 +602,11 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                     </button>
                     <button
                       id={`book-appointment-btn-${startup.id}`}
-                      onClick={() => onBookAppointment(startup, startup.openRoles[0])}
+                      onClick={onOpenWorldChat}
                       className="mornai-primary-action w-full py-2.5 px-3 text-xs font-semibold text-white rounded-xl shadow-sm transition-all text-center flex items-center justify-center gap-1"
                     >
-                      <Calendar className="w-3.5 h-3.5" />
-                      Book Sync
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Message
                     </button>
                   </div>
                 </div>
