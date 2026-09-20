@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { addDoc, collection, limit, limitToLast, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, limit, limitToLast, onSnapshot, orderBy, query, serverTimestamp, where } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   AlertCircle,
@@ -188,23 +188,35 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     }
   }, [currentUser.id]);
 
-  const messagesRefForRoom = (room: Room) =>
-    room.kind === 'world'
-      ? collection(db, 'worldChat', 'messages')
-      : collection(
-          db,
-          'startups',
-          room.startup!.id,
-          'privateChats',
-          currentUser.role === 'founder' ? room.contact!.id : currentUser.id,
-          'messages',
-        );
+  const privateParticipantsForRoom = (room: Room) =>
+    room.kind === 'private'
+      ? Array.from(new Set([room.startup!.founderId, room.contact!.id]))
+      : [];
+
+  const messagesQueryForRoom = (room: Room, direction: 'asc' | 'desc' = 'asc') => {
+    const base = collection(db, 'messages');
+    const roomFilters = [
+      where('roomId', '==', room.id),
+      where('roomType', '==', room.kind),
+    ];
+
+    if (room.kind === 'private') {
+      roomFilters.push(where('participants', 'array-contains', currentUser.id));
+    }
+
+    return query(
+      base,
+      ...roomFilters,
+      orderBy('createdAt', direction),
+      direction === 'asc' ? limitToLast(200) : limit(1),
+    );
+  };
 
   useEffect(() => {
     if (!rooms.length) return;
 
     const unsubscribes = rooms.map((room) => {
-      const latestQuery = query(messagesRefForRoom(room), orderBy('createdAt', 'desc'), limit(1));
+      const latestQuery = messagesQueryForRoom(room, 'desc');
 
       return onSnapshot(
         latestQuery,
@@ -235,21 +247,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     setChatError(null);
     setIsLoadingMessages(true);
 
-    const messagesRef =
-      activeRoom.kind === 'world'
-        ? collection(db, 'worldChat', 'messages')
-        : collection(
-            db,
-            'startups',
-            activeRoom.startup!.id,
-            'privateChats',
-            currentUser.role === 'founder' ? activeRoom.contact!.id : currentUser.id,
-            'messages',
-          );
-
     initialScrollPendingRef.current = true;
 
-    const messagesQuery = query(messagesRefForRoom(activeRoom), orderBy('createdAt', 'asc'), limitToLast(200));
+    const messagesQuery = messagesQueryForRoom(activeRoom, 'asc');
 
     const unsubscribe = onSnapshot(
       messagesQuery,
@@ -411,7 +411,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     );
 
     try {
-      await addDoc(messagesRefForRoom(activeRoom), {
+      const participants = privateParticipantsForRoom(activeRoom);
+
+      await addDoc(collection(db, 'messages'), {
+        roomId: activeRoom.id,
+        roomType: activeRoom.kind,
         senderId: currentUser.id,
         senderName: currentUser.name,
         senderAvatar: currentUser.avatar || null,
@@ -423,6 +427,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
           ? {
               startupId: activeRoom.startup!.id,
               recipientId: activeRoom.contact!.id,
+              participants,
             }
           : {}),
       });
