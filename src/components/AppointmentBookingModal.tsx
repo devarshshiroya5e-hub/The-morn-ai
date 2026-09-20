@@ -104,14 +104,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     try {
       await onConfirmAppointment(newAppointment);
       setIsSubmitted(true);
+      setTimeout(() => {
+        setIsSubmitted(false);
+        onClose();
+      }, 1500);
     } catch (error: any) {
       console.error('Appointment save error:', error);
       setSubmitError(error?.message || 'Unable to save the appointment request. Please try again.');
     }
-    setTimeout(() => {
-      setIsSubmitted(false);
-      onClose();
-    }, 1500);
   };
 
   const timeSlots = [
