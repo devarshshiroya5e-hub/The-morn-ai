@@ -64,6 +64,14 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (isLoggedIn) return;
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isLoggedIn]);
+
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
   const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile'>('discover');
 
@@ -81,9 +89,9 @@ export default function App() {
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
-  // Active startup for the Founder Workspace and AI Co-Founder Chat
-  const founderStartup = startups.find(s => s.founderId === currentUser.id) || startups[0];
-  const [activeStartupContext, setActiveStartupContext] = useState<Startup>(founderStartup);
+  // Active startup for the Founder Workspace and AI Co-Founder Chat.
+  // It is persisted per user so refreshes cannot silently switch a founder to a demo startup.
+  const [activeStartupContext, setActiveStartupContext] = useState<Startup | null>(null);
 
   // Persisted startups are the source of truth for anything created inside the product.
   // Mock startups remain available for the demo network, while Firestore startups survive refreshes.
@@ -106,14 +114,49 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn]);
 
-  // Keep the active workspace attached to a startup that still exists.
+  // Keep the active workspace attached to the startup owned/joined by this user.
+  // Prefer the user's last selected startup, then their founder startup, then a joined startup.
   useEffect(() => {
-    if (!startups.length) return;
-    if (startups.some((startup) => startup.id === activeStartupContext.id)) return;
+    if (!startups.length) {
+      setActiveStartupContext(null);
+      return;
+    }
 
-    const preferred = startups.find((startup) => startup.founderId === currentUser.id) || startups[0];
+    const userId = currentUser.id;
+    const isRelatedToUser = (startup: Startup) =>
+      startup.founderId === userId || startup.members?.some((member) => member.userId === userId);
+
+    const latestActive = activeStartupContext
+      ? startups.find((startup) => startup.id === activeStartupContext.id)
+      : null;
+
+    if (latestActive && isRelatedToUser(latestActive)) {
+      if (latestActive !== activeStartupContext) {
+        setActiveStartupContext(latestActive);
+      }
+      return;
+    }
+
+    const savedId = typeof window !== 'undefined'
+      ? window.localStorage.getItem(`mornai-active-startup:${userId}`)
+      : null;
+
+    const savedStartup = savedId
+      ? startups.find((startup) => startup.id === savedId && isRelatedToUser(startup))
+      : undefined;
+
+    const preferred =
+      savedStartup ||
+      startups.find((startup) => startup.founderId === userId) ||
+      startups.find((startup) => startup.members?.some((member) => member.userId === userId)) ||
+      startups[0];
+
     setActiveStartupContext(preferred);
-  }, [startups, currentUser.id]);
+
+    if (typeof window !== 'undefined' && preferred) {
+      window.localStorage.setItem(`mornai-active-startup:${userId}`, preferred.id);
+    }
+  }, [startups, currentUser.id, activeStartupContext]);
 
   // Toast feedback banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -194,6 +237,7 @@ export default function App() {
 
     setStartups((prev) => [newStartup, ...prev.filter((startup) => startup.id !== newStartup.id)]);
     setActiveStartupContext(newStartup);
+    window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, newStartup.id);
     setActiveView('workspace');
     showToast(`"${newStartup.name}" registered and saved to your MornAI account.`);
   };
@@ -294,15 +338,19 @@ export default function App() {
         {/* VIEW 3: WORKSPACE (Founder vs Talent) */}
         {activeView === 'workspace' && (
           currentUser.role === 'founder' ? (
-            <FounderWorkspace
-              startup={activeStartupContext}
-              currentUser={currentUser}
-              allTalents={mockTalentUsers}
-              appointments={appointments}
-              onUpdateStartup={handleUpdateStartup}
-              onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
-              onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
-            />
+            activeStartupContext ? (
+              <FounderWorkspace
+                startup={activeStartupContext}
+                currentUser={currentUser}
+                allTalents={mockTalentUsers}
+                appointments={appointments}
+                onUpdateStartup={handleUpdateStartup}
+                onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+              />
+            ) : (
+              <div className="mx-auto max-w-3xl p-10 text-center text-sm text-slate-500">Loading your startup workspace…</div>
+            )
           ) : (
             <TalentWorkspace
               currentUser={currentUser}
@@ -318,15 +366,19 @@ export default function App() {
         {/* VIEW 4: DIRECT APPOINTMENTS VIEW */}
         {activeView === 'appointments' && (
           currentUser.role === 'founder' ? (
-            <FounderWorkspace
-              startup={activeStartupContext}
-              currentUser={currentUser}
-              allTalents={mockTalentUsers}
-              appointments={appointments}
-              onUpdateStartup={handleUpdateStartup}
-              onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
-              onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
-            />
+            activeStartupContext ? (
+              <FounderWorkspace
+                startup={activeStartupContext}
+                currentUser={currentUser}
+                allTalents={mockTalentUsers}
+                appointments={appointments}
+                onUpdateStartup={handleUpdateStartup}
+                onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+              />
+            ) : (
+              <div className="mx-auto max-w-3xl p-10 text-center text-sm text-slate-500">Loading your startup workspace…</div>
+            )
           ) : (
             <TalentWorkspace
               currentUser={currentUser}
@@ -345,6 +397,12 @@ export default function App() {
             currentUser={currentUser}
             onUpdateUser={setCurrentUser}
             onLogout={async () => {
+              window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+              setSelectedStartupForDetail(null);
+              setIsDetailModalOpen(false);
+              setIsAiDrawerOpen(false);
+              setIsRegisterModalOpen(false);
+              setActiveStartupContext(null);
               await signOut(auth);
               setActiveView('discover');
             }}
@@ -364,20 +422,26 @@ export default function App() {
         onBookAppointment={handleOpenBookingModal}
         onConsultAi={(startup) => {
           setActiveStartupContext(startup);
+          window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, startup.id);
           setIsDetailModalOpen(false);
           setIsAiDrawerOpen(true);
         }}
       />
 
       {/* AI Co-Founder & Strategist Slide-out Drawer */}
-      <AiCoFounderDrawer
-        isOpen={isAiDrawerOpen}
-        onClose={() => setIsAiDrawerOpen(false)}
-        activeStartup={activeStartupContext}
-        currentUser={currentUser}
-        allStartups={startups}
-        onSelectStartup={(s) => setActiveStartupContext(s)}
-      />
+      {activeStartupContext && (
+        <AiCoFounderDrawer
+          isOpen={isAiDrawerOpen}
+          onClose={() => setIsAiDrawerOpen(false)}
+          activeStartup={activeStartupContext}
+          currentUser={currentUser}
+          allStartups={startups}
+          onSelectStartup={(s) => {
+            setActiveStartupContext(s);
+            window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, s.id);
+          }}
+        />
+      )}
 
       {/* Register Ongoing Startup Modal */}
       <StartupRegistrationModal
