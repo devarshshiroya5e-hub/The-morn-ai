@@ -149,8 +149,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
               </div>
             </div>
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/75 p-5">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-800"><Check className="h-4 w-4 text-emerald-600" />
-                <Video className="h-4 w-4" /> Sync details ready
+              <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-800">
+                <Check className="h-4 w-4 text-emerald-600" /> Sync details ready
               </div>
               <p className="mt-2 text-xs leading-6 text-emerald-700">The appointment is now visible in your Syncs workspace with the selected role, pitch and AI preparation brief.</p>
               <button onClick={onDone} className="mornai-primary-action mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white">
@@ -223,6 +223,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
               </div>
               <ShieldCheck className="h-5 w-5 text-violet-500" />
             </div>
+
+            <div className="mornai-book-sync-section-label"><span>01</span><div><p>Contribution</p><h2>Select the opportunity you want to discuss.</h2></div></div>
 
             <div>
               <label className="mb-2 block text-xs font-extrabold text-slate-600">Role / contribution</label>
