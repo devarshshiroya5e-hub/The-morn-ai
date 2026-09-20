@@ -292,6 +292,5 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
       </div>
     </div>
     </div>
-    </div>
   );
 };
