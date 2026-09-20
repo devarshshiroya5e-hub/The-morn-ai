@@ -19,7 +19,7 @@ interface AppointmentBookingModalProps {
   startup: Startup | null;
   selectedRole?: RolePost;
   currentUser: User;
-  onConfirmAppointment: (appointment: Appointment) => void;
+  onConfirmAppointment: (appointment: Appointment) => Promise<void>;
 }
 
 export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = ({
@@ -37,6 +37,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const [matchAnalysis, setMatchAnalysis] = useState<MatchingAnalysis | null>(null);
   const [isLoadingMatch, setIsLoadingMatch] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedRole) {
@@ -75,8 +76,9 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
   if (!isOpen || !startup) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
 
     const newAppointment: Appointment = {
       id: `apt-${Date.now()}`,
@@ -99,8 +101,13 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       createdDate: new Date().toISOString().split('T')[0],
     };
 
-    onConfirmAppointment(newAppointment);
-    setIsSubmitted(true);
+    try {
+      await onConfirmAppointment(newAppointment);
+      setIsSubmitted(true);
+    } catch (error: any) {
+      console.error('Appointment save error:', error);
+      setSubmitError(error?.message || 'Unable to save the appointment request. Please try again.');
+    }
     setTimeout(() => {
       setIsSubmitted(false);
       onClose();
@@ -191,6 +198,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {submitError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold leading-5 text-rose-700">{submitError}</div>}
             
             {/* Target Role Select */}
             <div>
