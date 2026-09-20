@@ -59,6 +59,28 @@ service cloud.firestore {
       }
     }
 
+
+
+    // ---------------------------------------------------------
+    // GLOBAL WORLD CHAT
+    // Every authenticated MornAI member can read and send messages.
+    // ---------------------------------------------------------
+
+    match /worldChat/messages/{messageId} {
+      allow read: if signedIn();
+
+      allow create: if
+        signedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000;
+
+      allow update, delete: if
+        signedIn()
+        && resource.data.senderId == request.auth.uid;
+    }
+
     // ---------------------------------------------------------
     // STARTUPS
     // ---------------------------------------------------------
@@ -101,6 +123,49 @@ service cloud.firestore {
           && request.resource.data.startupId == resource.data.startupId;
 
         allow delete: if isFounder(startupId);
+      }
+
+
+      // -------------------------------------------------------
+      // PRIVATE STARTUP CHAT
+      // Only the startup founder and officially selected/active
+      // members can access the conversation with that startup.
+      // -------------------------------------------------------
+
+      match /privateChats/{memberId}/messages/{messageId} {
+        allow read: if
+          isFounder(startupId)
+          ||
+          (
+            signedIn()
+            && request.auth.uid == memberId
+            && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(memberId))
+          );
+
+        allow create: if
+          (
+            isFounder(startupId)
+            ||
+            (
+              signedIn()
+              && request.auth.uid == memberId
+              && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(memberId))
+            )
+          )
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.startupId == startupId
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000;
+
+        allow update, delete: if
+          signedIn()
+          && resource.data.senderId == request.auth.uid
+          && (
+            isFounder(startupId)
+            ||
+            request.auth.uid == memberId
+          );
       }
 
       // -------------------------------------------------------
