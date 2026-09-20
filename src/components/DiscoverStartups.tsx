@@ -24,6 +24,7 @@ interface DiscoverStartupsProps {
   onSelectStartup: (startup: Startup) => void;
   onBookAppointment: (startup: Startup, role?: RolePost) => void;
   onOpenAiDrawer: () => void;
+  onOpenWorldChat: () => void;
 }
 
 export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
@@ -32,6 +33,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
   onSelectStartup,
   onBookAppointment,
   onOpenAiDrawer,
+  onOpenWorldChat,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('All');
@@ -129,12 +131,23 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                 Ask AI Co-Founder
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
-              <div className="flex items-center gap-2 text-xs font-semibold text-indigo-200">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
-                  <span className="relative h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                </span>
-                {discoveryStats.liveRoles} open roles across the network
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={onOpenWorldChat}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-xs font-extrabold text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/15"
+                >
+                  <Globe2 className="h-4 w-4 text-emerald-300" />
+                  World Chat
+                  <ArrowUpRight className="h-3.5 w-3.5 text-violet-200" />
+                </button>
+                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-200">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+                    <span className="relative h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  </span>
+                  {discoveryStats.liveRoles} open roles across the network
+                </div>
               </div>
             </div>
           </div>
@@ -193,6 +206,45 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
           );
         })}
       </div>
+
+      <section className="grid gap-3 lg:grid-cols-[1.4fr_.8fr_.8fr]">
+        <button
+          type="button"
+          onClick={onOpenWorldChat}
+          className="group relative overflow-hidden rounded-[24px] border border-violet-100 bg-white/80 p-5 text-left shadow-[0_18px_45px_rgba(124,58,237,.08)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-violet-200"
+        >
+          <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-violet-200/30 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
+                <MessageCircle className="h-4 w-4" />
+              </span>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 transition group-hover:text-violet-600" />
+            </div>
+            <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-500">Global conversation</p>
+            <h3 className="mt-1 text-base font-extrabold text-slate-950">Meet the network in World Chat.</h3>
+            <p className="mt-1.5 text-xs leading-5 text-slate-500">Talk with founders and contributors before you ever join a team.</p>
+          </div>
+        </button>
+
+        <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/70 p-5">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-emerald-600 shadow-sm">
+            <UsersRound className="h-4 w-4" />
+          </span>
+          <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-600">Talent signal</p>
+          <h3 className="mt-1 text-base font-extrabold text-slate-950">{discoveryStats.total * 3 + discoveryStats.liveRoles}+</h3>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Active people and opportunities being coordinated.</p>
+        </div>
+
+        <div className="rounded-[24px] border border-sky-100 bg-sky-50/70 p-5">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-sky-600 shadow-sm">
+            <BrainCircuit className="h-4 w-4" />
+          </span>
+          <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.18em] text-sky-600">Context signal</p>
+          <h3 className="mt-1 text-base font-extrabold text-slate-950">{discoveryStats.memoryLogs} memory events</h3>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Roadmaps and startup decisions stay attached to each company.</p>
+        </div>
+      </section>
 
       <div className="mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -418,8 +470,8 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
                           onClick={() => onBookAppointment(startup, role)}
                           className="mornai-job-card group flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white/75 px-2.5 py-2 text-left transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white"
                         >
-                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-violet-200 bg-violet-50 text-violet-600">
-                            <span className="text-base font-medium leading-none">+</span>
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-violet-200 bg-violet-50 text-violet-600">
+                            <span className="block text-base font-medium leading-none">+</span>
                           </span>
                           <span className="min-w-0 truncate text-[11px] font-extrabold text-violet-700 group-hover:text-violet-800">
                             {role.title}
