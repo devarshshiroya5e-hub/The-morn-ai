@@ -106,7 +106,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
         </div>
       </div>
       
-      <div className="mornai-discover-hero relative overflow-hidden rounded-[28px] border border-white/10 p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,.18)] sm:p-10">
+      <div className="mornai-discover-box mornai-discover-hero relative overflow-hidden rounded-[28px] border border-white/10 p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,.18)] sm:p-10">
         <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
         <div className="absolute right-20 -bottom-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(129,140,248,.15),transparent_24%),radial-gradient(circle_at_20%_90%,rgba(56,189,248,.10),transparent_22%)] pointer-events-none" />
@@ -214,7 +214,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
         <button
           type="button"
           onClick={onOpenWorldChat}
-          className="group relative overflow-hidden rounded-[24px] border border-violet-100 bg-white/80 p-5 text-left shadow-[0_18px_45px_rgba(124,58,237,.08)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-violet-200"
+          className="mornai-discover-box group relative overflow-hidden rounded-[24px] border border-violet-100 bg-white/80 p-5 text-left shadow-[0_18px_45px_rgba(124,58,237,.08)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-violet-200"
         >
           <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-violet-200/30 blur-2xl" />
           <div className="relative">
@@ -230,7 +230,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
           </div>
         </button>
 
-        <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/70 p-5">
+        <div className="mornai-discover-box rounded-[24px] border border-emerald-100 bg-emerald-50/70 p-5">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-emerald-600 shadow-sm">
             <UsersRound className="h-4 w-4" />
           </span>
@@ -239,7 +239,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
           <p className="mt-1 text-xs leading-5 text-slate-500">Active people and opportunities being coordinated.</p>
         </div>
 
-        <div className="rounded-[24px] border border-sky-100 bg-sky-50/70 p-5">
+        <div className="mornai-discover-box rounded-[24px] border border-sky-100 bg-sky-50/70 p-5">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-sky-600 shadow-sm">
             <BrainCircuit className="h-4 w-4" />
           </span>
@@ -250,7 +250,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr_.8fr]">
-        <div className="relative overflow-hidden rounded-[28px] border border-violet-100 bg-gradient-to-br from-white via-violet-50/70 to-indigo-50/80 p-6 shadow-[0_22px_55px_rgba(79,70,229,.08)]">
+        <div className="mornai-discover-box relative overflow-hidden rounded-[28px] border border-violet-100 bg-gradient-to-br from-white via-violet-50/70 to-indigo-50/80 p-6 shadow-[0_22px_55px_rgba(79,70,229,.08)]">
           <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-violet-300/25 blur-3xl" />
           <div className="relative">
             <div className="flex items-center justify-between gap-3">
@@ -291,7 +291,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/65 p-6 shadow-[0_18px_45px_rgba(16,185,129,.06)]">
+        <div className="mornai-discover-box rounded-[28px] border border-emerald-100 bg-emerald-50/65 p-6 shadow-[0_18px_45px_rgba(16,185,129,.06)]">
           <div className="flex items-center justify-between">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-emerald-600 shadow-sm">
               <Briefcase className="h-4 w-4" />
@@ -306,7 +306,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
         <button
           type="button"
           onClick={onOpenWorldChat}
-          className="group rounded-[28px] border border-sky-100 bg-sky-50/75 p-6 text-left shadow-[0_18px_45px_rgba(14,165,233,.06)] transition hover:-translate-y-1 hover:border-sky-200"
+          className="mornai-discover-box group rounded-[28px] border border-sky-100 bg-sky-50/75 p-6 text-left shadow-[0_18px_45px_rgba(14,165,233,.06)] transition hover:-translate-y-1 hover:border-sky-200"
         >
           <div className="flex items-center justify-between">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
@@ -320,7 +320,7 @@ export const DiscoverStartups: React.FC<DiscoverStartupsProps> = ({
         </button>
       </section>
 
-      <div className="mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
+      <div className="mornai-discover-box mornai-filter-bar bg-white/70 p-4 rounded-[22px] border border-white/90 shadow-sm space-y-4 backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
