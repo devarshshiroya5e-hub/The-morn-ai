@@ -92,7 +92,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       date,
       time,
       status: 'pending',
-      meetingLink: `https://meet.solvearn.net/room/${startup.name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`,
+      meetingLink: `https://meet.mornai.ai/room/${startup.name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`,
       pitchMessage: pitchMessage.trim() || `Excited to join ${startup.name} and contribute to your current sprint roadmap!`,
       aiMatchScore: matchAnalysis?.matchScore || 92,
       aiPreparationBrief: matchAnalysis?.synergyAnalysis || 'High technical synergy in core engineering stack.',
