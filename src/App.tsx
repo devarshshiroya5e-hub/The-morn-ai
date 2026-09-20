@@ -136,13 +136,13 @@ export default function App() {
             setAutoRestoredSession(true);
             setSessionRestoreComplete(false);
 
-            // Keep the public landing page visible for 3.5 seconds so a
+            // Keep the public landing page visible for 2 seconds so a
             // returning user sees the platform before entering automatically.
             window.setTimeout(() => {
               if (!cancelled) {
                 setSessionRestoreComplete(true);
               }
-            }, 3500);
+            }, 2000);
           } else {
             // A Firebase credential is not a completed MornAI account until
             // onboarding has created its profile document.
