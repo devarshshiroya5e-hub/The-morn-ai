@@ -188,6 +188,46 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     }
   }, [currentUser.id]);
 
+  const messagesRefForRoom = (room: Room) =>
+    room.kind === 'world'
+      ? collection(db, 'worldChat', 'messages')
+      : collection(
+          db,
+          'startups',
+          room.startup!.id,
+          'privateChats',
+          currentUser.role === 'founder' ? room.contact!.id : currentUser.id,
+          'messages',
+        );
+
+  useEffect(() => {
+    if (!rooms.length) return;
+
+    const unsubscribes = rooms.map((room) => {
+      const latestQuery = query(messagesRefForRoom(room), orderBy('createdAt', 'desc'), limit(1));
+
+      return onSnapshot(
+        latestQuery,
+        (snapshot) => {
+          const latest = snapshot.docs[0];
+          if (!latest) return;
+          const message = toMessage(latest);
+          setRoomPreviews((prev) => ({
+            ...prev,
+            [room.id]: {
+              text: message.text,
+              createdAt: message.createdAt,
+              senderId: message.senderId,
+            },
+          }));
+        },
+        (error) => console.error('Room preview error:', error),
+      );
+    });
+
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [rooms, currentUser.id, currentUser.role]);
+
   useEffect(() => {
     if (!activeRoom) return;
 
@@ -207,9 +247,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
             'messages',
           );
 
-    // Do not order the Firestore query. Sorting locally removes the common
-    // composite-index failure mode and also handles pending server timestamps.
-    const messagesQuery = query(messagesRef, limit(150));
+    initialScrollPendingRef.current = true;
+
+    const messagesQuery = query(messagesRefForRoom(activeRoom), orderBy('createdAt', 'asc'), limitToLast(200));
 
     const unsubscribe = onSnapshot(
       messagesQuery,
@@ -217,7 +257,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
         const nextMessages = snapshot.docs.map(toMessage).sort(
           (a, b) => roomTimestamp(a) - roomTimestamp(b),
         );
-        setMessages(nextMessages);
+        setMessages((previous) => {
+          const localOnly = previous.filter(
+            (message) =>
+              message.id.startsWith('local-') &&
+              message.status !== 'sent' &&
+              !nextMessages.some(
+                (persisted) => persisted.clientId && persisted.clientId === message.clientId,
+              ),
+          );
+          return [...nextMessages, ...localOnly].sort(
+            (a, b) => roomTimestamp(a) - roomTimestamp(b),
+          );
+        });
         setChatError(null);
         setIsLoadingMessages(false);
       },
@@ -240,8 +292,67 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
   ]);
 
   useEffect(() => {
+    if (!isLoadingMessages && initialScrollPendingRef.current) {
+      initialScrollPendingRef.current = false;
+      requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' }));
+      return;
+    }
+
+    const viewport = messageViewportRef.current;
+    if (!viewport) return;
+
+    const distanceFromBottom =
+      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+
+    if (distanceFromBottom < 180) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    } else {
+      setShowScrollToLatest(true);
+    }
+  }, [messages, isLoadingMessages]);
+
+  useEffect(() => {
+    const viewport = messageViewportRef.current;
+    if (!viewport) return;
+
+    const handleScroll = () => {
+      const distanceFromBottom =
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+      setShowScrollToLatest(distanceFromBottom > 180);
+    };
+
+    handleScroll();
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [activeRoomId]);
+
+  useEffect(() => {
+    if (!activeRoom || isLoadingMessages) return;
+    const latest = messages[messages.length - 1];
+    if (!latest) return;
+
+    const latestTime = roomTimestamp(latest);
+    setReadAt((previous) => {
+      const next = {
+        ...previous,
+        [activeRoom.id]: Math.max(previous[activeRoom.id] || 0, latestTime),
+      };
+      try {
+        window.localStorage.setItem(
+          `${READ_STORAGE_KEY}${currentUser.id}`,
+          JSON.stringify(next),
+        );
+      } catch {
+        // Ignore local storage errors. The chat remains usable.
+      }
+      return next;
+    });
+  }, [activeRoom?.id, currentUser.id, isLoadingMessages, messages]);
+
+  const scrollToLatest = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages]);
+    setShowScrollToLatest(false);
+  };
 
   const sendMessage = async () => {
     const text = draft.trim();
