@@ -163,7 +163,9 @@ export default function App() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Authentication is the product entry point. Existing Firebase sessions
+  // are restored automatically and bypass this screen immediately.
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(true);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -394,15 +396,15 @@ export default function App() {
     </>
   );
 
-  if (!authReady) {
+  // The auth screen is shown immediately on a fresh visit. Firebase's
+  // auth-state listener can then replace it with the logged-in workspace
+  // without asking the user to enter credentials again.
+  if (!authReady && !isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
-        <div className="w-full max-w-md rounded-3xl border border-white bg-white/90 p-8 text-center shadow-[0_24px_80px_rgba(15,23,42,.10)] backdrop-blur-xl">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white text-sm font-extrabold">M</div>
-          <h1 className="mt-4 text-lg font-extrabold text-slate-950">Restoring your MornAI session</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Checking authentication and workspace context. The app will continue automatically.</p>
-        </div>
-      </div>
+      <>
+        <div className="min-h-screen bg-slate-50" />
+        {authModals}
+      </>
     );
   }
 
@@ -417,10 +419,15 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <>
-        <LandingPage
-          onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}
-          onOpenPrivacy={() => setActiveView('privacy')}
-        />
+        {!isAuthModalOpen && (
+          <LandingPage
+            onOpenAuth={(mode) => {
+              setAuthMode(mode);
+              setIsAuthModalOpen(true);
+            }}
+            onOpenPrivacy={() => setActiveView('privacy')}
+          />
+        )}
         {authModals}
       </>
     );
@@ -554,6 +561,8 @@ export default function App() {
               setIsRegisterModalOpen(false);
               setActiveStartupContext(null);
               await signOut(auth);
+              setIsAuthModalOpen(true);
+              setAuthMode('login');
               setActiveView('discover');
             }}
           />
