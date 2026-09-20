@@ -349,6 +349,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     });
   }, [activeRoom?.id, currentUser.id, isLoadingMessages, messages]);
 
+  const setActiveRoom = (roomId: string) => {
+    setActiveRoomId(roomId);
+    setMobileRoomListOpen(false);
+  };
+
   const scrollToLatest = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     setShowScrollToLatest(false);
