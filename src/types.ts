@@ -91,6 +91,7 @@ export interface RolePost {
 
 export interface Appointment {
   id: string;
+  participants?: string[];
   startupId: string;
   startupName: string;
   founderId: string;
@@ -173,6 +174,9 @@ export interface MatchingAnalysis {
 
 export interface ChatMessage {
   id: string;
+  roomId?: string;
+  roomType?: 'world' | 'private';
+  participants?: string[];
   senderId: string;
   senderName: string;
   senderAvatar?: string;
