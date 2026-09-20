@@ -25,6 +25,12 @@ service cloud.firestore {
         );
     }
 
+    function isActiveMember(startupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid)).data.status == 'active';
+    }
+
     // ---------------------------------------------------------
     // USER PROFILE
     // ---------------------------------------------------------
@@ -74,7 +80,12 @@ service cloud.firestore {
         && request.resource.data.senderId == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 2000;
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.clientId is string
+        && request.resource.data.clientId.size() <= 128
+        && request.resource.data.createdAtClient is number
+        && request.resource.data.senderName is string
+        && request.resource.data.senderName.size() <= 120;
 
       allow update, delete: if
         signedIn()
@@ -139,7 +150,7 @@ service cloud.firestore {
           (
             signedIn()
             && request.auth.uid == memberId
-            && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(memberId))
+            && isActiveMember(startupId)
           );
 
         allow create: if
@@ -149,14 +160,20 @@ service cloud.firestore {
             (
               signedIn()
               && request.auth.uid == memberId
-              && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(memberId))
+              && isActiveMember(startupId)
             )
           )
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.startupId == startupId
+          && request.resource.data.recipientId == memberId
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 2000;
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.clientId is string
+          && request.resource.data.clientId.size() <= 128
+          && request.resource.data.createdAtClient is number
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() <= 120;
 
         allow update, delete: if
           signedIn()
@@ -164,7 +181,10 @@ service cloud.firestore {
           && (
             isFounder(startupId)
             ||
-            request.auth.uid == memberId
+            (
+              request.auth.uid == memberId
+              && isActiveMember(startupId)
+            )
           );
       }
 
