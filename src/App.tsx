@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
@@ -136,13 +137,14 @@ export default function App() {
             setAutoRestoredSession(true);
             setSessionRestoreComplete(false);
 
-            // Keep the public landing page visible for 2 seconds so a
+            // Keep the public landing page visible for 1 second so a
             // returning user sees the platform before entering automatically.
             window.setTimeout(() => {
               if (!cancelled) {
+                setIsAuthModalOpen(false);
                 setSessionRestoreComplete(true);
               }
-            }, 2000);
+            }, 1000);
           } else {
             // A Firebase credential is not a completed MornAI account until
             // onboarding has created its profile document.
@@ -165,9 +167,10 @@ export default function App() {
 
           window.setTimeout(() => {
             if (!cancelled) {
+              setIsAuthModalOpen(false);
               setSessionRestoreComplete(true);
             }
-          }, 3500);
+          }, 1000);
         }
       } finally {
         if (!cancelled) {
@@ -446,7 +449,13 @@ export default function App() {
 
   if (!authReady || showPublicLanding) {
     return (
-      <>
+      <motion.div
+        key="mornai-public-entry"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.28, ease: 'easeOut' }}
+        className="min-h-screen"
+      >
         <LandingPage
           onOpenAuth={(mode) => {
             setAuthMode(mode);
@@ -455,7 +464,7 @@ export default function App() {
           onOpenPrivacy={() => setActiveView('privacy')}
         />
         {authModals}
-      </>
+      </motion.div>
     );
   }
 
@@ -468,7 +477,14 @@ export default function App() {
   }
 
   return (
-    <div className="mornai-app-shell min-h-screen text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
+    <motion.div
+      key="mornai-authenticated-app"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.32, ease: 'easeOut' }}
+      className="min-h-screen"
+    >
+      <div className="mornai-app-shell min-h-screen text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
       {authModals}
       
       {/* Toast Banner */}
@@ -673,6 +689,7 @@ export default function App() {
         </div>
       </footer>
 
-    </div>
+      </div>
+    </motion.div>
   );
 }
