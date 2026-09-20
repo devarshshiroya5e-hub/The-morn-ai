@@ -170,8 +170,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
             </div>
             <div className="flex items-center gap-3">
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" /> {worldOnline.toLocaleString()} online</div>
-                <div className="mt-1 text-[10px] text-violet-100/65">Global conversation</div>
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" /> Live global room</div>
+                <div className="mt-1 text-[10px] text-violet-100/65">All authenticated THE MORN AI members</div>
               </div>
               <div className="hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-3 sm:block">
                 <UsersRound className="h-4 w-4 text-violet-200" />
