@@ -198,7 +198,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
       ? Array.from(new Set([room.startup!.founderId, room.contact!.id]))
       : [];
 
-  const messagesQueryForRoom = (room: Room, direction: 'asc' | 'desc' = 'asc') => {
+  const messagesQueryForRoom = (
+    room: Room,
+    direction: 'asc' | 'desc' = 'asc',
+    latestOnly = false,
+  ) => {
     const base = collection(db, 'messages');
     const roomFilters = [
       where('roomId', '==', room.id),
@@ -213,7 +217,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
       base,
       ...roomFilters,
       orderBy('createdAt', direction),
-      direction === 'asc' ? limitToLast(200) : limit(1),
+      direction === 'asc'
+        ? latestOnly ? limitToLast(1) : limitToLast(200)
+        : limit(1),
     );
   };
 
@@ -221,12 +227,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     if (!rooms.length) return;
 
     const unsubscribes = rooms.map((room) => {
-      const latestQuery = messagesQueryForRoom(room, 'desc');
+      // Use the same ascending index as the main room query and take the latest
+      // document with limitToLast(1). This avoids a second descending composite index.
+      const latestQuery = messagesQueryForRoom(room, 'asc', true);
 
       return onSnapshot(
         latestQuery,
         (snapshot) => {
-          const latest = snapshot.docs[0];
+          const latest = snapshot.docs[snapshot.docs.length - 1];
           if (!latest) return;
           const message = toMessage(latest);
           setRoomPreviews((prev) => ({
