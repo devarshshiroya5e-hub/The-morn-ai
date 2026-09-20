@@ -25,11 +25,11 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose }) => {
           </section>
           <section>
             <h3 className="text-lg font-semibold text-white mb-2">Terms of Service</h3>
-            <p>By using SolveEarn AI, you agree to comply with our community guidelines and terms of service. Unauthorized use is prohibited.</p>
+            <p>By using MornAI, you agree to comply with our community guidelines and terms of service. Unauthorized use is prohibited.</p>
           </section>
           <section>
             <h3 className="text-lg font-semibold text-white mb-2">Platform Information</h3>
-            <p>SolveEarn AI is a platform designed to connect founders and contributors. All milestones and equity agreements are subject to our internal protocols.</p>
+            <p>MornAI is a platform designed to connect founders and contributors. All milestones and equity agreements are subject to our internal protocols.</p>
           </section>
         </div>
       </div>
