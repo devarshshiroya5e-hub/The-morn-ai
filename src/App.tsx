@@ -102,6 +102,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User>(mockFounderUser);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [autoRestoredSession, setAutoRestoredSession] = useState(false);
+  const [sessionRestoreComplete, setSessionRestoreComplete] = useState(false);
 
   // State: all startups in the platform
   const [startups, setStartups] = useState<Startup[]>(initialStartups);
@@ -110,52 +112,77 @@ export default function App() {
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
 
   useEffect(() => {
+    let cancelled = false;
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         if (!user) {
-          setIsLoggedIn(false);
+          if (!cancelled) {
+            setIsLoggedIn(false);
+            setAutoRestoredSession(false);
+            setSessionRestoreComplete(true);
+          }
           return;
         }
 
         try {
           const savedProfile = await getDoc(doc(db, 'users', user.uid));
+
+          if (cancelled) return;
+
           if (savedProfile.exists()) {
             setCurrentUser(normalizeUser(savedProfile.data() as User));
             setIsLoggedIn(true);
+            setAutoRestoredSession(true);
+            setSessionRestoreComplete(false);
+
+            // Keep the public landing page visible for 3.5 seconds so a
+            // returning user sees the platform before entering automatically.
+            window.setTimeout(() => {
+              if (!cancelled) {
+                setSessionRestoreComplete(true);
+              }
+            }, 3500);
           } else {
             // A Firebase credential is not a completed MornAI account until
             // onboarding has created its profile document.
             setCurrentUser(buildFallbackUser(user));
             setIsLoggedIn(false);
+            setAutoRestoredSession(false);
+            setSessionRestoreComplete(true);
           }
         } catch (error) {
-          // Firestore can briefly fail during auth restoration. Keep the
-          // authenticated shell alive instead of turning the whole page white.
+          if (cancelled) return;
+
+          // Firebase can briefly restore auth before Firestore responds.
+          // Keep the authenticated shell available, but still use the same
+          // returning-user landing delay.
           console.error('Failed to restore MornAI profile:', error);
           setCurrentUser(buildFallbackUser(user));
           setIsLoggedIn(true);
+          setAutoRestoredSession(true);
+          setSessionRestoreComplete(false);
+
+          window.setTimeout(() => {
+            if (!cancelled) {
+              setSessionRestoreComplete(true);
+            }
+          }, 3500);
         }
       } finally {
-        setAuthReady(true);
+        if (!cancelled) {
+          setAuthReady(true);
+        }
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-
-  // Give Firebase 3 seconds to restore an existing session. For a new visitor,
-  // nothing is auto-submitted or changed, so the authentication page remains open.
-  useEffect(() => {
-    if (!authReady || !isLoggedIn) return;
-
-    const timer = window.setTimeout(() => {
-      setIsAuthModalOpen(false);
-    }, 3000);
-
-    return () => window.clearTimeout(timer);
-  }, [authReady, isLoggedIn]);
 
   useEffect(() => {
     if (isLoggedIn) return;
@@ -397,6 +424,8 @@ export default function App() {
         onSuccess={(user) => {
           setCurrentUser(user);
           setIsLoggedIn(true);
+          setAutoRestoredSession(false);
+          setSessionRestoreComplete(true);
           setIsAuthModalOpen(false);
           showToast('Successfully authenticated!');
         }}
@@ -412,7 +441,10 @@ export default function App() {
   // Firebase restores an existing session in the background.
   // New visitors see the public platform page. Existing authenticated sessions
   // automatically enter the app after a short session-restore delay.
-  if (!authReady && !isLoggedIn) {
+  const showPublicLanding =
+    !isLoggedIn || (autoRestoredSession && !sessionRestoreComplete);
+
+  if (!authReady || showPublicLanding) {
     return (
       <>
         <LandingPage
@@ -432,21 +464,6 @@ export default function App() {
       <PrivacyPolicyPage
         onBack={() => setActiveView(isLoggedIn ? 'discover' : 'discover')}
       />
-    );
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <>
-        <LandingPage
-          onOpenAuth={(mode) => {
-            setAuthMode(mode);
-            setIsAuthModalOpen(true);
-          }}
-          onOpenPrivacy={() => setActiveView('privacy')}
-        />
-        {authModals}
-      </>
     );
   }
 
@@ -578,6 +595,8 @@ export default function App() {
               setIsRegisterModalOpen(false);
               setActiveStartupContext(null);
               await signOut(auth);
+              setAutoRestoredSession(false);
+              setSessionRestoreComplete(true);
               setIsAuthModalOpen(false);
               setAuthMode('login');
                   setActiveView('discover');
