@@ -163,6 +163,32 @@
 .mornai-primary-action{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.30),0 10px 24px rgba(124,58,237,.22),0 0 18px rgba(168,85,247,.16);}
 .mornai-primary-action:hover{box-shadow:0 0 0 1px rgba(196,181,253,.44),0 14px 30px rgba(124,58,237,.28),0 0 24px rgba(168,85,247,.20);}
 
+
+.mornai-book-sync-page{position:relative;overflow:hidden;background:
+  radial-gradient(circle at 8% 4%,rgba(124,58,237,.09),transparent 28%),
+  radial-gradient(circle at 92% 10%,rgba(168,85,247,.08),transparent 30%),
+  linear-gradient(180deg,#fbfcff 0%,#f7f8fc 100%);}
+.mornai-book-sync-page::before{content:"";position:absolute;left:16%;top:6rem;width:22rem;height:22rem;border-radius:9999px;background:rgba(124,58,237,.07);filter:blur(70px);pointer-events:none;}
+.mornai-book-sync-page>*{position:relative;z-index:1;}
+.mornai-book-sync-topbar{display:flex;align-items:center;justify-content:space-between;gap:.8rem;}
+.mornai-book-sync-brand{display:flex;align-items:center;gap:.65rem;border:1px solid rgba(226,232,240,.9);border-radius:16px;padding:.45rem .7rem;background:rgba(255,255,255,.72);box-shadow:0 10px 28px rgba(15,23,42,.05);}
+.mornai-book-sync-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;border:1px solid rgba(255,255,255,.95);border-radius:24px;padding:1.2rem 1.3rem;background:rgba(255,255,255,.68);box-shadow:0 16px 42px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+.mornai-book-sync-steps{display:flex;align-items:center;gap:.45rem;white-space:nowrap;}
+.mornai-book-sync-steps span{display:inline-flex;align-items:center;gap:.35rem;font-size:.62rem;font-weight:800;color:#94a3b8;}
+.mornai-book-sync-steps span b{display:grid;place-items:center;width:1.55rem;height:1.55rem;border-radius:9999px;background:#f1f5f9;color:#64748b;font-size:.62rem;}
+.mornai-book-sync-steps span.is-active{color:#6d28d9;}
+.mornai-book-sync-steps span.is-active b{background:#ede9fe;color:#6d28d9;box-shadow:0 0 0 1px rgba(124,58,237,.12),0 0 12px rgba(124,58,237,.12);}
+.mornai-book-sync-section-label{display:flex;align-items:flex-start;gap:.7rem;}
+.mornai-book-sync-section-label>span{display:grid;place-items:center;min-width:1.85rem;height:1.85rem;border-radius:.65rem;background:#f5f3ff;color:#7c3aed;font-size:.62rem;font-weight:900;}
+.mornai-book-sync-section-label p{font-size:.61rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#8b5cf6;}
+.mornai-book-sync-section-label h2{margin-top:.15rem;font-size:.9rem;font-weight:800;color:#0f172a;}
+@media (max-width:767px){
+  .mornai-book-sync-topbar{align-items:flex-start;}
+  .mornai-book-sync-brand{display:none;}
+  .mornai-book-sync-intro{align-items:flex-start;flex-direction:column;}
+  .mornai-book-sync-steps{width:100%;justify-content:flex-start;overflow-x:auto;padding-bottom:.15rem;}
+}
+
 .mornai-page-panel{background:rgba(255,255,255,.74);border:1px solid rgba(255,255,255,.94);box-shadow:0 24px 70px rgba(15,23,42,.07),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);}
 .mornai-booking-hero{background:linear-gradient(135deg,#111827 0%,#27153f 48%,#6d28d9 100%);}
 .mornai-booking-summary{background:linear-gradient(135deg,rgba(245,243,255,.92),rgba(255,255,255,.72));border:1px solid rgba(196,181,253,.35);}
