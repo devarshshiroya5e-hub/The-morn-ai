@@ -1,12 +1,44 @@
 import React, { useState } from 'react';
 import { Startup, User } from '../types';
-import { X, Sparkles, BrainCircuit, Rocket, PlusCircle } from 'lucide-react';
+import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check } from 'lucide-react';
+
+
+const ROLE_SUGGESTIONS: Record<string, string[]> = {
+  'Artificial Intelligence': ['AI Engineer', 'AI Product Manager', 'Prompt Engineer', 'ML Engineer', 'Frontend Developer', 'Backend Developer', 'Full-Stack Developer', 'UI/UX Designer', 'Growth Marketer', 'Sales Specialist', 'Content Creator', 'Video Editor'],
+  'ClimateTech': ['Climate Data Analyst', 'IoT Engineer', 'Hardware Engineer', 'Backend Developer', 'Frontend Developer', 'Product Manager', 'Growth Marketer', 'Business Development Manager', 'Video Editor'],
+  'Developer Tools': ['Frontend Developer', 'Backend Developer', 'Full-Stack Developer', 'DevOps Engineer', 'Cloud Engineer', 'Developer Advocate', 'UI/UX Designer', 'Product Manager', 'Growth Marketer', 'Video Editor'],
+  'Biotech': ['Bioinformatics Engineer', 'ML Engineer', 'Research Analyst', 'Data Scientist', 'Frontend Developer', 'Backend Developer', 'Product Manager', 'Regulatory Specialist', 'Growth Marketer', 'Video Editor'],
+  'Fintech': ['Backend Developer', 'Full-Stack Developer', 'Data Analyst', 'Data Scientist', 'Cybersecurity Engineer', 'Product Manager', 'UI/UX Designer', 'Risk Analyst', 'Growth Marketer', 'Sales Specialist'],
+  'HealthTech': ['AI Engineer', 'Backend Developer', 'Frontend Developer', 'Full-Stack Developer', 'Health Data Analyst', 'Product Manager', 'UI/UX Designer', 'Clinical Operations Specialist', 'Growth Marketer', 'Video Editor'],
+};
+
+const ROLE_KEYWORDS: Record<string, string[]> = {
+  'AI Engineer': ['Python', 'Machine Learning', 'LLM', 'RAG', 'AI'],
+  'AI Product Manager': ['Product', 'AI', 'Roadmaps', 'User Research'],
+  'Prompt Engineer': ['Prompt Design', 'LLM', 'AI', 'Evaluation'],
+  'ML Engineer': ['Python', 'Machine Learning', 'PyTorch', 'MLOps'],
+  'Frontend Developer': ['React', 'TypeScript', 'CSS', 'UI'],
+  'Backend Developer': ['Node.js', 'Python', 'APIs', 'Databases'],
+  'Full-Stack Developer': ['React', 'TypeScript', 'Node.js', 'Database'],
+  'DevOps Engineer': ['AWS', 'Docker', 'CI/CD', 'Kubernetes'],
+  'Cloud Engineer': ['AWS', 'Cloud Architecture', 'Docker', 'DevOps'],
+  'UI/UX Designer': ['Figma', 'UX Research', 'Prototyping', 'UI Design'],
+  'Product Manager': ['Roadmaps', 'User Research', 'Analytics', 'Product'],
+  'Growth Marketer': ['SEO', 'Analytics', 'Content', 'Acquisition'],
+  'Sales Specialist': ['B2B Sales', 'Outreach', 'CRM', 'Negotiation'],
+  'Content Creator': ['Content Strategy', 'Copywriting', 'Social Media', 'Video'],
+  'Video Editor': ['Premiere Pro', 'After Effects', 'Short-form Video', 'Motion'],
+  'Data Analyst': ['SQL', 'Excel', 'Analytics', 'Dashboards'],
+  'Data Scientist': ['Python', 'SQL', 'Machine Learning', 'Statistics'],
+};
+
+const normalizeRole = (value: string) => value.trim().toLowerCase();
 
 interface StartupRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User;
-  onRegisterStartup: (newStartup: Startup) => void;
+  onRegisterStartup: (newStartup: Startup) => Promise<void> | void;
 }
 
 export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> = ({
@@ -23,7 +55,38 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [techStackInput, setTechStackInput] = useState('React, TypeScript, Python, Gemini API');
   const [fundingRaised, setFundingRaised] = useState('$150,000');
   const [location, setLocation] = useState('San Francisco, CA (Remote)');
+  const [roleInput, setRoleInput] = useState('');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [roleError, setRoleError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+
+  const roleSuggestions = React.useMemo(() => {
+    const list = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
+    const query = normalizeRole(roleInput);
+    if (!query) return list.slice(0, 8);
+    return list.filter((role) => normalizeRole(role).includes(query)).slice(0, 8);
+  }, [industry, roleInput]);
+
+  const roleKeywords = React.useMemo(() => {
+    const latestRole = selectedRoles[selectedRoles.length - 1];
+    if (latestRole && ROLE_KEYWORDS[latestRole]) return ROLE_KEYWORDS[latestRole];
+    return techStackInput.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4);
+  }, [selectedRoles, techStackInput]);
+
+  const addRole = (role: string) => {
+    const clean = role.trim();
+    if (!clean) return;
+    if (!selectedRoles.some((item) => normalizeRole(item) === normalizeRole(clean))) {
+      setSelectedRoles((prev) => [...prev, clean]);
+    }
+    setRoleInput('');
+    setRoleError('');
+  };
+
+  const removeRole = (role: string) => {
+    setSelectedRoles((prev) => prev.filter((item) => item !== role));
+  };
 
   if (!isOpen) return null;
 
@@ -31,13 +94,27 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     e.preventDefault();
     if (!name.trim() || !tagline.trim()) return;
 
+    const finalRoles = [...selectedRoles, ...(roleInput.trim() ? [roleInput.trim()] : [])]
+      .filter((role, index, arr) => arr.findIndex((item) => normalizeRole(item) === normalizeRole(role)) === index);
+
+    if (finalRoles.length === 0) {
+      setRoleError('Add at least one role your startup needs.');
+      return;
+    }
+
     setIsSynthesizing(true);
+    setSaveError('');
+    setRoleError('');
 
     const techStack = techStackInput.split(',').map(s => s.trim()).filter(Boolean);
+    const startupId = 'startup-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    const createdDate = new Date();
+    const createdDay = createdDate.toISOString().split('T')[0];
+    const startupLogo = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80';
 
     // Build base object
     const newStartup: Startup = {
-      id: `startup-${Date.now()}`,
+      id: startupId,
       name: name.trim(),
       tagline: tagline.trim(),
       industry,
@@ -52,14 +129,14 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       investorReadinessScore: 84,
       growthVelocityScore: 88,
       verified: true,
-      logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80',
+      logo: startupLogo,
       coverImage: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
       pitch: pitch.trim() || tagline.trim(),
       techStack,
       historyLogs: [
         {
-          id: `hist-reg-${Date.now()}`,
-          date: new Date().toISOString().split('T')[0],
+          id: 'hist-reg-' + startupId,
+          date: createdDay,
           type: 'milestone',
           title: 'Registered on SolveEarn Ecosystem',
           description: `${name} registered on SolveEarn by ${currentUser.name} to onboard skilled talent via AI sprint delegation.`,
@@ -75,7 +152,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           duration: 'Weeks 1-4',
           kpiTarget: 'Launch private beta to 100 pilot users',
           status: 'in_progress',
-          talentNeeded: ['Full Stack Engineer', 'Product Designer'],
+          talentNeeded: finalRoles,
           riskFactors: 'Sprint execution pace',
         },
         {
@@ -86,30 +163,28 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           duration: 'Weeks 5-8',
           kpiTarget: '$15k MRR or 5,000 active sessions',
           status: 'upcoming',
-          talentNeeded: ['Growth Marketer'],
+          talentNeeded: finalRoles.slice(0, 2),
           riskFactors: 'Customer acquisition cost',
         },
       ],
-      openRoles: [
-        {
-          id: `role-${Date.now()}-1`,
-          startupId: `startup-${Date.now()}`,
-          startupName: name.trim(),
-          startupLogo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80',
-          title: 'Founding Engineer / Contributor',
-          type: 'Equity + Stipend',
-          equityRange: '1.5% - 3.5%',
-          stipendRange: '$2,500 / sprint',
-          commitment: '15-20 hrs/week',
-          skills: techStack.slice(0, 4),
-          description: `Work alongside ${currentUser.name} on the core architecture and features for ${name}.`,
-          responsibilities: ['Implement core features', 'Work directly with AI sprint delegation'],
-          idealCandidate: 'Passionate developer looking for high equity upside',
-          postedDate: new Date().toISOString().split('T')[0],
-          applicantCount: 0,
-          status: 'open',
-        },
-      ],
+      openRoles: finalRoles.map((role, index) => ({
+        id: startupId + '-role-' + (index + 1),
+        startupId,
+        startupName: name.trim(),
+        startupLogo: startupLogo,
+        title: role,
+        type: 'Equity + Stipend' as const,
+        equityRange: 'Discuss with founder',
+        stipendRange: 'Discuss with founder',
+        commitment: 'Flexible / startup-defined',
+        skills: ROLE_KEYWORDS[role] || techStack.slice(0, 4),
+        description: 'Join ' + name.trim() + ' as a ' + role + ' and help move the startup roadmap forward.',
+        responsibilities: ['Own deliverables for the selected role', 'Collaborate with the founder and startup team'],
+        idealCandidate: 'A motivated ' + role + ' who wants meaningful ownership in an early-stage startup.',
+        postedDate: createdDay,
+        applicantCount: 0,
+        status: 'open' as const,
+      })),
       members: [
         {
           userId: currentUser.id,
@@ -124,8 +199,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       ],
       tasks: [
         {
-          id: `task-init-${Date.now()}`,
-          startupId: `startup-${Date.now()}`,
+          id: startupId + '-task-1',
+          startupId,
           assigneeId: currentUser.id,
           assigneeName: currentUser.name,
           assigneeAvatar: currentUser.avatar,
@@ -137,7 +212,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           description: 'Review incoming talent appointments and allocate first Phase 1 sprint package.',
           actionItems: ['Review SolveEarn applications', 'Confirm video sync slots'],
           aiMentoringTip: 'Keep initial onboarding tasks modular (< 10 hours) for high contributor momentum.',
-          createdAt: new Date().toISOString().split('T')[0],
+          createdAt: createdDay,
         },
       ],
     };
@@ -167,9 +242,20 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       console.warn('AI roadmap generation fallback to default', err);
     }
 
-    onRegisterStartup(newStartup);
-    setIsSynthesizing(false);
-    onClose();
+    try {
+      await onRegisterStartup(newStartup);
+      setName('');
+      setTagline('');
+      setPitch('');
+      setRoleInput('');
+      setSelectedRoles([]);
+      setIsSynthesizing(false);
+      onClose();
+    } catch (err) {
+      console.error('Startup registration failed:', err);
+      setIsSynthesizing(false);
+      setSaveError('The startup could not be saved. Check your Firebase connection and try again.');
+    }
   };
 
   return (
@@ -305,6 +391,82 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
             />
           </div>
 
+          <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
+            <div className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4 text-violet-600" />
+              <div>
+                <p className="text-xs font-extrabold text-violet-950">What roles do you need?</p>
+                <p className="text-[10px] text-violet-700">Start typing a role. Pick a suggested keyword or use your own title.</p>
+              </div>
+            </div>
+
+            <input
+              type="text"
+              value={roleInput}
+              onChange={(e) => setRoleInput(e.target.value)}
+              placeholder="e.g. Video Editor, AI Engineer, Sales..."
+              className="mt-3 w-full px-3 py-2.5 text-sm border border-violet-200 rounded-xl bg-white focus:ring-2 focus:ring-violet-400 focus:outline-none font-semibold"
+            />
+
+            {roleInput.trim() && roleSuggestions.length === 0 && (
+              <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <p className="text-[10px] font-bold text-amber-800">No matching suggested role.</p>
+                <button
+                  type="button"
+                  onClick={() => addRole(roleInput)}
+                  className="mt-1 inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-900"
+                >
+                  <PlusCircle className="h-3.5 w-3.5" /> Use “{roleInput.trim()}”
+                </button>
+              </div>
+            )}
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              {roleSuggestions.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => addRole(role)}
+                  className="rounded-full border border-violet-200 bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-violet-700 hover:bg-violet-50"
+                >
+                  + {role}
+                </button>
+              ))}
+            </div>
+
+            {selectedRoles.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedRoles.map((role) => (
+                  <span key={role} className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2.5 py-1.5 text-[10px] font-extrabold text-white">
+                    <Check className="h-3 w-3 text-emerald-300" />
+                    {role}
+                    <button
+                      type="button"
+                      onClick={() => removeRole(role)}
+                      className="ml-1 text-slate-300 hover:text-white"
+                      aria-label={'Remove ' + role}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-3 rounded-xl border border-violet-100 bg-white/80 p-3">
+              <p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-violet-500">Key skills / keywords</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {roleKeywords.map((keyword) => (
+                  <span key={keyword} className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-bold text-violet-700">
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {roleError && <p className="mt-2 text-xs font-bold text-rose-600">{roleError}</p>}
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
               Problem & Solution Pitch
@@ -321,7 +483,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 flex items-start gap-2.5 text-xs text-indigo-900">
             <BrainCircuit className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              Upon registering, our Gemini AI Co-Founder will automatically generate your initial 3-phase strategic roadmap, seed an open role, and initialize your continuous startup memory vault.
+              Your selected roles will be saved with this startup. MornAI will not invent an extra job during creation.
             </p>
           </div>
 
@@ -342,6 +504,12 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
               {isSynthesizing ? 'Synthesizing with AI...' : 'Register Startup & Initialize AI'}
             </button>
           </div>
+
+          {saveError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-700">
+              {saveError}
+            </div>
+          )}
 
         </form>
 
