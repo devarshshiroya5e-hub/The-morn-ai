@@ -168,3 +168,15 @@ export interface MatchingAnalysis {
   synergyAnalysis: string;
   suggestedNextSteps: string;
 }
+
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  text: string;
+  createdAt: string;
+  startupId?: string;
+  recipientId?: string;
+}
