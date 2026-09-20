@@ -10,7 +10,7 @@ interface AppointmentBookingPageProps {
   startup: Startup | null;
   selectedRole?: RolePost;
   currentUser: User;
-  onConfirmAppointment: (appointment: Appointment) => void;
+  onConfirmAppointment: (appointment: Appointment) => Promise<void>;
   onCancel: () => void;
   onDone: () => void;
 }
@@ -32,6 +32,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   const [matchAnalysis, setMatchAnalysis] = useState<MatchingAnalysis | null>(null);
   const [isLoadingMatch, setIsLoadingMatch] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!startup) return;
@@ -85,8 +86,9 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
     );
   }
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     const newAppointment: Appointment = {
       id: `apt-${Date.now()}`,
       startupId: startup.id,
@@ -107,8 +109,13 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
       aiPreparationBrief: matchAnalysis?.synergyAnalysis || 'Your profile shows relevant alignment with the startup roadmap.',
       createdDate: getToday(),
     };
-    onConfirmAppointment(newAppointment);
-    setIsSubmitted(true);
+    try {
+      await onConfirmAppointment(newAppointment);
+      setIsSubmitted(true);
+    } catch (error: any) {
+      console.error('Appointment save error:', error);
+      setSubmitError(error?.message || 'Unable to save the appointment request. Please try again.');
+    }
   };
 
   if (isSubmitted) {
@@ -217,6 +224,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
         <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_.72fr]">
           <form onSubmit={submit} className="space-y-5">
+            {submitError && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold leading-5 text-rose-700">{submitError}</div>}
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[.16em] text-slate-400">Schedule</p>
