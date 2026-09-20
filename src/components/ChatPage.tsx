@@ -51,6 +51,9 @@ const toMessage = (docSnap: any): ChatMessage => {
 
   return {
     id: docSnap.id,
+    roomId: typeof data.roomId === 'string' ? data.roomId : undefined,
+    roomType: data.roomType === 'world' || data.roomType === 'private' ? data.roomType : undefined,
+    participants: Array.isArray(data.participants) ? data.participants.filter((value: unknown): value is string => typeof value === 'string') : undefined,
     senderId: data.senderId || '',
     senderName: data.senderName || 'MornAI member',
     senderAvatar: data.senderAvatar,
@@ -377,6 +380,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
 
     const localMessage: ChatMessage = existingMessage || {
       id: `local-${clientId}`,
+      roomId: activeRoom.id,
+      roomType: activeRoom.kind,
+      participants: privateParticipantsForRoom(activeRoom),
       senderId: currentUser.id,
       senderName: currentUser.name,
       senderAvatar: currentUser.avatar,
