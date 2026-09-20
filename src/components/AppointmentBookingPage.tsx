@@ -160,6 +160,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
@@ -289,6 +290,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
           </aside>
         </div>
       </div>
+    </div>
     </div>
   );
 };
