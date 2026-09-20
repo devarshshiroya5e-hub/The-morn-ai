@@ -105,6 +105,8 @@ export default function App() {
   const handleOpenBookingModal = (startup: Startup, role?: RolePost) => {
     setBookingModalStartup(startup);
     setBookingModalRole(role);
+    setIsDetailModalOpen(false);
+    setSelectedStartupForDetail(null);
     setActiveView('booking');
   };
 
