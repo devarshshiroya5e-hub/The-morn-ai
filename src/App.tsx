@@ -74,7 +74,7 @@ export default function App() {
   }, [isLoggedIn]);
 
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile' | 'privacy'>('discover');
+  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('discover');
 
   // Modals & Drawers
   const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
@@ -217,8 +217,25 @@ export default function App() {
   // Update a startup (roadmap, tasks, memory logs, roles) in local state and Firestore.
   const handleUpdateStartup = async (updatedStartup: Startup) => {
     await setDoc(doc(db, 'startups', updatedStartup.id), updatedStartup);
+
+    // Mirror selected team members into protected member documents.
+    // A founder selecting/onboarding someone therefore unlocks their private startup chat.
+    await Promise.all(
+      (updatedStartup.members || []).map((member) =>
+        setDoc(
+          doc(db, 'startups', updatedStartup.id, 'members', member.userId),
+          {
+            ...member,
+            userId: member.userId,
+            startupId: updatedStartup.id,
+          },
+          { merge: true },
+        ),
+      ),
+    );
+
     setStartups(prev => prev.map(s => s.id === updatedStartup.id ? updatedStartup : s));
-    if (activeStartupContext.id === updatedStartup.id) {
+    if (activeStartupContext?.id === updatedStartup.id) {
       setActiveStartupContext(updatedStartup);
     }
     showToast(`Startup "${updatedStartup.name}" saved with AI Co-Founder memory.`);
@@ -330,8 +347,8 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         currentUser={currentUser}
-        activeTab={activeView === 'profile' ? 'profile' : activeView === 'appointments' ? 'appointments' : activeView === 'workspace' ? 'workspace' : 'discover'}
-        setActiveTab={(tab) => setActiveView(tab === 'profile' ? 'profile' : tab === 'appointments' ? 'appointments' : tab === 'workspace' ? 'workspace' : 'discover')}
+        activeTab={activeView === 'profile' ? 'profile' : activeView === 'messages' ? 'messages' : activeView === 'appointments' ? 'appointments' : activeView === 'workspace' ? 'workspace' : 'discover'}
+        setActiveTab={(tab) => setActiveView(tab === 'profile' ? 'profile' : tab === 'messages' ? 'messages' : tab === 'appointments' ? 'appointments' : tab === 'workspace' ? 'workspace' : 'discover')}
         onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
         onOpenRegisterStartup={() => setIsRegisterModalOpen(true)}
         onOpenPricing={() => {}}
@@ -421,7 +438,15 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 5: PROFILE PAGE */}
+        {/* VIEW 5: MESSAGES / WORLD CHAT */}
+        {activeView === 'messages' && (
+          <ChatPage
+            currentUser={currentUser}
+            startups={startups}
+          />
+        )}
+
+        {/* VIEW 6: PROFILE PAGE */}
         {activeView === 'profile' && (
           <ProfilePage
             currentUser={currentUser}
