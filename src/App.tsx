@@ -368,6 +368,7 @@ export default function App() {
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
             onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+            onOpenWorldChat={() => setActiveView('messages')}
           />
         )}
 
