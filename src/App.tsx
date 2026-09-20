@@ -10,6 +10,7 @@ import { TalentWorkspace } from './components/TalentWorkspace';
 import { AppointmentBookingPage } from './components/AppointmentBookingPage';
 import { AiCoFounderDrawer } from './components/AiCoFounderDrawer';
 import { AuthModal } from './components/AuthModal';
+import { AuthGateway } from './components/AuthGateway';
 import { LegalModal } from './components/LegalModal';
 import { StartupRegistrationModal } from './components/StartupRegistrationModal';
 import { ProfilePage } from './components/ProfilePage';
@@ -143,7 +144,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Give Firebase 3 seconds to restore an existing session. For a new visitor,
   // nothing is auto-submitted or changed, so the authentication page remains open.
@@ -180,6 +181,7 @@ export default function App() {
   // Authentication is always the first visible page. Existing Firebase sessions
   // are restored in the background and the auth page closes after a short delay.
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authGatewayOpen, setAuthGatewayOpen] = useState(true);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
@@ -398,6 +400,7 @@ export default function App() {
           setCurrentUser(user);
           setIsLoggedIn(true);
           setIsAuthModalOpen(false);
+          setAuthGatewayOpen(false);
           showToast('Successfully authenticated!');
         }}
       />
@@ -415,6 +418,16 @@ export default function App() {
     return (
       <>
         <div className="min-h-screen bg-slate-50" />
+        {authGatewayOpen && (
+          <AuthGateway
+            onChoose={(mode) => {
+              setAuthMode(mode);
+              setAuthGatewayOpen(false);
+              setIsAuthModalOpen(true);
+            }}
+            onOpenPrivacy={() => setActiveView('privacy')}
+          />
+        )}
         {authModals}
       </>
     );
@@ -431,10 +444,11 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <>
-        {!isAuthModalOpen && (
-          <LandingPage
-            onOpenAuth={(mode) => {
+        {authGatewayOpen && (
+          <AuthGateway
+            onChoose={(mode) => {
               setAuthMode(mode);
+              setAuthGatewayOpen(false);
               setIsAuthModalOpen(true);
             }}
             onOpenPrivacy={() => setActiveView('privacy')}
@@ -573,8 +587,9 @@ export default function App() {
               setIsRegisterModalOpen(false);
               setActiveStartupContext(null);
               await signOut(auth);
-              setIsAuthModalOpen(true);
+              setIsAuthModalOpen(false);
               setAuthMode('login');
+              setAuthGatewayOpen(true);
               setActiveView('discover');
             }}
           />
