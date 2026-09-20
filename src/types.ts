@@ -178,6 +178,9 @@ export interface ChatMessage {
   senderAvatar?: string;
   text: string;
   createdAt: string;
+  createdAtClient?: number;
+  clientId?: string;
+  status?: 'sending' | 'sent' | 'failed';
   startupId?: string;
   recipientId?: string;
 }
