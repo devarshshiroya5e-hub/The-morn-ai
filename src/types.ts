@@ -146,6 +146,7 @@ export interface Startup {
   historyLogs: StartupHistoryLog[];
   members: StartupMember[];
   memberIds?: string[];
+  persisted?: boolean;
   roadmap: RoadmapMilestone[];
   openRoles: RolePost[];
   tasks: TaskItem[];
