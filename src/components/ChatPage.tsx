@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { addDoc, collection, limit, limitToLast, onSnapshot, orderBy, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   AlertCircle,
@@ -198,45 +198,36 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
       ? Array.from(new Set([room.startup!.founderId, room.contact!.id]))
       : [];
 
-  const messagesQueryForRoom = (
-    room: Room,
-    direction: 'asc' | 'desc' = 'asc',
-    latestOnly = false,
-  ) => {
-    const base = collection(db, 'messages');
-    const roomFilters = [
+  const messagesQueryForRoom = (room: Room) => {
+    const filters = [
       where('roomId', '==', room.id),
       where('roomType', '==', room.kind),
     ];
 
     if (room.kind === 'private') {
-      roomFilters.push(where('participants', 'array-contains', currentUser.id));
+      filters.push(where('participants', 'array-contains', currentUser.id));
     }
 
-    return query(
-      base,
-      ...roomFilters,
-      orderBy('createdAt', direction),
-      direction === 'asc'
-        ? latestOnly ? limitToLast(1) : limitToLast(200)
-        : limit(1),
-    );
+    // Keep this query equality-only so Firestore can serve it from automatic
+    // single-field indexes. We sort by message time in the client.
+    return query(collection(db, 'messages'), ...filters);
   };
 
   useEffect(() => {
     if (!rooms.length) return;
 
     const unsubscribes = rooms.map((room) => {
-      // Use the same ascending index as the main room query and take the latest
-      // document with limitToLast(1). This avoids a second descending composite index.
-      const latestQuery = messagesQueryForRoom(room, 'asc', true);
+      const latestQuery = messagesQueryForRoom(room);
 
       return onSnapshot(
         latestQuery,
         (snapshot) => {
-          const latest = snapshot.docs[snapshot.docs.length - 1];
+          const latest = snapshot.docs
+            .map(toMessage)
+            .sort((a, b) => roomTimestamp(a) - roomTimestamp(b))
+            .at(-1);
           if (!latest) return;
-          const message = toMessage(latest);
+          const message = latest;
           setRoomPreviews((prev) => ({
             ...prev,
             [room.id]: {
@@ -262,7 +253,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
 
     initialScrollPendingRef.current = true;
 
-    const messagesQuery = messagesQueryForRoom(activeRoom, 'asc');
+    const messagesQuery = messagesQueryForRoom(activeRoom);
 
     const unsubscribe = onSnapshot(
       messagesQuery,
