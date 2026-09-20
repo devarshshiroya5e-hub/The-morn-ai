@@ -415,11 +415,8 @@ export default function App() {
     return (
       <>
         <div className="min-h-screen bg-slate-50" />
-        {authGatewayOpen && (
-          <AuthGateway
             onChoose={(mode) => {
               setAuthMode(mode);
-              setAuthGatewayOpen(false);
               setIsAuthModalOpen(true);
             }}
             onOpenPrivacy={() => setActiveView('privacy')}
@@ -441,11 +438,8 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <>
-        {authGatewayOpen && (
-          <AuthGateway
             onChoose={(mode) => {
               setAuthMode(mode);
-              setAuthGatewayOpen(false);
               setIsAuthModalOpen(true);
             }}
             onOpenPrivacy={() => setActiveView('privacy')}
