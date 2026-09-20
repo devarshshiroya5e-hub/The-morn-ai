@@ -64,6 +64,27 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
+  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile'>('discover');
+
+  // Modals & Drawers
+  const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const [bookingModalStartup, setBookingModalStartup] = useState<Startup | null>(null);
+  const [bookingModalRole, setBookingModalRole] = useState<RolePost | undefined>(undefined);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
+  const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  // Active startup for the Founder Workspace and AI Co-Founder Chat
+  const founderStartup = startups.find(s => s.founderId === currentUser.id) || startups[0];
+  const [activeStartupContext, setActiveStartupContext] = useState<Startup>(founderStartup);
+
   // Persisted startups are the source of truth for anything created inside the product.
   // Mock startups remain available for the demo network, while Firestore startups survive refreshes.
   useEffect(() => {
@@ -93,27 +114,6 @@ export default function App() {
     const preferred = startups.find((startup) => startup.founderId === currentUser.id) || startups[0];
     setActiveStartupContext(preferred);
   }, [startups, currentUser.id]);
-
-  // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile'>('discover');
-
-  // Modals & Drawers
-  const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
-  const [bookingModalStartup, setBookingModalStartup] = useState<Startup | null>(null);
-  const [bookingModalRole, setBookingModalRole] = useState<RolePost | undefined>(undefined);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-
-  const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-
-  // Active startup for the Founder Workspace and AI Co-Founder Chat
-  const founderStartup = startups.find(s => s.founderId === currentUser.id) || startups[0];
-  const [activeStartupContext, setActiveStartupContext] = useState<Startup>(founderStartup);
 
   // Toast feedback banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
