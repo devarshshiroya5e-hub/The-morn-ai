@@ -1,6 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { addDoc, collection, limit, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
-import { ArrowUp, Globe2, LockKeyhole, MessageCircle, Search, UsersRound, RotateCw } from 'lucide-react';
+import { addDoc, collection, limit, limitToLast, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  CheckCheck,
+  Clock3,
+  Globe2,
+  LockKeyhole,
+  MessageCircle,
+  RotateCw,
+  Search,
+  SendHorizontal,
+  UsersRound,
+  X,
+} from 'lucide-react';
 import { db } from '../lib/firebase';
 import { ChatMessage, Startup, User } from '../types';
 
@@ -18,6 +33,15 @@ interface Room {
   contact?: { id: string; name: string; avatar?: string; role?: string };
 }
 
+interface RoomPreview {
+  text: string;
+  createdAt: string;
+  senderId: string;
+}
+
+const READ_STORAGE_KEY = 'mornai-chat-read:';
+const MAX_MESSAGE_LENGTH = 2000;
+
 const toMessage = (docSnap: any): ChatMessage => {
   const data = docSnap.data();
   const timestamp =
@@ -32,25 +56,56 @@ const toMessage = (docSnap: any): ChatMessage => {
     senderAvatar: data.senderAvatar,
     text: typeof data.text === 'string' ? data.text : '',
     createdAt: timestamp,
+    createdAtClient: typeof data.createdAtClient === 'number' ? data.createdAtClient : Date.parse(timestamp),
+    clientId: typeof data.clientId === 'string' ? data.clientId : undefined,
+    status: 'sent',
     startupId: data.startupId,
     recipientId: data.recipientId,
   };
 };
 
 const roomTimestamp = (message: ChatMessage) => {
+  if (typeof message.createdAtClient === 'number' && Number.isFinite(message.createdAtClient)) {
+    return message.createdAtClient;
+  }
   const value = Date.parse(message.createdAt);
   return Number.isFinite(value) ? value : 0;
+};
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const formatDay = (iso: string) => {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+  return date.toLocaleDateString([], {
+    day: 'numeric',
+    month: 'short',
+    year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric',
+  });
 };
 
 export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => {
   const [activeRoomId, setActiveRoomId] = useState('world');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [roomPreviews, setRoomPreviews] = useState<Record<string, RoomPreview>>({});
+  const [readAt, setReadAt] = useState<Record<string, number>>({});
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [chatError, setChatError] = useState<string | null>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [showScrollToLatest, setShowScrollToLatest] = useState(false);
+  const [mobileRoomListOpen, setMobileRoomListOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messageViewportRef = useRef<HTMLDivElement>(null);
+  const initialScrollPendingRef = useRef(true);
 
   const rooms = useMemo<Room[]>(() => {
     const privateRooms: Room[] = [];
@@ -123,6 +178,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
   );
 
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || rooms[0];
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(`${READ_STORAGE_KEY}${currentUser.id}`);
+      setReadAt(stored ? JSON.parse(stored) : {});
+    } catch {
+      setReadAt({});
+    }
+  }, [currentUser.id]);
 
   useEffect(() => {
     if (!activeRoom) return;
