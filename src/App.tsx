@@ -102,6 +102,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User>(mockFounderUser);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
 
   // State: all startups in the platform
   const [startups, setStartups] = useState<Startup[]>(initialStartups);
@@ -144,6 +145,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 3000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isSplashVisible && authReady && !isLoggedIn) {
+      setAuthMode('login');
+      setIsAuthModalOpen(true);
+    }
+
+    if (isLoggedIn) {
+      setIsAuthModalOpen(false);
+    }
+  }, [isSplashVisible, authReady, isLoggedIn]);
+
+  useEffect(() => {
     if (isLoggedIn) return;
     const frame = requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -163,9 +183,9 @@ export default function App() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
-  // Authentication is the product entry point. Existing Firebase sessions
-  // are restored automatically and bypass this screen immediately.
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(true);
+  // Authentication is the product entry point after the startup splash.
+  // Existing Firebase sessions are restored automatically during the splash.
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -396,14 +416,45 @@ export default function App() {
     </>
   );
 
-  // The auth screen is shown immediately on a fresh visit. Firebase's
-  // auth-state listener can then replace it with the logged-in workspace
-  // without asking the user to enter credentials again.
+  // Every visit starts with the MornAI identity splash while Firebase checks
+  // whether a previous session is still valid. The splash lasts 3 seconds.
+  if (isSplashVisible) {
+    return (
+      <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center overflow-hidden px-6">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute left-1/2 top-1/2 w-[36rem] h-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-100/70 blur-3xl" />
+          <div className="absolute left-1/4 top-1/3 w-72 h-72 rounded-full bg-cyan-100/50 blur-3xl" />
+          <div className="absolute right-1/4 bottom-1/4 w-72 h-72 rounded-full bg-blue-100/45 blur-3xl" />
+        </div>
+
+        <div className="relative z-10 text-center">
+          <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-[22px] border border-slate-200/80 bg-white/80 shadow-[0_20px_60px_rgba(91,92,240,0.15)] backdrop-blur-xl">
+            <Sparkles className="h-7 w-7 text-violet-600" />
+          </div>
+
+          <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.34em] text-slate-400">
+            MornAI
+          </p>
+
+          <h1 className="font-['Outfit'] text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">
+            Build the company. Keep the context.
+          </h1>
+
+          <div className="mx-auto mt-7 h-1 w-28 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-1/2 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-violet-500" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Firebase resolves the previous session in the background. Once that
+  // session exists, the app opens directly. With no previous session,
+  // the normal login/signup screen appears after the splash.
   if (!authReady && !isLoggedIn) {
     return (
       <>
         <div className="min-h-screen bg-slate-50" />
-        {authModals}
       </>
     );
   }
