@@ -39,7 +39,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
 
-  const navItems = [
+  const navItems: Array<{
+    id: 'discover' | 'workspace' | 'messages';
+    label: string;
+    icon: typeof Compass;
+    badge?: number;
+  }> = [
     { id: 'discover' as const, label: 'Discover', icon: Compass },
     {
       id: 'workspace' as const,
