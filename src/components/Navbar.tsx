@@ -3,6 +3,7 @@ import { User } from '../types';
 import {
   Sparkles,
   Calendar,
+  MessageCircle,
   Compass,
   Briefcase,
   BrainCircuit,
@@ -17,8 +18,8 @@ import {
 
 interface NavbarProps {
   currentUser: User;
-  activeTab: 'discover' | 'workspace' | 'appointments' | 'talents' | 'profile';
-  setActiveTab: (tab: 'discover' | 'workspace' | 'appointments' | 'talents' | 'profile') => void;
+  activeTab: 'discover' | 'workspace' | 'appointments' | 'messages' | 'talents' | 'profile';
+  setActiveTab: (tab: 'discover' | 'workspace' | 'appointments' | 'messages' | 'talents' | 'profile') => void;
   onOpenAiDrawer: () => void;
   onOpenAuthModal: () => void;
   onOpenRegisterStartup: () => void;
@@ -46,10 +47,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       icon: Briefcase,
     },
     {
-      id: 'appointments' as const,
-      label: 'Syncs',
-      icon: Calendar,
-      badge: appointmentCount,
+      id: 'messages' as const,
+      label: 'Messages',
+      icon: MessageCircle,
     },
   ];
 
