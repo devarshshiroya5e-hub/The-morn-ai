@@ -14,6 +14,7 @@ import { LegalModal } from './components/LegalModal';
 import { StartupRegistrationModal } from './components/StartupRegistrationModal';
 import { ProfilePage } from './components/ProfilePage';
 import { LandingPage } from './components/LandingPage';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 
 import { 
   initialStartups, 
@@ -73,7 +74,7 @@ export default function App() {
   }, [isLoggedIn]);
 
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile'>('discover');
+  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'profile' | 'privacy'>('discover');
 
   // Modals & Drawers
   const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
@@ -294,10 +295,21 @@ export default function App() {
     </>
   );
 
+  if (activeView === 'privacy') {
+    return (
+      <PrivacyPolicyPage
+        onBack={() => setActiveView(isLoggedIn ? 'discover' : 'discover')}
+      />
+    );
+  }
+
   if (!isLoggedIn) {
     return (
       <>
-        <LandingPage onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }} />
+        <LandingPage
+          onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}
+          onOpenPrivacy={() => setActiveView('privacy')}
+        />
         {authModals}
       </>
     );
@@ -479,12 +491,20 @@ export default function App() {
           <div className="text-slate-400">
             AI Co-Founder • Startup Memory • Roadmaps • Talent • Execution
           </div>
-          <button 
-            onClick={() => setIsLegalModalOpen(true)}
-            className="text-slate-500 hover:text-indigo-400 text-xs underline"
-          >
-            Legal Information
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setActiveView('privacy')}
+              className="text-slate-500 hover:text-indigo-400 text-xs underline"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => setIsLegalModalOpen(true)}
+              className="text-slate-500 hover:text-indigo-400 text-xs underline"
+            >
+              Legal Information
+            </button>
+          </div>
         </div>
       </footer>
 
