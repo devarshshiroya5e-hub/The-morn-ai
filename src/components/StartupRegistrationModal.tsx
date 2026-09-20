@@ -195,6 +195,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           equityOrStipend: 'Founder Equity',
           status: 'active',
           skills: currentUser.skills,
+          profileDetails: currentUser.onboarding || {},
         },
       ],
       tasks: [
