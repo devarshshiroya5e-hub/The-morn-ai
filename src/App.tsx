@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { DiscoverStartups } from './components/DiscoverStartups';
@@ -21,8 +21,7 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { 
   initialStartups, 
   mockTalentUsers, 
-  mockFounderUser, 
-  mockAppointments 
+  mockFounderUser
 } from './data/mockData';
 import { Startup, User, RolePost, Appointment, TaskItem } from './types';
 
@@ -110,7 +109,7 @@ export default function App() {
   const [startups, setStartups] = useState<Startup[]>(initialStartups);
 
   // State: all appointments (syncs between founders and talent)
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -251,6 +250,43 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn]);
 
+  // Appointments are persisted centrally and scoped by participant ID.
+  // This keeps founder and talent dashboards in sync across refreshes/devices.
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setAppointments([]);
+      return;
+    }
+
+    const appointmentsQuery = query(
+      collection(db, 'appointments'),
+      where('participants', 'array-contains', currentUser.id),
+    );
+
+    const unsubscribe = onSnapshot(
+      appointmentsQuery,
+      (snapshot) => {
+        const remoteAppointments = snapshot.docs
+          .map((appointmentDoc) => ({
+            ...(appointmentDoc.data() as Appointment),
+            id: appointmentDoc.id,
+          }))
+          .sort((a, b) => {
+            const first = a.date + ' ' + a.time;
+            const second = b.date + ' ' + b.time;
+            return second.localeCompare(first);
+          });
+
+        setAppointments(remoteAppointments);
+      },
+      (error) => {
+        console.error('Failed to load appointments from Firestore:', error);
+        setAppointments([]);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [isLoggedIn, currentUser.id]);
   // Keep the active workspace attached to the startup owned/joined by this user.
   // Prefer the user's last selected startup, then their founder startup, then a joined startup.
   useEffect(() => {
@@ -329,15 +365,23 @@ export default function App() {
     setActiveView('booking');
   };
 
-  // Confirm appointment
-  const handleConfirmAppointment = (newAppointment: Appointment) => {
-    setAppointments(prev => [newAppointment, ...prev]);
+  // Confirm appointment and persist the full request in Firestore.
+  const handleConfirmAppointment = async (newAppointment: Appointment) => {
+    const participants = Array.from(new Set([newAppointment.founderId, newAppointment.talentId]));
+
+    await setDoc(doc(db, 'appointments', newAppointment.id), {
+      ...newAppointment,
+      participants,
+      createdBy: currentUser.id,
+      createdAt: serverTimestamp(),
+    });
+
     showToast(`Appointment request sent to ${newAppointment.founderName} for ${newAppointment.roleTitle}!`);
   };
 
-  // Update appointment status
-  const handleUpdateAppointmentStatus = (appointmentId: string, status: Appointment['status']) => {
-    setAppointments(prev => prev.map(a => a.id === appointmentId ? { ...a, status } : a));
+  // Appointment status changes are persisted and then reflected by the real-time listener.
+  const handleUpdateAppointmentStatus = async (appointmentId: string, status: Appointment['status']) => {
+    await updateDoc(doc(db, 'appointments', appointmentId), { status });
     showToast(`Appointment marked as ${status}.`);
   };
 
