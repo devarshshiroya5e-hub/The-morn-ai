@@ -130,6 +130,11 @@ export default function App() {
   // Keep the active workspace attached to the startup owned/joined by this user.
   // Prefer the user's last selected startup, then their founder startup, then a joined startup.
   useEffect(() => {
+    if (!isLoggedIn) {
+      setActiveStartupContext(null);
+      return;
+    }
+
     if (!startups.length) {
       setActiveStartupContext(null);
       return;
@@ -169,7 +174,7 @@ export default function App() {
     if (typeof window !== 'undefined' && preferred) {
       window.localStorage.setItem(`mornai-active-startup:${userId}`, preferred.id);
     }
-  }, [startups, currentUser.id, activeStartupContext]);
+  }, [isLoggedIn, startups, currentUser.id, activeStartupContext]);
 
   // Toast feedback banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
