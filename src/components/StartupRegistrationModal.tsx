@@ -138,8 +138,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           id: 'hist-reg-' + startupId,
           date: createdDay,
           type: 'milestone',
-          title: 'Registered on SolveEarn Ecosystem',
-          description: `${name} registered on SolveEarn by ${currentUser.name} to onboard skilled talent via AI sprint delegation.`,
+          title: 'Registered on THE MORN AI Ecosystem',
+          description: `${name} registered on THE MORN AI by ${currentUser.name} to onboard skilled talent via AI sprint delegation.`,
           impact: 'Initialized automated AI Co-Founder memory index.',
         },
       ],
@@ -211,7 +211,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           estimatedHours: 6,
           deadline: '3 days',
           description: 'Review incoming talent appointments and allocate first Phase 1 sprint package.',
-          actionItems: ['Review SolveEarn applications', 'Confirm video sync slots'],
+          actionItems: ['Review THE MORN AI applications', 'Confirm video sync slots'],
           aiMentoringTip: 'Keep initial onboarding tasks modular (< 10 hours) for high contributor momentum.',
           createdAt: createdDay,
         },
@@ -281,7 +281,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
             Register Your Ongoing Startup
           </h3>
           <p className="text-xs text-indigo-200 mt-1">
-            Publish your startup to the SolveEarn community, enable skilled talent appointments, and activate your automated AI Co-Founder.
+            Publish your startup to the THE MORN AI community, enable skilled talent appointments, and activate your automated AI Co-Founder.
           </p>
         </div>
 
