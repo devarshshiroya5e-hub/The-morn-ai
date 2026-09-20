@@ -1,19 +1,16 @@
-import React from 'react';
+import { Component, ErrorInfo, ReactNode, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-class RuntimeErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
+class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
 
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('MornAI runtime render error:', error, info);
   }
 
@@ -51,9 +48,9 @@ class RuntimeErrorBoundary extends React.Component<
 }
 
 createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  <StrictMode>
     <RuntimeErrorBoundary>
       <App />
     </RuntimeErrorBoundary>
-  </React.StrictMode>,
+  </StrictMode>,
 );
