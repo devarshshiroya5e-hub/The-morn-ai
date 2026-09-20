@@ -101,7 +101,20 @@ export default function App() {
     const unsubscribe = onSnapshot(
       collection(db, 'startups'),
       (snapshot) => {
-        const remoteStartups = snapshot.docs.map((startupDoc) => startupDoc.data() as Startup);
+        const remoteStartups = snapshot.docs
+          .map((startupDoc) => startupDoc.data() as Startup)
+          .map((startup) => {
+            if (startup.founderId !== currentUser.id || !currentUser.onboarding) return startup;
+
+            return {
+              ...startup,
+              members: (startup.members || []).map((member) =>
+                member.userId === currentUser.id
+                  ? { ...member, profileDetails: currentUser.onboarding }
+                  : member
+              ),
+            };
+          });
         const remoteIds = new Set(remoteStartups.map((startup) => startup.id));
         const demoStartups = initialStartups.filter((startup) => !remoteIds.has(startup.id));
         setStartups([...remoteStartups, ...demoStartups]);
