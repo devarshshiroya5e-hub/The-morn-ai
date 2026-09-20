@@ -145,6 +145,7 @@ export interface Startup {
   founderAvatar: string;
   historyLogs: StartupHistoryLog[];
   members: StartupMember[];
+  memberIds?: string[];
   roadmap: RoadmapMilestone[];
   openRoles: RolePost[];
   tasks: TaskItem[];
