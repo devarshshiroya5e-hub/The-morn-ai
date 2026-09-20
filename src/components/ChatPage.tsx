@@ -494,39 +494,86 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
         )}
 
         <div className="grid min-h-[620px] lg:grid-cols-[290px_1fr]">
-          <aside className="border-b border-slate-200/80 bg-white/65 p-4 lg:border-b-0 lg:border-r">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <aside className={`border-b border-slate-200/80 bg-white/95 p-4 backdrop-blur-xl lg:static lg:flex lg:flex-col lg:border-b-0 lg:border-r ${
+            mobileRoomListOpen
+              ? 'absolute inset-0 z-30 flex'
+              : 'hidden'
+          }`}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-600">Inbox</p>
+                <h2 className="mt-1 text-lg font-extrabold text-slate-950">Your conversations</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileRoomListOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 lg:hidden"
+                aria-label="Close conversations"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="relative mt-4">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search chats..."
-                className="w-full rounded-2xl border border-indigo-100 bg-white px-10 py-3 text-xs font-semibold text-slate-800 outline-none shadow-[0_0_22px_rgba(99,102,241,.08)] focus:border-indigo-300"
+                placeholder="Search conversations"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-10 py-3 text-xs font-semibold text-slate-800 outline-none transition focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-50"
               />
             </div>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-1.5 overflow-y-auto">
               {visibleRooms.map((room) => {
                 const active = room.id === activeRoom?.id;
+                const preview = roomPreviews[room.id];
+                const lastRead = readAt[room.id] || 0;
+                const previewTime = preview ? Date.parse(preview.createdAt) : 0;
+                const unread = Boolean(preview && !active && previewTime > lastRead);
+
                 return (
                   <button
                     key={room.id}
                     type="button"
-                    onClick={() => setActiveRoomId(room.id)}
-                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                    onClick={() => setActiveRoom(room.id)}
+                    className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
                       active
-                        ? 'border-violet-200 bg-violet-50 shadow-[0_0_24px_rgba(124,58,237,.10)]'
-                        : 'border-transparent hover:border-slate-200 hover:bg-white'
+                        ? 'border-violet-200 bg-violet-50 shadow-[0_0_24px_rgba(124,58,237,.09)]'
+                        : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                    <span className={`relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl ${
                       room.kind === 'world' ? 'bg-slate-950 text-white' : 'bg-violet-100 text-violet-700'
                     }`}>
-                      {room.kind === 'world' ? <Globe2 className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
+                      {room.kind === 'world' ? (
+                        <Globe2 className="h-4 w-4" />
+                      ) : room.contact?.avatar ? (
+                        <img src={room.contact.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <LockKeyhole className="h-4 w-4" />
+                      )}
+                      {unread && <span className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full border-2 border-white bg-violet-600" />}
                     </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-extrabold text-slate-900">{room.title}</span>
-                      <span className="mt-0.5 block truncate text-[10px] font-semibold text-slate-400">{room.subtitle}</span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className={`truncate text-xs ${
+                          unread ? 'font-black text-slate-950' : 'font-extrabold text-slate-900'
+                        }`}>
+                          {room.title}
+                        </span>
+                        {preview && (
+                          <span className="shrink-0 text-[9px] font-semibold text-slate-400">
+                            {formatTime(preview.createdAt)}
+                          </span>
+                        )}
+                      </span>
+                      <span className={`mt-1 block truncate text-[10px] leading-5 ${
+                        unread ? 'font-bold text-slate-600' : 'font-semibold text-slate-400'
+                      }`}>
+                        {preview?.text || room.subtitle}
+                      </span>
                     </span>
                   </button>
                 );
@@ -538,17 +585,27 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
                 <LockKeyhole className="h-4 w-4 text-violet-600" />
                 <p className="mt-2 text-xs font-extrabold text-slate-900">Private chat locked</p>
                 <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                  A startup owner must select you before a private room appears here.
+                  Private rooms appear after a founder selects you for an active startup team.
                 </p>
               </div>
             )}
           </aside>
 
-          <section className="flex min-h-[620px] flex-col bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,.07),transparent_30%),#fff]">
+          <section className="relative flex min-h-[620px] min-w-0 flex-col bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,.07),transparent_30%),#fff]">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-5 py-4 sm:px-7">
               <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-violet-700">
-                  {activeRoom?.kind === 'world' ? <Globe2 className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
+                <button
+                  type="button"
+                  onClick={() => setMobileRoomListOpen(true)}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 lg:hidden"
+                  aria-label="Open conversations"
+                >
+                  <ArrowUp className="h-4 w-4 rotate-90" />
+                </button>
+                <span className="hidden h-10 w-10 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-700 lg:grid">
+                  {activeRoom?.kind === 'world' ? <Globe2 className="h-4 w-4" /> : activeRoom?.contact?.avatar ? (
+                    <img src={activeRoom.contact.avatar} alt="" className="h-full w-full object-cover" />
+                  ) : <LockKeyhole className="h-4 w-4" />}
                 </span>
                 <div>
                   <h2 className="text-sm font-extrabold text-slate-950">{activeRoom?.title || 'World Chat'}</h2>
