@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Startup, User, RolePost, Appointment, MatchingAnalysis } from '../types';
 import {
   ArrowLeft, ArrowRight, Calendar, CheckCircle2, Clock3, BrainCircuit,
-  ShieldCheck, Send, Sparkles, Video, MapPin, BriefcaseBusiness
+  ShieldCheck, Send, Sparkles, Video, MapPin, BriefcaseBusiness, Users,
+  Check, ChevronRight
 } from 'lucide-react';
 
 interface AppointmentBookingPageProps {
@@ -69,7 +70,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   if (!startup) {
     return (
-      <div className="mx-auto max-w-4xl px-5 py-16 text-center">
+      <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-8 sm:px-8 sm:py-10">
+        <div className="mx-auto max-w-2xl pt-10 text-center">
         <div className="mornai-page-panel mx-auto max-w-xl rounded-[28px] p-10">
           <Calendar className="mx-auto h-10 w-10 text-violet-500" />
           <h1 className="mt-4 text-2xl font-extrabold text-slate-950">No startup selected</h1>
@@ -77,6 +79,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
           <button onClick={onCancel} className="mornai-primary-action mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white">
             <ArrowLeft className="h-4 w-4" /> Back to discovery
           </button>
+        </div>
         </div>
       </div>
     );
@@ -110,7 +113,17 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   if (isSubmitted) {
     return (
-      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+      <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-8 sm:px-8 sm:py-10">
+        <div className="mx-auto max-w-5xl">
+          <div className="mornai-book-sync-topbar">
+            <button onClick={onCancel} className="mornai-back-action inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold">
+              <ArrowLeft className="h-4 w-4" /> Back to discovery
+            </button>
+            <div className="mornai-book-sync-brand">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-600 text-white"><Calendar className="h-4 w-4" /></span>
+              <div><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-600">MornAI Syncs</p><p className="text-sm font-extrabold text-slate-950">Book Sync</p></div>
+            </div>
+          </div>
         <div className="mornai-page-panel overflow-hidden rounded-[30px]">
           <div className="mornai-booking-hero p-7 text-white sm:p-10">
             <div className="flex items-center gap-4">
@@ -136,7 +149,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
               </div>
             </div>
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/75 p-5">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-800">
+              <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-800"><Check className="h-4 w-4 text-emerald-600" />
                 <Video className="h-4 w-4" /> Sync details ready
               </div>
               <p className="mt-2 text-xs leading-6 text-emerald-700">The appointment is now visible in your Syncs workspace with the selected role, pitch and AI preparation brief.</p>
@@ -151,12 +164,30 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-9">
-      <button onClick={onCancel} className="mornai-back-action mb-5 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold">
-        <ArrowLeft className="h-4 w-4" /> Back to discovery
-      </button>
+    <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-7 sm:px-8 sm:py-9">
+      <div className="mx-auto max-w-6xl">
+        <div className="mornai-book-sync-topbar mb-5">
+          <button onClick={onCancel} className="mornai-back-action inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold">
+            <ArrowLeft className="h-4 w-4" /> Back to discovery
+          </button>
+          <div className="mornai-book-sync-brand">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-600 text-white"><Calendar className="h-4 w-4" /></span>
+            <div><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-600">MornAI Syncs</p><p className="text-sm font-extrabold text-slate-950">Book Sync</p></div>
+          </div>
+        </div>
 
-      <div className="mornai-page-panel overflow-hidden rounded-[30px]">
+        <div className="mornai-book-sync-intro mb-5">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-600">Founder conversation</p>
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Book a founder sync</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Choose the contribution, pick a time, and send the founder a clear introduction. Everything stays attached to this startup.</p>
+          </div>
+          <div className="mornai-book-sync-steps">
+            <span className="is-active"><b>1</b> Details</span><ChevronRight className="h-3.5 w-3.5 text-slate-300" /><span><b>2</b> Schedule</span><ChevronRight className="h-3.5 w-3.5 text-slate-300" /><span><b>3</b> Send</span>
+          </div>
+        </div>
+
+        <div className="mornai-page-panel overflow-hidden rounded-[30px]">
         <div className="mornai-booking-hero relative overflow-hidden p-6 text-white sm:p-9">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-fuchsia-500/15 blur-3xl" />
           <div className="relative z-10 grid gap-7 lg:grid-cols-[1.2fr_.8fr] lg:items-center">
@@ -169,6 +200,10 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
                 </div>
                 <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Book a conversation with {startup.founderName}.</h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">{startup.name} • {startup.tagline}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-200"><Users className="h-3.5 w-3.5" /> Founder: {startup.founderName}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-200"><MapPin className="h-3.5 w-3.5" /> {startup.location}</span>
+              </div>
               </div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[.07] p-4 backdrop-blur-xl">
@@ -197,6 +232,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
               </select>
             </div>
 
+            <div className="mornai-book-sync-section-label mt-2"><span>02</span><div><p>Schedule</p><h2>Pick a time that works for you.</h2></div></div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-xs font-extrabold text-slate-600">Preferred date</label>
@@ -215,6 +252,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
                 </div>
               </div>
             </div>
+
+            <div className="mornai-book-sync-section-label mt-2"><span>03</span><div><p>Introduction</p><h2>Give the founder useful context.</h2></div></div>
 
             <div>
               <label className="mb-2 block text-xs font-extrabold text-slate-600">Your founder pitch</label>
