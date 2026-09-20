@@ -1,12 +1,209 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    function signedIn() {
+      return request.auth != null;
     }
+
+    function isUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isFounder(startupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/startups/$(startupId)).data.founderId == request.auth.uid;
+    }
+
+    function isMember(startupId) {
+      return signedIn()
+        && (
+          isFounder(startupId)
+          ||
+          exists(/databases/$(database)/documents/startups/$(startupId)/members/$(request.auth.uid))
+        );
+    }
+
+    // ---------------------------------------------------------
+    // USER PROFILE
+    // ---------------------------------------------------------
+
+    match /users/{userId} {
+      allow read, create, update, delete: if isUser(userId);
+
+      // One independent context per startup.
+      // A founder can own startup A and be a worker in startup B
+      // without overwriting the global user profile.
+      match /startupContexts/{startupId} {
+        allow read: if isUser(userId);
+
+        allow create, update: if
+          isUser(userId)
+          && exists(/databases/$(database)/documents/startups/$(startupId))
+          && request.resource.data.userId == userId
+          && request.resource.data.startupId == startupId
+          && (
+            (
+              request.resource.data.role == 'founder'
+              && get(/databases/$(database)/documents/startups/$(startupId)).data.founderId == userId
+            )
+            ||
+            (
+              request.resource.data.role == 'employee'
+              && exists(/databases/$(database)/documents/startups/$(startupId)/members/$(userId))
+            )
+          );
+
+        allow delete: if isUser(userId);
+      }
+    }
+
+    // ---------------------------------------------------------
+    // STARTUPS
+    // ---------------------------------------------------------
+
     match /startups/{startupId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if signedIn();
+
+      // A user can only create a startup for themselves.
+      allow create: if
+        signedIn()
+        && request.resource.data.founderId == request.auth.uid;
+
+      // Only the founder can edit the startup.
+      // Founder ownership cannot be transferred accidentally.
+      allow update: if
+        signedIn()
+        && resource.data.founderId == request.auth.uid
+        && request.resource.data.founderId == resource.data.founderId;
+
+      allow delete: if
+        signedIn()
+        && resource.data.founderId == request.auth.uid;
+
+      // -------------------------------------------------------
+      // STARTUP MEMBERS
+      // -------------------------------------------------------
+
+      match /members/{memberId} {
+        allow read: if isMember(startupId);
+
+        // Founder can add/manage members.
+        allow create: if
+          isFounder(startupId)
+          && request.resource.data.userId == memberId
+          && request.resource.data.startupId == startupId;
+
+        allow update: if
+          isFounder(startupId)
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.startupId == resource.data.startupId;
+
+        allow delete: if isFounder(startupId);
+      }
+
+      // -------------------------------------------------------
+      // OPEN ROLES
+      // -------------------------------------------------------
+
+      match /roles/{roleId} {
+        allow read: if signedIn();
+        allow create, update, delete: if isFounder(startupId);
+      }
+
+      // -------------------------------------------------------
+      // TASKS
+      // -------------------------------------------------------
+
+      match /tasks/{taskId} {
+        allow read: if isMember(startupId);
+
+        allow create: if
+          isFounder(startupId)
+          ||
+          (
+            isMember(startupId)
+            && request.resource.data.startupId == startupId
+            && request.resource.data.assigneeId == request.auth.uid
+          );
+
+        allow update: if
+          isFounder(startupId)
+          ||
+          (
+            isMember(startupId)
+            && resource.data.assigneeId == request.auth.uid
+            && request.resource.data.startupId == startupId
+            && request.resource.data.assigneeId == request.auth.uid
+          );
+
+        allow delete: if isFounder(startupId);
+      }
+
+      // -------------------------------------------------------
+      // AI MEMORY / HISTORY
+      // -------------------------------------------------------
+
+      match /historyLogs/{logId} {
+        allow read: if isMember(startupId);
+        allow create, update, delete: if isFounder(startupId);
+      }
+
+      // -------------------------------------------------------
+      // APPOINTMENTS / SYNC REQUESTS
+      // -------------------------------------------------------
+
+      match /appointments/{appointmentId} {
+        allow read: if
+          isFounder(startupId)
+          ||
+          (
+            signedIn()
+            && resource.data.talentId == request.auth.uid
+          );
+
+        allow create: if
+          signedIn()
+          && request.resource.data.startupId == startupId
+          && request.resource.data.talentId == request.auth.uid;
+
+        allow update: if
+          (
+            isFounder(startupId)
+            ||
+            (
+              signedIn()
+              && resource.data.talentId == request.auth.uid
+            )
+          )
+          && request.resource.data.startupId == startupId
+          && request.resource.data.founderId == resource.data.founderId
+          && request.resource.data.talentId == resource.data.talentId;
+
+        allow delete: if
+          isFounder(startupId)
+          ||
+          (
+            signedIn()
+            && resource.data.talentId == request.auth.uid
+          );
+      }
+
+      // -------------------------------------------------------
+      // IMMUTABLE ACTIVITY HISTORY
+      // -------------------------------------------------------
+
+      match /activityLogs/{logId} {
+        allow read: if isMember(startupId);
+
+        allow create: if
+          isMember(startupId)
+          && request.resource.data.startupId == startupId
+          && request.resource.data.actorId == request.auth.uid;
+
+        allow update, delete: if false;
+      }
     }
   }
 }
