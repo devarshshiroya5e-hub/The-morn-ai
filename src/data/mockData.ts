@@ -200,7 +200,7 @@ export const INITIAL_STARTUPS: Startup[] = [
         responsibilities: [
           'Formulate pilot-to-paid conversion sequence and email triggers',
           'Coordinate customer case study publications with pilot labs',
-          'Optimize SolveEarn community appointments and contributor pipelines'
+          'Optimize THE MORN AI community appointments and contributor pipelines'
         ],
         idealCandidate: 'Growth hacker with interest in deep tech and science ecosystems.',
         postedDate: '2026-02-22',
