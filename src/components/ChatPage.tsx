@@ -38,7 +38,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
-  const [worldOnline] = useState(1247);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const rooms = useMemo<Room[]>(() => {
