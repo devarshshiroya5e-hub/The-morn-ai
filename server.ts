@@ -102,7 +102,7 @@ app.post("/api/ai/generate-roadmap", async (req, res) => {
             objective: `Consolidate ${startup?.name || "Startup"}'s architecture and onboard initial core skill contributors.`,
             milestones: [
               "Finalize production architecture and auth flow",
-              "Onboard Full Stack and UI/UX contributors via SolveEarn appointments",
+              "Onboard Full Stack and UI/UX contributors via THE MORN AI appointments",
               "Deploy alpha prototype with closed-loop telemetry"
             ],
             talentNeeded: ["Lead React Engineer", "Product UI/UX Designer"],
@@ -343,7 +343,7 @@ app.post("/api/ai/match-analysis", async (req, res) => {
           `High availability for active milestone sprints`
         ],
         synergyAnalysis: `${candidate?.name}'s technical background directly unblocks ${startup?.name}'s Phase 1 roadmap deliverable. Onboarding this contributor accelerates time-to-market by approximately 2.8 weeks.`,
-        suggestedNextSteps: "Schedule a 25-minute SolveEarn appointment to align on sprint milestone deliverables and equity terms."
+        suggestedNextSteps: "Schedule a 25-minute THE MORN AI appointment to align on sprint milestone deliverables and equity terms."
       });
     }
 
@@ -508,7 +508,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`SolveEarn AI server running on http://0.0.0.0:${PORT}`);
+    console.log(`THE MORN AI server running on http://0.0.0.0:${PORT}`);
   });
 }
 
