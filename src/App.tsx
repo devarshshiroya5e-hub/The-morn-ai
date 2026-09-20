@@ -13,6 +13,7 @@ import { AuthModal } from './components/AuthModal';
 import { LegalModal } from './components/LegalModal';
 import { StartupRegistrationModal } from './components/StartupRegistrationModal';
 import { ProfilePage } from './components/ProfilePage';
+import { ChatPage } from './components/ChatPage';
 import { LandingPage } from './components/LandingPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 
