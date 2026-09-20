@@ -55,6 +55,7 @@ export interface StartupMember {
   equityOrStipend: string;
   status: 'active' | 'invited';
   skills?: string[];
+  profileDetails?: User['onboarding'];
 }
 
 export interface RoadmapMilestone {
