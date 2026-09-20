@@ -115,7 +115,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
 
     if (currentUser.role === 'founder') {
       startups
-        .filter((startup) => startup.founderId === currentUser.id)
+        .filter((startup) => startup.persisted && startup.founderId === currentUser.id)
         .forEach((startup) => {
           (startup.members || [])
             .filter((member) => member.userId !== currentUser.id && member.status === 'active')
@@ -138,6 +138,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     } else {
       startups
         .filter((startup) =>
+          startup.persisted &&
           startup.members?.some(
             (member) => member.userId === currentUser.id && member.status === 'active',
           ),
