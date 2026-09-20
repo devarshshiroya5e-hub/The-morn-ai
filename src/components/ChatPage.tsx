@@ -450,6 +450,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     }
   };
 
+  const activeReadAt = activeRoom ? readAt[activeRoom.id] || 0 : 0;
+
   return (
     <div className="mornai-chat-page mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mornai-discover-box overflow-hidden rounded-[32px] border border-white/90 bg-white/70 shadow-[0_30px_90px_rgba(15,23,42,.10)] backdrop-blur-2xl">
@@ -617,67 +619,202 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
               )}
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-7">
+            <div
+              ref={messageViewportRef}
+              className="relative flex-1 overflow-y-auto px-3 py-5 sm:px-7"
+            >
               {isLoadingMessages && (
-                <div className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-3xl border border-dashed border-violet-200 bg-violet-50/50 p-6 text-center text-xs font-semibold text-violet-700">
-                  <RotateCw className="h-4 w-4 animate-spin" /> Connecting to messages...
+                <div className="mx-auto flex min-h-[360px] max-w-md items-center justify-center">
+                  <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/60 px-5 py-4 text-center">
+                    <RotateCw className="mx-auto h-5 w-5 animate-spin text-violet-600" />
+                    <p className="mt-2 text-xs font-extrabold text-violet-700">Connecting to messages...</p>
+                    <p className="mt-1 text-[10px] font-semibold text-violet-500">Your conversation will appear here.</p>
+                  </div>
                 </div>
               )}
 
               {!isLoadingMessages && messages.length === 0 && !chatError && (
-                <div className="mx-auto max-w-md rounded-3xl border border-dashed border-slate-200 bg-white/75 p-8 text-center">
-                  {activeRoom?.kind === 'world' ? <Globe2 className="mx-auto h-9 w-9 text-violet-300" /> : <LockKeyhole className="mx-auto h-9 w-9 text-violet-300" />}
-                  <h3 className="mt-3 text-sm font-extrabold text-slate-900">Start the conversation</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    {activeRoom?.kind === 'world' ? 'Say something useful, interesting, or at least not “hi”.' : 'This private room is unlocked for your startup selection.'}
-                  </p>
+                <div className="flex min-h-[360px] items-center justify-center">
+                  <div className="mx-auto max-w-md rounded-[30px] border border-dashed border-slate-200 bg-white/80 p-8 text-center shadow-sm">
+                    <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-violet-50 text-violet-600">
+                      {activeRoom?.kind === 'world' ? <Globe2 className="h-5 w-5" /> : <LockKeyhole className="h-5 w-5" />}
+                    </span>
+                    <h3 className="mt-4 text-sm font-extrabold text-slate-900">
+                      {activeRoom?.kind === 'world' ? 'Start the global conversation' : 'Start a private conversation'}
+                    </h3>
+                    <p className="mt-2 text-xs leading-6 text-slate-500">
+                      {activeRoom?.kind === 'world'
+                        ? 'Share an idea, ask a useful question, or find someone building something interesting.'
+                        : 'This private room is available because this teammate is part of the startup team.'}
+                    </p>
+                  </div>
                 </div>
               )}
 
-              {messages.map((message) => {
-                const mine = message.senderId === currentUser.id;
-                return (
-                  <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${
-                      mine ? 'bg-violet-600 text-white' : 'border border-slate-200 bg-white text-slate-800 shadow-sm'
-                    }`}>
-                      {!mine && <div className="mb-1 text-[10px] font-extrabold text-violet-600">{message.senderName}</div>}
-                      <p className="whitespace-pre-wrap text-xs leading-6">{message.text}</p>
-                      <span className={`mt-1 block text-[9px] ${mine ? 'text-violet-100' : 'text-slate-400'}`}>
-                        {new Date(message.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={bottomRef} />
-            </div>
+              {!isLoadingMessages && messages.length > 0 && (
+                <div className="mx-auto max-w-3xl">
+                  {messages.map((message, index) => {
+                    const previous = index > 0 ? messages[index - 1] : undefined;
+                    const mine = message.senderId === currentUser.id;
+                    const previousMine = previous?.senderId === message.senderId;
+                    const sameDay = previous && formatDay(previous.createdAt) === formatDay(message.createdAt);
+                    const grouped =
+                      Boolean(previousMine && sameDay) &&
+                      roomTimestamp(message) - roomTimestamp(previous as ChatMessage) < 5 * 60 * 1000;
+                    const showDay = !previous || !sameDay;
+                    const unreadBoundary =
+                      Boolean(previous) &&
+                      activeReadAt > 0 &&
+                      roomTimestamp(message) > activeReadAt &&
+                      roomTimestamp(previous as ChatMessage) <= activeReadAt;
 
-            <div className="border-t border-slate-200/70 bg-white/85 p-4 backdrop-blur-xl sm:p-5">
-              <div className="flex items-end gap-2">
-                <textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void sendMessage();
-                    }
-                  }}
-                  rows={1}
-                  placeholder={activeRoom?.kind === 'world' ? 'Message everyone...' : 'Message your startup contact...'}
-                  className="min-h-12 flex-1 resize-none rounded-2xl border border-indigo-100 bg-white px-4 py-3.5 text-xs text-slate-900 outline-none shadow-[0_0_20px_rgba(99,102,241,.07)] focus:border-indigo-300 focus:shadow-[0_0_28px_rgba(99,102,241,.12)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => void sendMessage()}
-                  disabled={!draft.trim() || !activeRoom || isSending}
-                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {isSending ? <RotateCw className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-                </button>
+                    return (
+                      <React.Fragment key={message.id}>
+                        {showDay && (
+                          <div className="my-6 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-slate-200" />
+                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[9px] font-extrabold uppercase tracking-[.14em] text-slate-400">
+                              {formatDay(message.createdAt)}
+                            </span>
+                            <div className="h-px flex-1 bg-slate-200" />
+                          </div>
+                        )}
+
+                        {unreadBoundary && (
+                          <div className="my-4 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-violet-200" />
+                            <span className="rounded-full bg-violet-100 px-3 py-1 text-[9px] font-black uppercase tracking-[.13em] text-violet-700">
+                              New messages
+                            </span>
+                            <div className="h-px flex-1 bg-violet-200" />
+                          </div>
+                        )}
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: .16 }}
+                          className={`flex ${
+                            mine ? 'justify-end' : 'justify-start'
+                          } ${grouped ? 'mt-1' : 'mt-3'}`}
+                        >
+                          <div className={`flex max-w-[88%] items-end gap-2 sm:max-w-[76%] ${mine ? 'flex-row-reverse' : ''}`}>
+                            <div className="w-8 shrink-0">
+                              {!grouped && !mine && (
+                                message.senderAvatar ? (
+                                  <img
+                                    src={message.senderAvatar}
+                                    alt=""
+                                    className="h-8 w-8 rounded-xl object-cover"
+                                  />
+                                ) : (
+                                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-900 text-[10px] font-black text-white">
+                                    {message.senderName.charAt(0).toUpperCase()}
+                                  </span>
+                                )
+                              )}
+                            </div>
+
+                            <div className="min-w-0">
+                              {!grouped && !mine && (
+                                <p className="mb-1 ml-1 text-[10px] font-extrabold text-violet-600">
+                                  {message.senderName}
+                                </p>
+                              )}
+
+                              <div
+                                className={`rounded-[22px] px-4 py-3 shadow-sm transition-shadow ${
+                                  mine
+                                    ? 'rounded-br-md bg-[linear-gradient(135deg,#5b21b6_0%,#7c3aed_65%,#9333ea_100%)] text-white shadow-[0_10px_28px_rgba(124,58,237,.18)]'
+                                    : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'
+                                } ${message.status === 'failed' ? 'ring-2 ring-rose-200 ring-offset-2' : ''}`}
+                              >
+                                <p className="whitespace-pre-wrap break-words text-xs leading-6">{message.text}</p>
+                                <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-semibold ${
+                                  mine ? 'text-violet-100' : 'text-slate-400'
+                                }`}>
+                                  <span>{formatTime(message.createdAt)}</span>
+                                  {mine && (
+                                    <>
+                                      {message.status === 'sending' && <Clock3 className="h-3 w-3" />}
+                                      {message.status === 'sent' && <CheckCheck className="h-3 w-3" />}
+                                      {message.status === 'failed' && <AlertCircle className="h-3 w-3 text-rose-200" />}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {message.status === 'failed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => void sendMessage(message)}
+                                  className="mt-1 flex items-center gap-1 text-[9px] font-extrabold text-rose-600 hover:text-rose-700"
+                                >
+                                  <RotateCw className="h-3 w-3" /> Tap to retry
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+
+              <AnimatePresence>
+                {showScrollToLatest && (
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, y: 8, scale: .96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: .96 }}
+                    onClick={scrollToLatest}
+                    className="sticky bottom-3 left-1/2 z-10 mx-auto flex -translate-x-1/2 items-center gap-2 rounded-full border border-violet-200 bg-white/95 px-3.5 py-2 text-[10px] font-extrabold text-violet-700 shadow-lg backdrop-blur-xl"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5" /> Jump to latest
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="border-t border-slate-200/70 bg-white/90 p-3 backdrop-blur-xl sm:p-4">
+              <div className="mx-auto max-w-3xl">
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-2 shadow-[0_12px_32px_rgba(15,23,42,.05)] transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_16px_38px_rgba(124,58,237,.10)]">
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        void sendMessage();
+                      }
+                    }}
+                    rows={1}
+                    placeholder={activeRoom?.kind === 'world' ? 'Message everyone...' : 'Write to your startup contact...'}
+                    className="min-h-12 w-full resize-none border-0 bg-transparent px-3 py-2.5 text-xs leading-6 text-slate-900 outline-none placeholder:text-slate-400"
+                    aria-label="Message"
+                  />
+
+                  <div className="flex items-center justify-between gap-3 px-2 pb-1">
+                    <p className={`text-[9px] font-semibold ${
+                      draft.length > MAX_MESSAGE_LENGTH * .9 ? 'text-amber-600' : 'text-slate-400'
+                    }`}>
+                      {draft.length.toLocaleString()}/{MAX_MESSAGE_LENGTH.toLocaleString()} • Enter to send • Shift + Enter for a new line
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void sendMessage()}
+                      disabled={!draft.trim() || !activeRoom || isSending}
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-950 text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-35"
+                      aria-label="Send message"
+                    >
+                      {isSending ? <RotateCw className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <p className="mt-2 text-[10px] font-semibold text-slate-400">Enter sends • Shift + Enter adds a new line</p>
             </div>
           </section>
         </div>
