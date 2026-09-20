@@ -10,7 +10,6 @@ import { TalentWorkspace } from './components/TalentWorkspace';
 import { AppointmentBookingPage } from './components/AppointmentBookingPage';
 import { AiCoFounderDrawer } from './components/AiCoFounderDrawer';
 import { AuthModal } from './components/AuthModal';
-import { AuthGateway } from './components/AuthGateway';
 import { LegalModal } from './components/LegalModal';
 import { StartupRegistrationModal } from './components/StartupRegistrationModal';
 import { ProfilePage } from './components/ProfilePage';
@@ -181,7 +180,6 @@ export default function App() {
   // Authentication is always the first visible page. Existing Firebase sessions
   // are restored in the background and the auth page closes after a short delay.
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authGatewayOpen, setAuthGatewayOpen] = useState(true);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
@@ -400,7 +398,6 @@ export default function App() {
           setCurrentUser(user);
           setIsLoggedIn(true);
           setIsAuthModalOpen(false);
-          setAuthGatewayOpen(false);
           showToast('Successfully authenticated!');
         }}
       />
@@ -589,8 +586,7 @@ export default function App() {
               await signOut(auth);
               setIsAuthModalOpen(false);
               setAuthMode('login');
-              setAuthGatewayOpen(true);
-              setActiveView('discover');
+                  setActiveView('discover');
             }}
           />
         )}
