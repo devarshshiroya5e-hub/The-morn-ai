@@ -106,6 +106,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
   const [isSending, setIsSending] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [mobileRoomListOpen, setMobileRoomListOpen] = useState(false);
+  const [chatRetryKey, setChatRetryKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messageViewportRef = useRef<HTMLDivElement>(null);
   const initialScrollPendingRef = useRef(true);
@@ -293,6 +294,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     activeRoom?.contact?.id,
     currentUser.id,
     currentUser.role,
+    chatRetryKey,
   ]);
 
   useEffect(() => {
@@ -504,7 +506,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
             </div>
             <button
               type="button"
-              onClick={() => setActiveRoomId(activeRoom?.id || 'world')}
+              onClick={() => setChatRetryKey((value) => value + 1)}
               className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-[10px] font-extrabold text-rose-700"
             >
               Retry
