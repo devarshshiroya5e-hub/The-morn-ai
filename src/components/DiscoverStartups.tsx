@@ -12,6 +12,7 @@ import {
   TrendingUp,
   BrainCircuit,
   Users,
+  UsersRound,
   Activity,
   Layers3,
   Zap,
