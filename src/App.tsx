@@ -58,8 +58,8 @@ const normalizeStartup = (raw: Partial<Startup>): Startup => {
     investorReadinessScore: typeof raw.investorReadinessScore === 'number' ? raw.investorReadinessScore : 0,
     growthVelocityScore: typeof raw.growthVelocityScore === 'number' ? raw.growthVelocityScore : 0,
     verified: raw.verified === true,
-    memberIds: Array.isArray((raw as any).memberIds)
-      ? (raw as any).memberIds.filter((value: unknown): value is string => typeof value === 'string')
+    memberIds: Array.isArray(raw.memberIds)
+      ? raw.memberIds.filter((value): value is string => typeof value === 'string')
       : undefined,
   };
 };
@@ -416,7 +416,17 @@ export default function App() {
 
   // Update a startup (roadmap, tasks, memory logs, roles) in local state and Firestore.
   const handleUpdateStartup = async (updatedStartup: Startup) => {
-    await setDoc(doc(db, 'startups', updatedStartup.id), updatedStartup);
+    const memberIds = Array.from(new Set([
+      updatedStartup.founderId,
+      ...(updatedStartup.members || [])
+        .filter((member) => member.status === 'active')
+        .map((member) => member.userId),
+    ].filter(Boolean)));
+
+    await setDoc(doc(db, 'startups', updatedStartup.id), {
+      ...updatedStartup,
+      memberIds,
+    });
 
     // Mirror selected team members into protected member documents.
     // A founder selecting/onboarding someone therefore unlocks their private startup chat.
