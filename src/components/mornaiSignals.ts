@@ -17,6 +17,9 @@ export interface MornaiPreferences {
   followedStartupIds?: string[];
   readNotificationIds?: string[];
   dailyFocus?: string;
+  dailyStreak?: number;
+  lastActiveDate?: string;
+  dailyActionsCompleted?: number;
 }
 
 export const normalizePreferences = (raw: unknown): MornaiPreferences => {
