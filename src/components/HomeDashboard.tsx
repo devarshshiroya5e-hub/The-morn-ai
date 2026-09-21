@@ -19,7 +19,7 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-import { Appointment, Startup, User } from '../types';
+import { Appointment, ConnectionRequest, Startup, User } from '../types';
 import { buildMornaiNotifications, formatRelativeDate, scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
 
 interface HomeDashboardProps {
@@ -29,6 +29,7 @@ interface HomeDashboardProps {
   allTalents: User[];
   previousVisitAt?: number;
   unreadNotificationCount: number;
+  connections: ConnectionRequest[];
   onOpenNetwork: (tab?: 'people' | 'startups' | 'opportunities') => void;
   onOpenWorkspace: () => void;
   onOpenMessages: () => void;
@@ -46,6 +47,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   allTalents,
   previousVisitAt,
   unreadNotificationCount,
+  connections,
   onOpenNetwork,
   onOpenWorkspace,
   onOpenMessages,
@@ -62,7 +64,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   );
 
   const notifications = useMemo(
-    () => buildMornaiNotifications(currentUser, startups, appointments),
+    () => buildMornaiNotifications(currentUser, startups, appointments, connections),
     [appointments, currentUser, startups],
   );
 
