@@ -458,10 +458,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="relative min-h-[calc(100dvh-1.5rem)] px-3 py-3 sm:min-h-[calc(100dvh-2.5rem)] sm:px-5 sm:py-5">
             <motion.div
-              initial={{ opacity: 0, y: 24, scale: .985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: .28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 28, scale: .965, filter: 'blur(9px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: 20, scale: .985, filter: 'blur(6px)' }}
+              transition={{ duration: 0.58, ease: [0.16, 1, 0.3, 1] }}
+              style={{ willChange: 'transform, opacity, filter' }}
               className="mornai-auth-surface relative mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/85 bg-white/[0.62] shadow-[0_35px_120px_rgba(15,23,42,.14)] backdrop-blur-3xl"
             >
               <div className="mornai-auth-nav">
@@ -558,14 +559,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
                   )}
 
-                  <AnimatePresence mode="wait">
+                  <AnimatePresence mode="popLayout" initial={false}>
                     {mode === 'login' ? (
                       <motion.div
                         key="login"
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: .24, ease: [0.22, 1, 0.36, 1] }}
+                        initial={{ opacity: 0, x: 18, y: 8, filter: 'blur(4px)' }}
+                        animate={{ opacity: 1, x: 0, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, x: -14, y: -4, filter: 'blur(3px)' }}
+                        transition={{ duration: .42, ease: [0.16, 1, 0.3, 1] }}
+                        layout
                         className="mx-auto max-w-md pt-10 pb-10"
                       >
                         <Pill icon={<Sparkles className="h-3.5 w-3.5" />}>Welcome back</Pill>
@@ -614,10 +616,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     ) : (
                       <motion.div
                         key={`signup-${step}`}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: .22, ease: [0.22, 1, 0.36, 1] }}
+                        initial={{ opacity: 0, x: 18, y: 10, filter: 'blur(4px)' }}
+                        animate={{ opacity: 1, x: 0, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, x: -14, y: -4, filter: 'blur(3px)' }}
+                        transition={{ duration: .42, ease: [0.16, 1, 0.3, 1] }}
+                        layout
                         className="mx-auto max-w-xl pb-10"
                       >
                         {step === 1 && (
