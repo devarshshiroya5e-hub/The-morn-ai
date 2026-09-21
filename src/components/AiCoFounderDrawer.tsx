@@ -56,13 +56,43 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
 
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat
+  // Lock the document while the drawer is open so wheel/touch gestures belong
+  // to the AI panel instead of moving the page underneath it.
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (!isOpen) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyOverscroll = body.style.overscrollBehavior;
+
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+      body.style.overscrollBehavior = previousBodyOverscroll;
+    };
+  }, [isOpen]);
+
+  // Scroll only the message viewport. scrollIntoView() would also move the
+  // document, which is exactly the weird page jump we do not want.
+  useEffect(() => {
+    if (!isOpen) return;
+    const container = chatScrollRef.current;
+    if (!container) return;
+
+    requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      });
+    });
   }, [messages, isOpen]);
 
   if (!isOpen) return null;
@@ -122,7 +152,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-2xl border-l border-slate-200 flex flex-col animate-in slide-in-from-right duration-200">
+    <div className="mornai-ai-drawer fixed inset-y-0 right-0 z-50 flex h-dvh max-h-dvh min-h-0 w-full max-w-lg flex-col overflow-hidden bg-white shadow-2xl border-l border-slate-200 animate-in slide-in-from-right duration-200">
       
       {/* Header */}
       <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
@@ -173,7 +203,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
       </div>
 
       {/* Chat Messages Body */}
-      <div className="p-4 overflow-y-auto flex-1 space-y-4 bg-slate-50/50">
+      <div ref={chatScrollRef} className="mornai-ai-chat min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 bg-slate-50/50 touch-pan-y">
         {messages?.map((msg) => (
           <div
             key={msg.id}
@@ -239,7 +269,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+        <div aria-hidden="true" className="h-px" />
       </div>
 
       {/* Chat Input */}
