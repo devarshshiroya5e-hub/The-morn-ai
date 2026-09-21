@@ -14,7 +14,7 @@ interface NotificationCenterProps {
   onClose: () => void;
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
-  onOpenNetwork: (tab?: 'people' | 'startups' | 'opportunities') => void;
+  onOpenNetwork: (tab?: 'people' | 'startups' | 'opportunities' | 'connections') => void;
   onOpenWorkspace: () => void;
 }
 
