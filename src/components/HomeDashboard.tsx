@@ -62,14 +62,15 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onBookAppointment,
 }) => {
   const isFounder = currentUser.role === 'founder';
+  const liveStartups = useMemo(() => startups.filter((startup) => startup.persisted), [startups]);
   const relatedStartup = useMemo(
     () => startups.find((startup) => startup.founderId === currentUser.id) || startups.find((startup) => startup.members.some((member) => member.userId === currentUser.id)),
     [currentUser.id, startups],
   );
 
   const notifications = useMemo(
-    () => buildMornaiNotifications(currentUser, startups, appointments, connections),
-    [appointments, connections, currentUser, startups],
+    () => buildMornaiNotifications(currentUser, liveStartups, appointments, connections),
+    [appointments, connections, currentUser, liveStartups],
   );
 
   const matchCards = useMemo(() => {
@@ -84,7 +85,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       .map((startup) => ({ startup, score: scoreStartupForTalent(startup, currentUser) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 4);
-  }, [allTalents, currentUser, isFounder, relatedStartup, startups]);
+  }, [allTalents, currentUser, isFounder, liveStartups, relatedStartup, startups]);
 
   const unfinishedTasks = relatedStartup?.tasks.filter((task) => task.status !== 'done').length || 0;
   const openRoles = relatedStartup?.openRoles.filter((role) => role.status === 'open').length || 0;
