@@ -120,6 +120,7 @@ export default function App() {
   const [talentUsers, setTalentUsers] = useState<User[]>([]);
   const [connections, setConnections] = useState<ConnectionRequest[]>([]);
   const [preferences, setPreferences] = useState<MornaiPreferences>({});
+  const [previousVisitAt, setPreviousVisitAt] = useState<number | undefined>(undefined);
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
 
@@ -241,7 +242,9 @@ export default function App() {
       try {
         const snapshot = await getDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'));
         if (cancelled) return;
-        setPreferences(snapshot.exists() ? normalizePreferences(snapshot.data()) : {});
+        const normalized = snapshot.exists() ? normalizePreferences(snapshot.data()) : {};
+        setPreferences(normalized);
+        setPreviousVisitAt(normalized.lastVisitedAt);
       } catch (error) {
         console.error('Failed to load MornAI preferences:', error);
         if (!cancelled) setPreferences({});
@@ -268,13 +271,13 @@ export default function App() {
     if (!isLoggedIn || !currentUser.id) return;
     const timer = window.setTimeout(() => {
       setPreferences((previous) => {
-        const next = nextDailyState(previous);
+        const next = { ...nextDailyState(previous), lastVisitedAt: Date.now() };
         void setDoc(
           doc(db, 'users', currentUser.id, 'preferences', 'mornai'),
-          { ...next, lastVisitedAt: Date.now() },
+          next,
           { merge: true },
         ).catch((error) => console.error('Failed to persist daily activity:', error));
-        return { ...next, lastVisitedAt: previous.lastVisitedAt };
+        return next;
       });
     }, 1800);
     return () => window.clearTimeout(timer);
@@ -879,7 +882,7 @@ export default function App() {
             startups={startups}
             appointments={appointments}
             allTalents={talentUsers}
-            previousVisitAt={preferences.lastVisitedAt}
+            previousVisitAt={previousVisitAt}
             unreadNotificationCount={unreadNotificationCount}
             connections={connections}
             followedStartupIds={preferences.followedStartupIds || []}
