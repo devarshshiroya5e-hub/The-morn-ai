@@ -65,7 +65,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
   const notifications = useMemo(
     () => buildMornaiNotifications(currentUser, startups, appointments, connections),
-    [appointments, currentUser, startups],
+    [appointments, connections, currentUser, startups],
   );
 
   const matchCards = useMemo(() => {
