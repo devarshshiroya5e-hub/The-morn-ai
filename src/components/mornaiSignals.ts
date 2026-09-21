@@ -179,14 +179,16 @@ export const dateKey = (date = new Date()) => {
 export const nextDailyState = (preferences: MornaiPreferences) => {
   const today = dateKey();
   if (preferences.lastActiveDate === today) return preferences;
+
   const previous = preferences.lastActiveDate ? new Date(`${preferences.lastActiveDate}T12:00:00`) : null;
   const now = new Date();
   const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12, 0, 0);
-  const isYesterday = previous && dateKey(yesterday) === preferences.lastActiveDate;
+  const continuesStreak = previous && dateKey(yesterday) === preferences.lastActiveDate;
+
   return {
     ...preferences,
     lastActiveDate: today,
-    dailyStreak: (preferences.dailyStreak || 0) + (isYesterday ? 1 : 1),
+    dailyStreak: continuesStreak ? (preferences.dailyStreak || 0) + 1 : 1,
     dailyActionsCompleted: 0,
   };
 };
