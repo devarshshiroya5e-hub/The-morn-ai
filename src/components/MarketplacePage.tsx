@@ -442,9 +442,11 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
 
       <AnimatePresence>
         {selectedTalent && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div initial={{ opacity: 0, y: 12, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: .98 }} className="mornai-talent-modal w-full max-w-2xl rounded-[30px] p-5 sm:p-7">
-              <div className="flex items-start justify-between gap-4">
+          <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="flex min-h-full items-start justify-center sm:items-center">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-talent-modal my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:my-0 sm:max-h-[calc(100dvh-2.5rem)]">
+              <div className="shrink-0 p-5 pb-0 sm:p-6 sm:pb-0">
+                <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-3">
                   <img src={selectedTalent.avatar} alt="" className="h-16 w-16 rounded-[22px] object-cover shadow-xl" />
                   <div>
@@ -454,8 +456,10 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   </div>
                 </div>
                 <button type="button" onClick={() => setSelectedTalent(null)} className="mornai-close-btn"><X className="h-4 w-4" /></button>
+                </div>
               </div>
 
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <MiniSignal label="Reputation" value={`${selectedTalent.reputationScore || 82}/100`} icon={<Star className="h-3.5 w-3.5" />} />
                 <MiniSignal label="Milestones" value={String(selectedTalent.completedMilestones || 0)} icon={<Zap className="h-3.5 w-3.5" />} />
@@ -482,8 +486,9 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                 <button type="button" onClick={() => onToggleSavedTalent(selectedTalent.id)} className="mornai-market-secondary flex-1"><Bookmark className="h-3.5 w-3.5" /> {savedTalentIds.includes(selectedTalent.id) ? 'Saved' : 'Save person'}</button>
                 <button type="button" onClick={() => { onSendConnection(selectedTalent); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>
               </div>
+            </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
