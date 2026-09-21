@@ -50,6 +50,16 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const [isGeneratingPredictive, setIsGeneratingPredictive] = useState(false);
   const [predictiveData, setPredictiveData] = useState<PredictiveInsights | null>(null);
 
+  // Design-only website studio
+  const [showWebsiteStudio, setShowWebsiteStudio] = useState(false);
+  const [websitePrompt, setWebsitePrompt] = useState('');
+  const [websiteImagePreview, setWebsiteImagePreview] = useState('');
+  const [websitePreviewMode, setWebsitePreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+
+  // AI input design
+  const [roadmapGoalInput, setRoadmapGoalInput] = useState('');
+  const [delegationBrief, setDelegationBrief] = useState('');
+
   // New Memory Log Form state
   const [newLogTitle, setNewLogTitle] = useState('');
   const [newLogType, setNewLogType] = useState<StartupHistoryLog['type']>('milestone');
@@ -68,6 +78,14 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const startupAppointments = appointments.filter(a => a.startupId === startup.id);
 
   // 1. Trigger AI Roadmap Generation
+  const handleWebsiteImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setWebsiteImagePreview(typeof reader.result === 'string' ? reader.result : '');
+    reader.readAsDataURL(file);
+  };
+
   const handleGenerateRoadmap = async () => {
     setIsGeneratingRoadmap(true);
     try {
@@ -196,6 +214,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
           startup,
           employee: assignee,
           roadmapPhase: startup.roadmap[0]?.phase || 'Phase 1 MVP',
+          founderInstruction: delegationBrief.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -1071,6 +1090,136 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* DESIGN MODAL: AI WEBSITE STUDIO */}
+      {showWebsiteStudio && (
+        <div className="mornai-website-overlay fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="mornai-website-studio relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[32px]">
+            <div className="flex items-center justify-between gap-4 border-b border-white/80 bg-white/75 px-5 py-4 backdrop-blur-xl sm:px-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="mornai-workspace-ai-kicker">AI Website Studio</span>
+                  <span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-black text-violet-700">Design mode</span>
+                </div>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Build the website for {startup.name}</h2>
+                <p className="mt-1 text-[11px] text-slate-500">Describe the startup or upload a product image. AI generation will connect later.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWebsiteStudio(false)}
+                className="mornai-close-btn"
+                aria-label="Close website studio"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid min-h-0 flex-1 overflow-auto lg:grid-cols-[360px_1fr]">
+              <aside className="border-b border-slate-200/70 bg-white/65 p-5 backdrop-blur-xl lg:border-b-0 lg:border-r">
+                <div className="rounded-[24px] border border-white/90 bg-white/70 p-4 shadow-[0_18px_50px_rgba(15,23,42,.06)] backdrop-blur-xl">
+                  <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+                    <BrainCircuit className="h-4 w-4 text-violet-600" />
+                    Full AI Website Chat
+                  </div>
+                  <p className="mt-1 text-[10px] leading-5 text-slate-500">This is the future chat surface. For now it is a visual prototype.</p>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="max-w-[92%] rounded-2xl rounded-tl-md bg-slate-50 px-3.5 py-3 text-[11px] leading-5 text-slate-600">
+                      Tell me what your startup does, what the website should achieve, and the style you want.
+                    </div>
+                    {websitePrompt && (
+                      <div className="ml-auto max-w-[92%] rounded-2xl rounded-tr-md bg-violet-600 px-3.5 py-3 text-[11px] leading-5 text-white shadow-[0_10px_24px_rgba(124,58,237,.18)]">
+                        {websitePrompt}
+                      </div>
+                    )}
+                  </div>
+
+                  <textarea
+                    value={websitePrompt}
+                    onChange={(e) => setWebsitePrompt(e.target.value)}
+                    rows={5}
+                    placeholder="Describe your startup, audience, pages, products, style, CTA..."
+                    className="mornai-workspace-ai-field mt-4"
+                  />
+
+                  <label className="mornai-website-upload mt-3">
+                    <input type="file" accept="image/*" onChange={handleWebsiteImageSelect} className="sr-only" />
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-violet-600 shadow-sm">
+                      <ImagePlus className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-black text-slate-900">Upload a product photo</p>
+                      <p className="mt-0.5 text-[10px] text-slate-500">Use a product image as visual context for the future AI builder.</p>
+                    </div>
+                    <UploadCloud className="h-4 w-4 text-slate-400" />
+                  </label>
+
+                  {websiteImagePreview && (
+                    <div className="mt-3 overflow-hidden rounded-2xl border border-violet-100 bg-white">
+                      <img src={websiteImagePreview} alt="Uploaded product preview" className="h-28 w-full object-cover" />
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="mornai-workspace-ai-primary mt-4 w-full justify-center"
+                  >
+                    <BrainCircuit className="h-4 w-4" />
+                    Generate Website Concept
+                  </button>
+                </div>
+              </aside>
+
+              <section className="min-h-[540px] bg-slate-100/70 p-4 sm:p-6">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="mornai-workspace-ai-kicker">Live Preview</span>
+                    <p className="mt-1 text-xs font-bold text-slate-700">AI-generated website preview surface</p>
+                  </div>
+                  <div className="mornai-preview-switch">
+                    <button type="button" onClick={() => setWebsitePreviewMode('desktop')} className={websitePreviewMode === 'desktop' ? 'is-active' : ''}><Monitor className="h-3.5 w-3.5" /> Desktop</button>
+                    <button type="button" onClick={() => setWebsitePreviewMode('mobile')} className={websitePreviewMode === 'mobile' ? 'is-active' : ''}><Smartphone className="h-3.5 w-3.5" /> Mobile</button>
+                  </div>
+                </div>
+
+                <div className="flex min-h-[480px] items-center justify-center overflow-auto rounded-[28px] border border-white/80 bg-white/55 p-4 shadow-inner backdrop-blur-xl">
+                  <div className={websitePreviewMode === 'mobile' ? 'mornai-website-preview is-mobile' : 'mornai-website-preview'}>
+                    <div className="mornai-website-preview-topbar">
+                      <span>{startup.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span>About</span><span>Solutions</span><span>Contact</span>
+                      </div>
+                    </div>
+                    <div className="mornai-website-preview-hero">
+                      <div className="min-w-0">
+                        <span className="mornai-website-preview-badge">Built with MornAI</span>
+                        <h3>{startup.name}</h3>
+                        <p>{websitePrompt || startup.tagline || 'A clear, modern digital home for your startup.'}</p>
+                        <button type="button">Get Started</button>
+                      </div>
+                      <div className="mornai-website-preview-media">
+                        {websiteImagePreview ? (
+                          <img src={websiteImagePreview} alt="" />
+                        ) : (
+                          <div className="mornai-website-placeholder">
+                            <Globe2 className="h-8 w-8" />
+                            <span>Your product visual</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mornai-website-preview-cards">
+                      <div><span>01</span><strong>What you solve</strong><p>Problem-focused startup positioning.</p></div>
+                      <div><span>02</span><strong>How it works</strong><p>Simple product story and value flow.</p></div>
+                      <div><span>03</span><strong>Why trust you</strong><p>Proof, traction, team and credibility.</p></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
         </div>
       )}
 
