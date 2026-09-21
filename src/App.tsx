@@ -271,10 +271,10 @@ export default function App() {
         const next = nextDailyState(previous);
         void setDoc(
           doc(db, 'users', currentUser.id, 'preferences', 'mornai'),
-          { ...next, lastVisitedAt: previous.lastVisitedAt || Date.now() },
+          { ...next, lastVisitedAt: Date.now() },
           { merge: true },
         ).catch((error) => console.error('Failed to persist daily activity:', error));
-        return { ...next, lastVisitedAt: previous.lastVisitedAt || Date.now() };
+        return { ...next, lastVisitedAt: previous.lastVisitedAt };
       });
     }, 1800);
     return () => window.clearTimeout(timer);
