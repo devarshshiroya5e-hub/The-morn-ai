@@ -443,11 +443,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35 }}
+          initial={{ opacity: 0, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, filter: 'blur(8px)' }}
+          transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
           ref={scrollRef}
+          style={{ willChange: 'opacity, filter' }}
           className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
         >
           <div className="mornai-ambient mornai-auth-ambient pointer-events-none absolute inset-0" aria-hidden="true">
