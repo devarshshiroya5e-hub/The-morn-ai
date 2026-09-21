@@ -92,7 +92,10 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
       const res = await fetch('/api/ai/generate-roadmap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startup }),
+        body: JSON.stringify({
+          startup,
+          goal: roadmapGoalInput.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (data.roadmap && Array.isArray(data.roadmap)) {
@@ -366,6 +369,16 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
               <span>AI Co-Founder Advisory</span>
             </button>
 
+            <button
+              id="founder-website-btn"
+              type="button"
+              onClick={() => setShowWebsiteStudio(true)}
+              className="mornai-workspace-glass-action"
+            >
+              <Globe2 className="w-4 h-4 text-violet-600" />
+              <span>Website</span>
+            </button>
+
           </div>
 
         </div>
@@ -459,6 +472,25 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
       {activeTab === 'strategy' && (
         <div className="space-y-6">
           
+           {/* AI Goal Input */}
+           <div className="mornai-workspace-ai-panel">
+             <div className="min-w-0 flex-1">
+               <span className="mornai-workspace-ai-kicker">AI Roadmap Goal</span>
+               <h3 className="mt-1 text-sm font-bold text-slate-900">Tell MornAI what goal you want to reach.</h3>
+               <p className="mt-1 text-xs leading-5 text-slate-500">
+                 Describe the outcome you want, such as launching the MVP, reaching a customer target, or preparing for funding.
+               </p>
+               <textarea
+                 id="roadmap-goal-input"
+                 value={roadmapGoalInput}
+                 onChange={(e) => setRoadmapGoalInput(e.target.value)}
+                 rows={3}
+                 placeholder="e.g. Launch our MVP in 45 days and reach the first 500 paying users..."
+                 className="mornai-workspace-ai-field mt-3"
+               />
+             </div>
+           </div>
+
           {/* Action Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-indigo-50/70 p-4 rounded-xl border border-indigo-100">
             <div>
@@ -607,6 +639,25 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
       {activeTab === 'delegation' && (
         <div className="space-y-6">
           
+          {/* AI Task Delegation Input */}
+          <div className="mornai-workspace-ai-panel">
+            <div className="min-w-0 flex-1">
+              <span className="mornai-workspace-ai-kicker">AI Auto-Delegate Brief</span>
+              <h3 className="mt-1 text-sm font-bold text-slate-900">Tell the AI what work you want assigned to your team.</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Describe the outcome, constraints, priority, or workstream. The future AI will turn this into team tasks.
+              </p>
+              <textarea
+                id="auto-delegate-brief-input"
+                value={delegationBrief}
+                onChange={(e) => setDelegationBrief(e.target.value)}
+                rows={3}
+                placeholder="e.g. Break the onboarding launch into tasks for design and engineering, with the highest priority on activation..."
+                className="mornai-workspace-ai-field mt-3"
+              />
+            </div>
+          </div>
+
           {/* AI Task Delegation Trigger Box */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
