@@ -46,9 +46,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
   return (
     <AnimatePresence>
-      <motion.div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-        <div className="flex min-h-full items-start justify-center sm:items-center">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-pricing-modal my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] sm:my-0 sm:max-h-[calc(100dvh-2.5rem)]">
+      <motion.div className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+        <div className="flex min-h-full items-start justify-center py-1 sm:py-2">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-pricing-modal w-full max-w-6xl rounded-[28px]">
             <div className="shrink-0 p-4 pb-3 sm:p-5 sm:pb-3">
               <div className="flex items-start justify-between gap-4">
             <div>
@@ -66,7 +66,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-5 sm:pt-3">
+            <div className="px-4 pb-4 pt-1 sm:px-5 sm:pb-5 sm:pt-1">
           <div className="grid gap-3 pb-1 lg:grid-cols-3">
             {plans.map((plan) => (
               <div key={plan.name} className={`mornai-price-card ${plan.featured ? 'is-featured' : ''}`}>
