@@ -708,9 +708,12 @@ html {
 body {
   overscroll-behavior-y: none;
 }
-.mornai-main,
 .mornai-app-shell {
-  contain: layout style;
+  contain: none !important;
+}
+.mornai-main {
+  /* Do not create a containing block for viewport-fixed drawers/modals. */
+  contain: none;
 }
 .mornai-auth-scroll {
   contain: layout style;
@@ -723,9 +726,13 @@ body {
 
 /* AI drawer: one self-contained viewport, one scroll owner. */
 .mornai-ai-drawer {
+  position: fixed !important;
+  inset-block: 0;
+  right: 0;
   isolation: isolate;
   contain: layout paint style;
   overscroll-behavior: none;
+  max-height: 100dvh;
 }
 .mornai-ai-chat {
   min-height: 0;
