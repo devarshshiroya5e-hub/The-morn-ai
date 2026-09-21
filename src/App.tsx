@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, QuerySnapshot, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { StartupDetailModal } from './components/StartupDetailModal';
@@ -419,30 +419,52 @@ export default function App() {
       return;
     }
 
-    const connectionsQuery = query(
+    const connectionsById = new Map<string, ConnectionRequest>();
+    let sentReady = false;
+    let receivedReady = false;
+
+    const publishConnections = () => {
+      setConnections(
+        Array.from(connectionsById.values()).sort((a, b) => b.createdAtClient - a.createdAtClient),
+      );
+    };
+
+    const handleConnectionSnapshot = (snapshot: QuerySnapshot, side: 'sent' | 'received') => {
+      snapshot.docs.forEach((connectionDoc) => {
+        connectionsById.set(connectionDoc.id, {
+          ...(connectionDoc.data() as ConnectionRequest),
+          id: connectionDoc.id,
+        });
+      });
+      if (side === 'sent') sentReady = true;
+      if (side === 'received') receivedReady = true;
+      if (sentReady || receivedReady) publishConnections();
+    };
+
+    const sentQuery = query(
       collection(db, 'connections'),
-      where('participants', 'array-contains', currentUser.id),
+      where('fromUserId', '==', currentUser.id),
+    );
+    const receivedQuery = query(
+      collection(db, 'connections'),
+      where('toUserId', '==', currentUser.id),
     );
 
-    const unsubscribe = onSnapshot(
-      connectionsQuery,
-      (snapshot) => {
-        const remoteConnections = snapshot.docs
-          .map((connectionDoc) => ({
-            ...(connectionDoc.data() as ConnectionRequest),
-            id: connectionDoc.id,
-          }))
-          .sort((a, b) => b.createdAtClient - a.createdAtClient);
-
-        setConnections(remoteConnections);
-      },
-      (error) => {
-        console.error('Failed to load network connections:', error);
-        setConnections([]);
-      },
+    const unsubscribeSent = onSnapshot(
+      sentQuery,
+      (snapshot) => handleConnectionSnapshot(snapshot, 'sent'),
+      (error) => console.error('Failed to load sent network connections:', error),
+    );
+    const unsubscribeReceived = onSnapshot(
+      receivedQuery,
+      (snapshot) => handleConnectionSnapshot(snapshot, 'received'),
+      (error) => console.error('Failed to load received network connections:', error),
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeSent();
+      unsubscribeReceived();
+    };
   }, [isLoggedIn, currentUser.id]);
 
   // Persisted startups are the source of truth for anything created inside the product.
@@ -514,34 +536,56 @@ export default function App() {
       return;
     }
 
-    const appointmentsQuery = query(
+    const appointmentsById = new Map<string, Appointment>();
+    let founderReady = false;
+    let talentReady = false;
+
+    const publishAppointments = () => {
+      setAppointments(
+        Array.from(appointmentsById.values()).sort((a, b) => {
+          const first = a.date + ' ' + a.time;
+          const second = b.date + ' ' + b.time;
+          return second.localeCompare(first);
+        }),
+      );
+    };
+
+    const handleAppointmentSnapshot = (snapshot: QuerySnapshot, side: 'founder' | 'talent') => {
+      snapshot.docs.forEach((appointmentDoc) => {
+        appointmentsById.set(appointmentDoc.id, {
+          ...(appointmentDoc.data() as Appointment),
+          id: appointmentDoc.id,
+        });
+      });
+      if (side === 'founder') founderReady = true;
+      if (side === 'talent') talentReady = true;
+      if (founderReady || talentReady) publishAppointments();
+    };
+
+    const founderQuery = query(
       collection(db, 'appointments'),
-      where('participants', 'array-contains', currentUser.id),
+      where('founderId', '==', currentUser.id),
+    );
+    const talentQuery = query(
+      collection(db, 'appointments'),
+      where('talentId', '==', currentUser.id),
     );
 
-    const unsubscribe = onSnapshot(
-      appointmentsQuery,
-      (snapshot) => {
-        const remoteAppointments = snapshot.docs
-          .map((appointmentDoc) => ({
-            ...(appointmentDoc.data() as Appointment),
-            id: appointmentDoc.id,
-          }))
-          .sort((a, b) => {
-            const first = a.date + ' ' + a.time;
-            const second = b.date + ' ' + b.time;
-            return second.localeCompare(first);
-          });
-
-        setAppointments(remoteAppointments);
-      },
-      (error) => {
-        console.error('Failed to load appointments from Firestore:', error);
-        setAppointments([]);
-      },
+    const unsubscribeFounder = onSnapshot(
+      founderQuery,
+      (snapshot) => handleAppointmentSnapshot(snapshot, 'founder'),
+      (error) => console.error('Failed to load founder appointments from Firestore:', error),
+    );
+    const unsubscribeTalent = onSnapshot(
+      talentQuery,
+      (snapshot) => handleAppointmentSnapshot(snapshot, 'talent'),
+      (error) => console.error('Failed to load talent appointments from Firestore:', error),
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeFounder();
+      unsubscribeTalent();
+    };
   }, [isLoggedIn, currentUser.id]);
   // Keep the active workspace attached to the startup owned/joined by this user.
   // Prefer the user's last selected startup, then their founder startup, then a joined startup.
