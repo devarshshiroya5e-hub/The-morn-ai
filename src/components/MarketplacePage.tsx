@@ -488,7 +488,8 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
               </div>
             </div>
             </motion.div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
