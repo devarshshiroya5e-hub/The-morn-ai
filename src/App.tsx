@@ -882,6 +882,7 @@ export default function App() {
             previousVisitAt={preferences.lastVisitedAt}
             unreadNotificationCount={unreadNotificationCount}
             connections={connections}
+            followedStartupIds={preferences.followedStartupIds || []}
             dailyStreak={preferences.dailyStreak || 0}
             dailyActionsCompleted={preferences.dailyActionsCompleted || 0}
             onOpenNetwork={(tab) => {
@@ -1071,6 +1072,7 @@ export default function App() {
         startups={startups}
         appointments={appointments}
         connections={connections}
+        followedStartupIds={preferences.followedStartupIds || []}
         readNotificationIds={preferences.readNotificationIds || []}
         onClose={() => setIsNotificationCenterOpen(false)}
         onMarkRead={markNotificationRead}
