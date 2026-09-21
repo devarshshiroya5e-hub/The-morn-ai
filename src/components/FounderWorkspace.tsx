@@ -1282,12 +1282,27 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
 
       {/* MODAL: ADD STARTUP MEMORY LOG */}
       {showAddLogModal && (
-        <div className="mornai-memory-log-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
-          <div className="mornai-memory-log-modal relative w-full max-w-lg rounded-[28px] p-6 space-y-4 sm:p-7">
-            <h3 className="text-lg font-bold text-slate-900 font-['Outfit']">
+        <div className="mornai-memory-log-overlay fixed inset-0 z-50 overflow-y-auto p-3 sm:p-4">
+          <div className="mornai-memory-log-modal mx-auto my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-[28px] sm:my-0 sm:max-h-[calc(100dvh-2rem)]">
+            <div className="shrink-0 px-6 pt-5 sm:px-7 sm:pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 font-['Outfit']">
               Add New Memory Log into Startup Vault
-            </h3>
-            <p className="text-xs text-slate-500">
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddLogModal(false)}
+                  className="mornai-close-btn shrink-0"
+                  aria-label="Close memory log"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="mornai-modal-scroll px-6 pb-6 sm:px-7 sm:pb-7">
+              <p className="text-xs text-slate-500">
               This log is permanently remembered by the AI Co-Founder to guide future roadmaps and task delegation.
             </p>
 
@@ -1358,6 +1373,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
