@@ -79,9 +79,10 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-y-auto max-h-[92vh] animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm p-3 sm:p-6">
+      <div className="relative mx-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-3rem)]">
         
+        <div className="shrink-0">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -242,8 +243,10 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
           </div>
         </div>
 
+        </div>
+
         {/* Tab Content Body (Scrollable) */}
-        <div className="p-6 bg-slate-50/50 space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50/50 p-6 space-y-6">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
