@@ -1076,8 +1076,8 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
 
       {/* MODAL: ADD STARTUP MEMORY LOG */}
       {showAddLogModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4">
+        <div className="mornai-memory-log-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
+          <div className="mornai-memory-log-modal relative w-full max-w-lg rounded-[28px] p-6 space-y-4 sm:p-7">
             <h3 className="text-lg font-bold text-slate-900 font-['Outfit']">
               Add New Memory Log into Startup Vault
             </h3>
@@ -1094,7 +1094,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                   placeholder="e.g. Pivoted pricing from per-seat to usage-based telemetry"
                   value={newLogTitle}
                   onChange={(e) => setNewLogTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="mornai-memory-log-field px-3.5 py-3 text-sm"
                 />
               </div>
 
@@ -1103,7 +1103,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                 <select
                   value={newLogType}
                   onChange={(e) => setNewLogType(e.target.value as any)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                  className="mornai-memory-log-field px-3.5 py-3 text-sm"
                 >
                   <option value="milestone">Milestone Achieved</option>
                   <option value="pivot">Strategic Pivot</option>
@@ -1136,17 +1136,17 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 border-t border-slate-200/70 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddLogModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100/80"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm"
+                  className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,.24)] transition hover:shadow-[0_14px_30px_rgba(99,102,241,.32)]"
                 >
                   Save into Memory
                 </button>
