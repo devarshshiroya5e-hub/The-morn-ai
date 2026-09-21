@@ -204,13 +204,37 @@ export default function App() {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Keep browser scroll restoration from reusing the previous document position.
   useEffect(() => {
+    if (typeof window === 'undefined' || !('scrollRestoration' in window.history)) return;
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
+  // New visitors and the one-second returning-user landing screen always start at the top.
+  useLayoutEffect(() => {
     if (isLoggedIn) return;
-    const frame = requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    });
-    return () => cancelAnimationFrame(frame);
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [isLoggedIn]);
+
+  // When the one-second landing screen gives way to the authenticated app,
+  // reset before the new page paints so a scroll performed during the delay
+  // cannot leak into the main website.
+  useLayoutEffect(() => {
+    if (isLoggedIn && sessionRestoreComplete) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [isLoggedIn, sessionRestoreComplete]);
+
+  // Every internal view is a new page surface. Always enter it from the top,
+  // regardless of how far the user had scrolled on the previous surface.
+  useLayoutEffect(() => {
+    if (!isLoggedIn || !sessionRestoreComplete) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [activeView, isLoggedIn, sessionRestoreComplete]);
 
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
   const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('home');
