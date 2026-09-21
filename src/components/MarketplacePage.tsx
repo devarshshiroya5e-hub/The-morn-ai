@@ -37,7 +37,6 @@ interface MarketplacePageProps {
   onToggleSavedTalent: (id: string) => void;
   onToggleSavedStartup: (id: string) => void;
   onToggleFollowStartup: (id: string) => void;
-  onToggleSavedStartup: (id: string) => void;
   onSendConnection: (user: User) => void;
   onUpdateConnectionStatus: (connectionId: string, status: ConnectionRequest['status']) => void;
   onSelectStartup: (startup: Startup) => void;
@@ -56,7 +55,6 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   onToggleSavedTalent,
   onToggleSavedStartup,
   onToggleFollowStartup,
-  onToggleSavedStartup,
   onSendConnection,
   onUpdateConnectionStatus,
   onSelectStartup,
