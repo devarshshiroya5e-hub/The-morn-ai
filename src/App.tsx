@@ -73,8 +73,8 @@ const stripUndefinedPreferenceFields = <T extends Record<string, unknown>>(value
     Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined),
   ) as Partial<T>;
 
-const normalizeUser = (raw: User): User => ({
-  id: typeof raw.id === 'string' ? raw.id : '',
+const normalizeUser = (raw: User, fallbackId = ''): User => ({
+  id: typeof raw.id === 'string' && raw.id ? raw.id : fallbackId,
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Member',
   email: typeof raw.email === 'string' ? raw.email : '',
   role: raw.role === 'founder' || raw.role === 'employee' ? raw.role : 'employee',
@@ -149,7 +149,7 @@ export default function App() {
           if (cancelled) return;
 
           if (savedProfile.exists()) {
-            setCurrentUser(normalizeUser(savedProfile.data() as User));
+            setCurrentUser(normalizeUser(savedProfile.data() as User, user.uid));
             setIsLoggedIn(true);
             setAutoRestoredSession(true);
             setSessionRestoreComplete(false);
@@ -290,6 +290,10 @@ export default function App() {
   }, [isLoggedIn, currentUser.id]);
 
   const persistPreferences = (patch: Partial<MornaiPreferences>) => {
+    if (!isLoggedIn || !currentUser.id) {
+      return;
+    }
+
     setPreferences((previous) => {
       const next = { ...previous, ...patch };
       const persisted = stripUndefinedPreferenceFields(next);
@@ -320,6 +324,10 @@ export default function App() {
   }, [isLoggedIn, currentUser.id]);
 
   const completeDailyAction = () => {
+    if (!isLoggedIn || !currentUser.id) {
+      return;
+    }
+
     setPreferences((previous) => {
       const next = { ...previous, dailyActionsCompleted: Math.min(3, (previous.dailyActionsCompleted || 0) + 1) };
       const persisted = stripUndefinedPreferenceFields(next);
