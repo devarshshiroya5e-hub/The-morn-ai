@@ -66,7 +66,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-5 sm:pt-3">
           <div className="grid gap-3 pb-1 lg:grid-cols-3">
             {plans.map((plan) => (
               <div key={plan.name} className={`mornai-price-card ${plan.featured ? 'is-featured' : ''}`}>
