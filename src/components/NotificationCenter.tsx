@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { BellRing, BriefcaseBusiness, Check, Clock3, Rocket, Sparkles, X } from 'lucide-react';
-import { Appointment, Startup, User } from '../types';
+import { Appointment, ConnectionRequest, Startup, User } from '../types';
 import { buildMornaiNotifications, formatRelativeDate, MornaiNotification } from './mornaiSignals';
 
 interface NotificationCenterProps {
@@ -9,6 +9,7 @@ interface NotificationCenterProps {
   currentUser: User;
   startups: Startup[];
   appointments: Appointment[];
+  connections: ConnectionRequest[];
   readNotificationIds: string[];
   onClose: () => void;
   onMarkRead: (id: string) => void;
@@ -22,6 +23,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   currentUser,
   startups,
   appointments,
+  connections,
   readNotificationIds,
   onClose,
   onMarkRead,
@@ -29,14 +31,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   onOpenNetwork,
   onOpenWorkspace,
 }) => {
-  const notifications = useMemo(() => buildMornaiNotifications(currentUser, startups, appointments), [appointments, currentUser, startups]);
+  const notifications = useMemo(() => buildMornaiNotifications(currentUser, startups, appointments, connections), [appointments, connections, currentUser, startups]);
   const unread = notifications.filter((item) => !readNotificationIds.includes(item.id));
 
   if (!isOpen) return null;
 
   const handleOpen = (item: MornaiNotification) => {
     onMarkRead(item.id);
-    if (item.type === 'match' || item.type === 'opportunity') onOpenNetwork(currentUser.role === 'founder' ? 'people' : 'opportunities');
+    if (item.type === 'match' || item.type === 'opportunity' || item.type === 'connection') onOpenNetwork(item.type === 'connection' ? 'connections' : currentUser.role === 'founder' ? 'people' : 'opportunities');
     else onOpenWorkspace();
     onClose();
   };
@@ -70,6 +72,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               <button key={item.id} type="button" onClick={() => handleOpen(item)} className={`mornai-notification-row ${isUnread ? 'is-unread' : ''}`}>
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-slate-50">
                   {item.type === 'match' ? <Sparkles className="h-4 w-4 text-violet-600" /> :
+                    item.type === 'connection' ? <BellRing className="h-4 w-4 text-violet-600" /> :
                     item.type === 'appointment' ? <Clock3 className="h-4 w-4 text-amber-500" /> :
                       item.type === 'opportunity' ? <BriefcaseBusiness className="h-4 w-4 text-sky-600" /> :
                         <Rocket className="h-4 w-4 text-emerald-600" />}
