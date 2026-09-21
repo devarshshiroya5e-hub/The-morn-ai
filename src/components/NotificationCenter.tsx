@@ -10,6 +10,7 @@ interface NotificationCenterProps {
   startups: Startup[];
   appointments: Appointment[];
   connections: ConnectionRequest[];
+  followedStartupIds: string[];
   readNotificationIds: string[];
   onClose: () => void;
   onMarkRead: (id: string) => void;
@@ -24,6 +25,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   startups,
   appointments,
   connections,
+  followedStartupIds,
   readNotificationIds,
   onClose,
   onMarkRead,
@@ -31,7 +33,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   onOpenNetwork,
   onOpenWorkspace,
 }) => {
-  const notifications = useMemo(() => buildMornaiNotifications(currentUser, startups, appointments, connections), [appointments, connections, currentUser, startups]);
+  const notifications = useMemo(() => buildMornaiNotifications(currentUser, startups, appointments, connections, followedStartupIds), [appointments, connections, currentUser, followedStartupIds, startups]);
   const unread = notifications.filter((item) => !readNotificationIds.includes(item.id));
 
   if (!isOpen) return null;
