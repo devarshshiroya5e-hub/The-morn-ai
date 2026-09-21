@@ -210,3 +210,87 @@
 .mornai-job-card{box-shadow:0 8px 20px rgba(15,23,42,.045),inset 0 1px 0 rgba(255,255,255,.96);}
 .mornai-job-card:hover{border-color:rgba(167,139,250,.36);box-shadow:0 14px 28px rgba(124,58,237,.08);}
 .mornai-job-cta{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.28),0 7px 16px rgba(124,58,237,.20);}
+
+
+/* MornAI retention + marketplace layer */
+.mornai-home-page,.mornai-marketplace-page{position:relative;}
+.mornai-home-page::before,.mornai-marketplace-page::before{content:"";position:fixed;inset:9% 8% auto auto;width:26rem;height:26rem;border-radius:9999px;background:rgba(139,92,246,.045);filter:blur(80px);pointer-events:none;z-index:-1;}
+.mornai-home-hero{background:linear-gradient(135deg,#111827 0%,#261342 42%,#6d28d9 100%);box-shadow:0 30px 90px rgba(76,29,149,.18),inset 0 1px 0 rgba(255,255,255,.16);}
+.mornai-home-panel{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.94);box-shadow:0 22px 64px rgba(15,23,42,.065),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px) saturate(165%);-webkit-backdrop-filter:blur(18px) saturate(165%);}
+.mornai-home-icon-btn{display:grid;place-items:center;width:2.7rem;height:2.7rem;border:1px solid rgba(226,232,240,.88);border-radius:16px;background:rgba(255,255,255,.76);color:#64748b;box-shadow:0 10px 26px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);transition:transform .18s ease,box-shadow .18s ease,color .18s ease,border-color .18s ease;}
+.mornai-home-icon-btn:hover{transform:translateY(-2px);color:#6d28d9;border-color:rgba(124,58,237,.26);box-shadow:0 16px 34px rgba(124,58,237,.09),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-primary,.mornai-home-secondary{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border-radius:14px;padding:.68rem .9rem;font-size:.68rem;font-weight:900;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-home-primary{background:rgba(255,255,255,.94);color:#312e81;box-shadow:0 12px 26px rgba(2,6,23,.16);}
+.mornai-home-primary:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(2,6,23,.20);}
+.mornai-home-secondary{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:white;backdrop-filter:blur(12px);}
+.mornai-home-secondary:hover{transform:translateY(-2px);background:rgba(255,255,255,.12);}
+.mornai-home-stat{display:flex;min-width:0;align-items:center;gap:.75rem;padding:.9rem;border:1px solid rgba(255,255,255,.96);border-radius:18px;background:rgba(255,255,255,.72);box-shadow:0 14px 34px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.mornai-home-stat:hover{transform:translateY(-2px);border-color:rgba(124,58,237,.22);box-shadow:0 18px 40px rgba(79,70,229,.08),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-stat-violet svg{color:#7c3aed}.mornai-home-stat-amber svg{color:#f59e0b}.mornai-home-stat-emerald svg{color:#059669}.mornai-home-stat-sky svg{color:#0284c7}
+.mornai-home-match-card{display:flex;align-items:center;gap:.75rem;width:100%;padding:.8rem;border:1px solid rgba(226,232,240,.84);border-radius:20px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 10px 24px rgba(15,23,42,.035);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-home-match-card:hover{transform:translateY(-2px);border-color:rgba(124,58,237,.20);background:rgba(255,255,255,.92);box-shadow:0 16px 34px rgba(79,70,229,.07),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-chip{display:inline-flex;align-items:center;border:1px solid rgba(226,232,240,.92);border-radius:9999px;padding:.3rem .48rem;background:rgba(248,250,252,.86);font-size:.57rem;font-weight:800;color:#64748b;}
+.mornai-home-text-link{display:inline-flex;align-items:center;gap:.15rem;color:#6d28d9;font-size:.66rem;font-weight:900;transition:transform .16s ease,color .16s ease;}
+.mornai-home-text-link:hover{transform:translateX(2px);color:#4c1d95;}
+.mornai-home-action{display:flex;align-items:center;gap:.65rem;width:100%;padding:.72rem .8rem;border:1px solid rgba(226,232,240,.82);border-radius:16px;background:rgba(255,255,255,.68);font-size:.68rem;font-weight:800;color:#334155;box-shadow:inset 0 1px 0 rgba(255,255,255,.98);transition:transform .17s ease,background .17s ease,border-color .17s ease;}
+.mornai-home-action:hover{transform:translateX(2px);background:rgba(255,255,255,.94);border-color:rgba(124,58,237,.18);}
+.mornai-home-pro-cta{display:inline-flex;align-items:center;gap:.4rem;border-radius:14px;padding:.65rem .8rem;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid rgba(196,181,253,.48);color:#6d28d9;font-size:.65rem;font-weight:900;box-shadow:0 10px 26px rgba(124,58,237,.08);transition:transform .18s ease,box-shadow .18s ease;}
+.mornai-home-pro-cta:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(124,58,237,.12);}
+.mornai-home-value-card{border:1px solid rgba(226,232,240,.78);border-radius:22px;padding:1rem;background:rgba(255,255,255,.56);box-shadow:inset 0 1px 0 rgba(255,255,255,.99);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.mornai-home-value-card:hover{transform:translateY(-2px);border-color:rgba(124,58,237,.18);box-shadow:0 14px 30px rgba(79,70,229,.06),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-value-icon{display:grid;place-items:center;width:2rem;height:2rem;border-radius:12px;background:white;box-shadow:0 8px 18px rgba(15,23,42,.06);}
+.mornai-tone-violet{color:#7c3aed}.mornai-tone-sky{color:#0284c7}.mornai-tone-amber{color:#d97706}
+
+.mornai-marketplace-page{padding-bottom:2rem;}
+.mornai-market-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#111827 0%,#24113f 46%,#4c1d95 100%);box-shadow:0 28px 80px rgba(76,29,149,.16),inset 0 1px 0 rgba(255,255,255,.13);}
+.mornai-market-hero::after{content:"";position:absolute;right:-9rem;bottom:-10rem;width:28rem;height:28rem;border-radius:9999px;background:radial-gradient(circle,rgba(168,85,247,.35),transparent 68%);filter:blur(12px);pointer-events:none;}
+.mornai-market-toolbar{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.72);box-shadow:0 18px 46px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.mornai-market-search{display:flex;align-items:center;gap:.6rem;border:1px solid rgba(226,232,240,.9);border-radius:17px;padding:.75rem .85rem;background:rgba(248,250,252,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.96);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-market-search:focus-within{border-color:rgba(124,58,237,.34);background:rgba(255,255,255,.96);box-shadow:0 0 0 4px rgba(124,58,237,.065),0 14px 28px rgba(79,70,229,.055);}
+.mornai-market-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;font-size:.72rem;font-weight:700;color:#0f172a;}
+.mornai-market-search input::placeholder{color:#94a3b8;}
+.mornai-market-filter-btn,.mornai-market-tab,.mornai-market-chip{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border:1px solid rgba(226,232,240,.88);border-radius:14px;padding:.62rem .76rem;background:rgba(255,255,255,.68);color:#64748b;font-size:.65rem;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.98);transition:transform .17s ease,background .17s ease,border-color .17s ease,color .17s ease;}
+.mornai-market-filter-btn:hover,.mornai-market-tab:hover,.mornai-market-chip:hover{transform:translateY(-1px);border-color:rgba(124,58,237,.22);color:#6d28d9;}
+.mornai-market-filter-btn.is-active,.mornai-market-chip.is-active{background:#f5f3ff;border-color:rgba(124,58,237,.22);color:#6d28d9;}
+.mornai-market-tab.is-active{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-color:rgba(124,58,237,.25);color:#6d28d9;box-shadow:0 8px 20px rgba(124,58,237,.07);}
+.mornai-market-tab span{display:grid;min-width:1.2rem;height:1.2rem;place-items:center;padding:0 .25rem;border-radius:9999px;background:rgba(241,245,249,.92);font-size:.53rem;color:#64748b;}
+.mornai-market-select{display:block;width:100%;border:1px solid rgba(226,232,240,.9);border-radius:14px;padding:.55rem .65rem;background:white;color:#334155;outline:none;font-size:.68rem;font-weight:800;}
+.mornai-market-stat{display:inline-flex;align-items:center;gap:.35rem;border:1px solid rgba(255,255,255,.9);border-radius:9999px;background:rgba(255,255,255,.72);padding:.52rem .7rem;font-size:.62rem;font-weight:900;color:#475569;box-shadow:0 8px 20px rgba(15,23,42,.045);backdrop-filter:blur(12px);}
+.mornai-person-card,.mornai-startup-network-card,.mornai-role-card{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.72);box-shadow:0 18px 48px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px) saturate(155%);-webkit-backdrop-filter:blur(18px) saturate(155%);transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s ease,border-color .18s ease;}
+.mornai-person-card{border-radius:26px;padding:1rem;}
+.mornai-startup-network-card{overflow:hidden;border-radius:26px;}
+.mornai-role-card{display:flex;align-items:flex-start;gap:.8rem;border-radius:24px;padding:1rem;}
+.mornai-person-card:hover,.mornai-startup-network-card:hover,.mornai-role-card:hover{transform:translateY(-3px);border-color:rgba(124,58,237,.18);box-shadow:0 24px 56px rgba(79,70,229,.075),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-market-skill{display:inline-flex;align-items:center;border:1px solid rgba(226,232,240,.9);border-radius:9999px;padding:.3rem .5rem;background:rgba(248,250,252,.82);font-size:.55rem;font-weight:800;color:#64748b;}
+.mornai-market-skill.is-match{background:#f5f3ff;border-color:rgba(124,58,237,.20);color:#6d28d9;}
+.mornai-save-btn{display:grid;place-items:center;width:2rem;height:2rem;border:1px solid rgba(226,232,240,.86);border-radius:12px;background:rgba(255,255,255,.76);color:#94a3b8;transition:transform .17s ease,background .17s ease,color .17s ease,border-color .17s ease,box-shadow .17s ease;}
+.mornai-save-btn:hover{transform:translateY(-1px);color:#6d28d9;border-color:rgba(124,58,237,.22);box-shadow:0 8px 18px rgba(124,58,237,.07);}
+.mornai-save-btn.is-saved{background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.18);}
+.mornai-market-primary,.mornai-market-secondary{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border-radius:14px;padding:.62rem .75rem;font-size:.63rem;font-weight:900;transition:transform .17s ease,box-shadow .17s ease,background .17s ease;}
+.mornai-market-primary{background:linear-gradient(135deg,#6d28d9,#a855f7);color:white;box-shadow:0 10px 22px rgba(124,58,237,.18);}
+.mornai-market-primary:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(124,58,237,.24);}
+.mornai-market-secondary{border:1px solid rgba(226,232,240,.9);background:rgba(255,255,255,.72);color:#475569;box-shadow:inset 0 1px 0 rgba(255,255,255,.98);}
+.mornai-market-secondary:hover{transform:translateY(-1px);background:white;color:#0f172a;}
+.mornai-talent-modal,.mornai-pricing-modal,.mornai-notification-drawer{border:1px solid rgba(255,255,255,.96);background:rgba(255,255,255,.82);box-shadow:0 30px 90px rgba(15,23,42,.18),inset 0 1px 0 rgba(255,255,255,1);backdrop-filter:blur(26px) saturate(175%);-webkit-backdrop-filter:blur(26px) saturate(175%);}
+.mornai-close-btn{display:grid;place-items:center;width:2.15rem;height:2.15rem;border:1px solid rgba(226,232,240,.88);border-radius:12px;background:rgba(255,255,255,.72);color:#64748b;transition:transform .17s ease,color .17s ease,background .17s ease;}
+.mornai-close-btn:hover{transform:rotate(90deg);background:white;color:#6d28d9;}
+.mornai-modal-label{font-size:.58rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:#94a3b8;}
+.mornai-notification-trigger{border:1px solid rgba(226,232,240,.84);background:rgba(255,255,255,.68);box-shadow:0 10px 24px rgba(15,23,42,.045),inset 0 1px 0 rgba(255,255,255,1);transition:transform .17s ease,color .17s ease,border-color .17s ease,box-shadow .17s ease;}
+.mornai-notification-trigger:hover{transform:translateY(-2px);color:#6d28d9;border-color:rgba(124,58,237,.22);box-shadow:0 14px 28px rgba(124,58,237,.08);}
+.mornai-notification-action{display:inline-flex;align-items:center;gap:.35rem;border:1px solid rgba(226,232,240,.88);border-radius:10px;padding:.45rem .55rem;background:rgba(255,255,255,.72);font-size:.55rem;font-weight:900;color:#64748b;}
+.mornai-notification-row{display:flex;align-items:flex-start;gap:.7rem;width:100%;padding:.75rem;border-radius:18px;text-align:left;transition:background .16s ease,transform .16s ease;}
+.mornai-notification-row:hover{background:rgba(248,250,252,.82);transform:translateX(2px);}
+.mornai-notification-row.is-unread{background:linear-gradient(135deg,rgba(245,243,255,.86),rgba(239,246,255,.62));}
+.mornai-billing-toggle{display:flex;gap:.15rem;border:1px solid rgba(226,232,240,.9);border-radius:9999px;padding:.2rem;background:white;}
+.mornai-billing-toggle span{padding:.38rem .58rem;border-radius:9999px;font-size:.55rem;font-weight:900;color:#94a3b8;}
+.mornai-billing-toggle span.is-on{background:#f5f3ff;color:#6d28d9;box-shadow:0 5px 14px rgba(124,58,237,.08);}
+.mornai-price-card{position:relative;border:1px solid rgba(226,232,240,.88);border-radius:24px;padding:1.1rem;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 14px 34px rgba(15,23,42,.045);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;}
+.mornai-price-card:hover{transform:translateY(-3px);box-shadow:0 22px 46px rgba(79,70,229,.07),inset 0 1px 0 rgba(255,255,255,1);border-color:rgba(124,58,237,.18);}
+.mornai-price-card.is-featured{border-color:rgba(124,58,237,.24);background:linear-gradient(145deg,rgba(250,245,255,.95),rgba(255,255,255,.78));box-shadow:0 18px 44px rgba(124,58,237,.10),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-price-badge{position:absolute;right:1rem;top:-.55rem;border-radius:9999px;padding:.35rem .55rem;background:linear-gradient(135deg,#6d28d9,#a855f7);color:white;font-size:.52rem;font-weight:900;box-shadow:0 8px 18px rgba(124,58,237,.22);}
+.mornai-price-primary{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 12px 24px rgba(124,58,237,.18);}
+.mornai-price-secondary{border:1px solid rgba(226,232,240,.9);background:rgba(255,255,255,.78);}
+@media (max-width:767px){
+  .mornai-role-card{flex-direction:column;}
+  .mornai-role-card>div:last-child{width:100%;}
+}
