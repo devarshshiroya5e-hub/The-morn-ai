@@ -901,7 +901,7 @@ export default function App() {
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
             initialTab={
-              (window.sessionStorage.getItem('mornai-network-tab') as 'people' | 'startups' | 'opportunities' | null) ||
+              (window.sessionStorage.getItem('mornai-network-tab') as 'people' | 'startups' | 'opportunities' | 'connections' | null) ||
               undefined
             }
           />
