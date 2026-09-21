@@ -140,8 +140,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
       startups
         .filter((startup) =>
           startup.persisted &&
-          startup.members?.some(
-            (member) => member.userId === currentUser.id && member.status === 'active',
+          (
+            startup.memberIds?.includes(currentUser.id) ||
+            startup.members?.some(
+              (member) => member.userId === currentUser.id && member.status === 'active',
+            )
           ),
         )
         .forEach((startup) => {
@@ -195,7 +198,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
 
   const privateParticipantsForRoom = (room: Room) =>
     room.kind === 'private'
-      ? Array.from(new Set([room.startup!.founderId, room.contact!.id]))
+      ? Array.from(new Set([currentUser.id, room.contact!.id]))
       : [];
 
   const messagesQueryForRoom = (room: Room) => {
