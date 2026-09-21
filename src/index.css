@@ -673,3 +673,49 @@ select.mornai-memory-log-field{appearance:auto;cursor:pointer;}
 .mornai-auth-surface {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.98), inset 0 -1px 0 rgba(99,102,241,.08), 0 24px 64px rgba(15,23,42,.10);
 }
+
+
+/* Scroll-performance layer: static glass cards do not need live backdrop sampling while scrolling. */
+.mornai-app-nav,
+.mornai-user-menu,
+.mornai-mobile-nav,
+.mornai-inline-stat,
+.mornai-discovery-stat,
+.mornai-book-sync-intro,
+.mornai-page-panel,
+.mornai-home-panel,
+.mornai-home-icon-btn,
+.mornai-home-secondary,
+.mornai-home-stat,
+.mornai-home-match-card,
+.mornai-market-toolbar,
+.mornai-market-stat,
+.mornai-person-card,
+.mornai-startup-network-card,
+.mornai-role-card,
+.mornai-daily-loop,
+.mornai-workspace-glass-action,
+.mornai-workspace-ai-panel,
+.mornai-workspace-ai-field,
+.mornai-preview-switch {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html {
+  scroll-behavior: auto;
+}
+body {
+  overscroll-behavior-y: none;
+}
+.mornai-main,
+.mornai-app-shell {
+  contain: layout style;
+}
+.mornai-auth-scroll {
+  contain: layout style;
+  overscroll-behavior: none;
+  scroll-behavior: auto !important;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
