@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="mornai-app-nav mx-auto flex max-w-7xl items-center gap-2 rounded-[22px] px-2.5 py-2 sm:gap-3 sm:px-3">
         <button
           id="brand-logo-btn"
-          onClick={() => setActiveTab('discover')}
+          onClick={() => setActiveTab('home')}
           className="group flex min-w-0 items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition-transform duration-200 hover:-translate-y-0.5"
         >
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-950 text-white shadow-[0_10px_26px_rgba(15,23,42,.18)]">
