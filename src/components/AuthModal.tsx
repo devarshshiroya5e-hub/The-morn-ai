@@ -443,12 +443,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, filter: 'blur(8px)' }}
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, filter: 'blur(8px)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
           ref={scrollRef}
-          style={{ willChange: 'opacity, filter' }}
           className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
         >
           <div className="mornai-ambient mornai-auth-ambient pointer-events-none absolute inset-0" aria-hidden="true">
@@ -459,11 +458,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="relative min-h-[calc(100dvh-1.5rem)] px-3 py-3 sm:min-h-[calc(100dvh-2.5rem)] sm:px-5 sm:py-5">
             <motion.div
-              initial={{ opacity: 0, y: 28, scale: .965, filter: 'blur(9px)' }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: 20, scale: .985, filter: 'blur(6px)' }}
+              initial={{ opacity: 0, y: 28, scale: .965 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: .985 }}
               transition={{ duration: 0.58, ease: [0.16, 1, 0.3, 1] }}
-              style={{ willChange: 'transform, opacity, filter' }}
               className="mornai-auth-surface relative mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/85 bg-white/[0.62] shadow-[0_35px_120px_rgba(15,23,42,.14)] backdrop-blur-3xl"
             >
               <div className="mornai-auth-nav">
@@ -564,11 +562,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {mode === 'login' ? (
                       <motion.div
                         key="login"
-                        initial={{ opacity: 0, x: 18, y: 8, filter: 'blur(4px)' }}
-                        animate={{ opacity: 1, x: 0, y: 0, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, x: -14, y: -4, filter: 'blur(3px)' }}
-                        transition={{ duration: .42, ease: [0.16, 1, 0.3, 1] }}
-                        layout
+                        initial={{ opacity: 0, x: 14, y: 4 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, x: -10, y: -2 }}
+                        transition={{ duration: .36, ease: [0.16, 1, 0.3, 1] }}
                         className="mx-auto max-w-md pt-10 pb-10"
                       >
                         <Pill icon={<Sparkles className="h-3.5 w-3.5" />}>Welcome back</Pill>
@@ -617,11 +614,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     ) : (
                       <motion.div
                         key={`signup-${step}`}
-                        initial={{ opacity: 0, x: 18, y: 10, filter: 'blur(4px)' }}
-                        animate={{ opacity: 1, x: 0, y: 0, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, x: -14, y: -4, filter: 'blur(3px)' }}
-                        transition={{ duration: .42, ease: [0.16, 1, 0.3, 1] }}
-                        layout
+                        initial={{ opacity: 0, x: 14, y: 5 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, x: -10, y: -2 }}
+                        transition={{ duration: .36, ease: [0.16, 1, 0.3, 1] }}
                         className="mx-auto max-w-xl pb-10"
                       >
                         {step === 1 && (
