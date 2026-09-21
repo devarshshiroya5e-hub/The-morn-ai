@@ -28,6 +28,9 @@ export const normalizePreferences = (raw: unknown): MornaiPreferences => {
     followedStartupIds: Array.isArray(value.followedStartupIds) ? value.followedStartupIds.filter((id): id is string => typeof id === 'string') : [],
     readNotificationIds: Array.isArray(value.readNotificationIds) ? value.readNotificationIds.filter((id): id is string => typeof id === 'string') : [],
     dailyFocus: typeof value.dailyFocus === 'string' ? value.dailyFocus : undefined,
+    dailyStreak: typeof value.dailyStreak === 'number' ? value.dailyStreak : 0,
+    lastActiveDate: typeof value.lastActiveDate === 'string' ? value.lastActiveDate : undefined,
+    dailyActionsCompleted: typeof value.dailyActionsCompleted === 'number' ? value.dailyActionsCompleted : 0,
   };
 };
 
@@ -164,4 +167,26 @@ export const formatRelativeDate = (timestamp?: number) => {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
   return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+export const dateKey = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const nextDailyState = (preferences: MornaiPreferences) => {
+  const today = dateKey();
+  if (preferences.lastActiveDate === today) return preferences;
+  const previous = preferences.lastActiveDate ? new Date(`${preferences.lastActiveDate}T12:00:00`) : null;
+  const now = new Date();
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12, 0, 0);
+  const isYesterday = previous && dateKey(yesterday) === preferences.lastActiveDate;
+  return {
+    ...preferences,
+    lastActiveDate: today,
+    dailyStreak: (preferences.dailyStreak || 0) + (isYesterday ? 1 : 1),
+    dailyActionsCompleted: 0,
+  };
 };
