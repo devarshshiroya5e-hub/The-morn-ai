@@ -24,7 +24,7 @@ import {
 import { ConnectionRequest, RolePost, Startup, User } from '../types';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
 
-type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections';
+type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections' | 'saved';
 
 interface MarketplacePageProps {
   currentUser: User;
@@ -68,30 +68,33 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const [selectedTalent, setSelectedTalent] = useState<User | null>(null);
   const [onlyStrongMatches, setOnlyStrongMatches] = useState(false);
 
-  const industries = useMemo(() => ['All', ...Array.from(new Set(startups.map((startup) => startup.industry))).slice(0, 8)], [startups]);
+  const networkStartups = useMemo(() => startups.filter((startup) => startup.persisted), [startups]);
+  const savedPeople = useMemo(() => allTalents.filter((person) => savedTalentIds.includes(person.id)), [allTalents, savedTalentIds]);
+  const savedStartups = useMemo(() => networkStartups.filter((startup) => savedStartupIds.includes(startup.id)), [networkStartups, savedStartupIds]);
+  const industries = useMemo(() => ['All', ...Array.from(new Set(networkStartups.map((startup) => startup.industry))).slice(0, 8)], [networkStartups]);
 
   const openRoles = useMemo(
-    () => startups.flatMap((startup) => startup.openRoles.filter((role) => role.status === 'open').map((role) => ({ startup, role }))),
-    [startups],
+    () => networkStartups.flatMap((startup) => startup.openRoles.filter((role) => role.status === 'open').map((role) => ({ startup, role }))),
+    [networkStartups],
   );
 
   const rankedTalents = useMemo(() => {
     return allTalents
-      .map((talent) => ({ talent, score: scoreTalentForStartup(talent, currentUser.role === 'founder' ? startups.find((startup) => startup.founderId === currentUser.id) : undefined) }))
+      .map((talent) => ({ talent, score: scoreTalentForStartup(talent, currentUser.role === 'founder' ? networkStartups.find((startup) => startup.founderId === currentUser.id) : undefined) }))
       .filter(({ talent }) => talent.id !== currentUser.id)
       .filter(({ talent }) => !query || [talent.name, talent.title, talent.bio, ...talent.skills].join(' ').toLowerCase().includes(query.toLowerCase()))
       .filter(({ score }) => !onlyStrongMatches || score >= 84)
       .sort((a, b) => b.score - a.score);
-  }, [allTalents, currentUser.id, currentUser.role, onlyStrongMatches, query, startups]);
+  }, [allTalents, currentUser.id, currentUser.role, networkStartups, onlyStrongMatches, query]);
 
   const rankedStartups = useMemo(() => {
-    return startups
+    return networkStartups
       .map((startup) => ({ startup, score: currentUser.role === 'employee' ? scoreStartupForTalent(startup, currentUser) : (startup.verified ? 86 : 72) }))
       .filter(({ startup }) => !query || [startup.name, startup.tagline, startup.pitch, startup.industry, ...startup.techStack].join(' ').toLowerCase().includes(query.toLowerCase()))
       .filter(({ startup }) => industry === 'All' || startup.industry === industry)
       .filter(({ score }) => !onlyStrongMatches || score >= 84)
       .sort((a, b) => b.score - a.score);
-  }, [currentUser, industry, onlyStrongMatches, query, startups]);
+  }, [currentUser, industry, networkStartups, onlyStrongMatches, query]);
 
   const rankedRoles = useMemo(() => {
     return openRoles
@@ -121,6 +124,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
     { id: 'startups' as const, label: 'Startups', icon: Sparkles, count: rankedStartups.length },
     { id: 'opportunities' as const, label: 'Opportunities', icon: BriefcaseBusiness, count: rankedRoles.length },
     { id: 'connections' as const, label: 'Connections', icon: MessageCircle, count: incomingConnections.length },
+    { id: 'saved' as const, label: 'Saved', icon: Bookmark, count: savedPeople.length + savedStartups.length },
   ];
 
   return (
@@ -318,6 +322,31 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
         </section>
       )}
 
+      {activeTab === 'saved' && (
+        <section className="space-y-5">
+          <div className="mornai-market-panel rounded-[28px] p-5 sm:p-6">
+            <span className="mornai-section-kicker"><Bookmark className="h-3.5 w-3.5" /> Saved</span>
+            <h2 className="mt-3 text-xl font-black text-slate-950">Things you don't want to lose.</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Keep promising people and real startup opportunities one click away.</p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="mornai-person-card">
+              <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-950">Saved people</h3><span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-black text-violet-700">{savedPeople.length}</span></div>
+              <div className="mt-4 space-y-2">
+                {savedPeople.map((person) => <button key={person.id} type="button" onClick={() => setSelectedTalent(person)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3 text-left hover:border-violet-200"><img src={person.avatar} alt="" className="h-10 w-10 rounded-xl object-cover" /><span className="min-w-0 flex-1"><strong className="block truncate text-xs font-black text-slate-950">{person.name}</strong><span className="block truncate text-[10px] text-slate-500">{person.title}</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-300" /></button>)}
+                {savedPeople.length === 0 && <EmptyState title="No saved people yet" body="Bookmark a strong contributor from the People view." />}
+              </div>
+            </div>
+            <div className="mornai-person-card">
+              <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-950">Saved startups</h3><span className="rounded-full bg-sky-50 px-2 py-1 text-[9px] font-black text-sky-700">{savedStartups.length}</span></div>
+              <div className="mt-4 space-y-2">
+                {savedStartups.map((startup) => <button key={startup.id} type="button" onClick={() => onSelectStartup(startup)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3 text-left hover:border-violet-200"><img src={startup.logo} alt="" className="h-10 w-10 rounded-xl object-cover" /><span className="min-w-0 flex-1"><strong className="block truncate text-xs font-black text-slate-950">{startup.name}</strong><span className="block truncate text-[10px] text-slate-500">{startup.industry} • {startup.openRoles.filter((role) => role.status === 'open').length} open roles</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-300" /></button>)}
+                {savedStartups.length === 0 && <EmptyState title="No saved startups yet" body="Bookmark a real persisted startup from the Startups view." />}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
       {activeTab === 'connections' && (
         <section className="space-y-5">
           <div className="grid gap-4 lg:grid-cols-2">
