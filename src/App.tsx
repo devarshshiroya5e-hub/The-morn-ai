@@ -602,7 +602,9 @@ export default function App() {
 
     const userId = currentUser.id;
     const isRelatedToUser = (startup: Startup) =>
-      startup.founderId === userId || startup.members?.some((member) => member.userId === userId);
+      startup.founderId === userId
+      || startup.memberIds?.includes(userId)
+      || startup.members?.some((member) => member.userId === userId);
 
     const latestActive = activeStartupContext
       ? startups.find((startup) => startup.id === activeStartupContext.id)
@@ -648,6 +650,22 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  };
+
+  // AI Co-Founder always needs a real startup context. Never open a hidden/empty
+  // drawer when that context is still loading or unavailable.
+  const handleOpenAiDrawer = () => {
+    if (!activeStartupContext) {
+      showToast(
+        currentUser.role === 'founder'
+          ? 'Create or select a startup before opening AI Co-Founder.'
+          : 'Join a startup before opening AI Co-Founder.',
+      );
+      setIsAiDrawerOpen(false);
+      return;
+    }
+
+    setIsAiDrawerOpen(true);
   };
 
   // Open detailed startup profile
@@ -933,7 +951,7 @@ export default function App() {
           else if (tab === 'network') setActiveView('network');
           else setActiveView('home');
         }}
-        onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+        onOpenAiDrawer={handleOpenAiDrawer}
         onOpenRegisterStartup={() => setIsRegisterModalOpen(true)}
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenNotifications={() => setIsNotificationCenterOpen(true)}
@@ -975,7 +993,7 @@ export default function App() {
             onOpenWorkspace={() => { completeDailyAction(); setActiveView('workspace'); }}
             onOpenMessages={() => { completeDailyAction(); setActiveView('messages'); }}
             onOpenNotifications={() => setIsNotificationCenterOpen(true)}
-            onOpenAiDrawer={() => { completeDailyAction(); setIsAiDrawerOpen(true); }}
+            onOpenAiDrawer={() => { completeDailyAction(); handleOpenAiDrawer(); }}
             onOpenPricing={() => setIsPricingOpen(true)}
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
@@ -1029,7 +1047,7 @@ export default function App() {
                 appointments={appointments}
                 onUpdateStartup={handleUpdateStartup}
                 onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
-                onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+                onOpenAiDrawer={handleOpenAiDrawer}
               />
             ) : (
               <div className="mx-auto max-w-3xl p-10 text-center text-sm text-slate-500">Loading your startup workspace…</div>
@@ -1041,7 +1059,7 @@ export default function App() {
               appointments={appointments}
               onBookAppointment={handleOpenBookingModal}
               onUpdateTaskStatus={handleUpdateTaskStatus}
-              onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+              onOpenAiDrawer={handleOpenAiDrawer}
             />
           )
         )}
