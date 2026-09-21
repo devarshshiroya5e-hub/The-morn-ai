@@ -30,6 +30,8 @@ interface HomeDashboardProps {
   previousVisitAt?: number;
   unreadNotificationCount: number;
   connections: ConnectionRequest[];
+  dailyStreak: number;
+  dailyActionsCompleted: number;
   onOpenNetwork: (tab?: 'people' | 'startups' | 'opportunities') => void;
   onOpenWorkspace: () => void;
   onOpenMessages: () => void;
@@ -48,6 +50,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   previousVisitAt,
   unreadNotificationCount,
   connections,
+  dailyStreak,
+  dailyActionsCompleted,
   onOpenNetwork,
   onOpenWorkspace,
   onOpenMessages,
@@ -208,6 +212,23 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="mornai-daily-loop">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-600 shadow-sm"><Flame className="h-4 w-4" /></span>
+          <div className="min-w-0">
+            <p className="text-[9px] font-black uppercase tracking-[.15em] text-amber-600">Daily operating loop</p>
+            <p className="mt-1 text-sm font-black text-slate-950">{dailyStreak > 0 ? dailyStreak + ' day active streak' : 'Start your first active day'}</p>
+            <p className="mt-0.5 text-[10px] leading-5 text-slate-500">Do 3 useful things and tomorrow's MornAI home becomes more relevant.</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="flex items-center gap-1.5" aria-label="Daily progress">
+            {[0, 1, 2].map((step) => <span key={step} className={"h-2 w-8 rounded-full " + (step < dailyActionsCompleted ? "bg-violet-500 shadow-[0_0_12px_rgba(124,58,237,.18)]" : "bg-slate-200")} />)}
+          </div>
+          <span className="rounded-full bg-violet-50 px-2.5 py-1.5 text-[9px] font-black text-violet-700">{Math.min(3, dailyActionsCompleted)}/3</span>
         </div>
       </div>
 
