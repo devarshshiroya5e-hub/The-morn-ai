@@ -73,6 +73,7 @@ export const buildMornaiNotifications = (
   startups: Startup[],
   appointments: Appointment[],
   connections: ConnectionRequest[] = [],
+  followedStartupIds: string[] = [],
   now = Date.now(),
 ): MornaiNotification[] => {
   const items: MornaiNotification[] = [];
@@ -138,6 +139,23 @@ export const buildMornaiNotifications = (
         action: 'Review connection',
         startupId: connection.startupId,
       });
+    });
+
+  startups
+    .filter((startup) => followedStartupIds.includes(startup.id))
+    .forEach((startup) => {
+      const freshRole = startup.openRoles.find((role) => role.status === 'open' && dateToTimestamp(role.postedDate) > now - 7 * 86400000);
+      if (freshRole) {
+        items.push({
+          id: `followed-role-${startup.id}-${freshRole.id}`,
+          type: 'opportunity',
+          title: `New work at ${startup.name}`,
+          description: `${freshRole.title} is open and matches a startup you're following.`,
+          timestamp: dateToTimestamp(freshRole.postedDate),
+          action: 'View opportunity',
+          startupId: startup.id,
+        });
+      }
     });
 
   appointments
