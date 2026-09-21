@@ -719,3 +719,8 @@ body {
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
+
+
+/* AI drawer: one self-contained viewport, one scroll owner. */
+.mornai-ai-drawer { overscroll-behavior: none; }
+.mornai-ai-chat { min-height: 0; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; }
