@@ -20,7 +20,7 @@ import { HomeDashboard } from './components/HomeDashboard';
 import { MarketplacePage } from './components/MarketplacePage';
 import { NotificationCenter } from './components/NotificationCenter';
 import { PricingModal } from './components/PricingModal';
-import { buildMornaiNotifications, MornaiPreferences, normalizePreferences } from './components/mornaiSignals';
+import { buildMornaiNotifications, MornaiPreferences, nextDailyState, normalizePreferences } from './components/mornaiSignals';
 
 import { 
   initialStartups, 
@@ -117,7 +117,7 @@ export default function App() {
 
   // State: all appointments (syncs between founders and talent)
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [talentUsers, setTalentUsers] = useState<User[]>(mockTalentUsers);
+  const [talentUsers, setTalentUsers] = useState<User[]>([]);
   const [connections, setConnections] = useState<ConnectionRequest[]>([]);
   const [preferences, setPreferences] = useState<MornaiPreferences>({});
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
@@ -267,10 +267,26 @@ export default function App() {
   useEffect(() => {
     if (!isLoggedIn || !currentUser.id) return;
     const timer = window.setTimeout(() => {
-      persistPreferences({ lastVisitedAt: Date.now() });
+      setPreferences((previous) => {
+        const next = nextDailyState(previous);
+        void setDoc(
+          doc(db, 'users', currentUser.id, 'preferences', 'mornai'),
+          { ...next, lastVisitedAt: previous.lastVisitedAt || Date.now() },
+          { merge: true },
+        ).catch((error) => console.error('Failed to persist daily activity:', error));
+        return { ...next, lastVisitedAt: previous.lastVisitedAt || Date.now() };
+      });
     }, 1800);
     return () => window.clearTimeout(timer);
   }, [isLoggedIn, currentUser.id]);
+
+  const completeDailyAction = () => {
+    setPreferences((previous) => {
+      const next = { ...previous, dailyActionsCompleted: Math.min(3, (previous.dailyActionsCompleted || 0) + 1) };
+      void setDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'), next, { merge: true }).catch((error) => console.error('Failed to persist daily action:', error));
+      return next;
+    });
+  };
 
   const togglePreferenceId = (field: 'savedTalentIds' | 'savedStartupIds' | 'followedStartupIds', id: string) => {
     const current = preferences[field] || [];
@@ -308,17 +324,14 @@ export default function App() {
       (snapshot) => {
         const remote = snapshot.docs
           .map((profileDoc) => normalizeUser({ ...(profileDoc.data() as User), id: profileDoc.id }))
-          .filter((profile) => profile.id !== currentUser.id && profile.role === 'employee');
+          .filter((profile) => profile.id !== currentUser.id)
+          .filter((profile) => currentUser.role === 'founder' ? profile.role === 'employee' : profile.role === 'founder');
 
-        const remoteIds = new Set(remote.map((profile) => profile.id));
-        setTalentUsers([
-          ...remote,
-          ...mockTalentUsers.filter((profile) => !remoteIds.has(profile.id)),
-        ]);
+        setTalentUsers(remote);
       },
       (error) => {
         console.error('Failed to load public network profiles:', error);
-        setTalentUsers(mockTalentUsers);
+        setTalentUsers([]);
       },
     );
 
@@ -870,13 +883,14 @@ export default function App() {
             unreadNotificationCount={unreadNotificationCount}
             connections={connections}
             onOpenNetwork={(tab) => {
+              completeDailyAction();
               setActiveView('network');
               if (tab) window.sessionStorage.setItem('mornai-network-tab', tab);
             }}
-            onOpenWorkspace={() => setActiveView('workspace')}
-            onOpenMessages={() => setActiveView('messages')}
+            onOpenWorkspace={() => { completeDailyAction(); setActiveView('workspace'); }}
+            onOpenMessages={() => { completeDailyAction(); setActiveView('messages'); }}
             onOpenNotifications={() => setIsNotificationCenterOpen(true)}
-            onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+            onOpenAiDrawer={() => { completeDailyAction(); setIsAiDrawerOpen(true); }}
             onOpenPricing={() => setIsPricingOpen(true)}
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
