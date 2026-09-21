@@ -46,9 +46,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
   return (
     <AnimatePresence>
-      <motion.div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-        <motion.div initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .98 }} className="mornai-pricing-modal w-full max-w-6xl rounded-[32px] p-5 sm:p-7">
-          <div className="flex items-start justify-between gap-4">
+      <motion.div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+        <div className="flex min-h-full items-start justify-center sm:items-center">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-pricing-modal my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] sm:my-0 sm:max-h-[calc(100dvh-2.5rem)]">
+            <div className="shrink-0 p-4 pb-3 sm:p-5 sm:pb-3">
+              <div className="flex items-start justify-between gap-4">
             <div>
               <span className="mornai-section-kicker"><Crown className="h-3.5 w-3.5" /> MornAI Pro</span>
               <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Pay for leverage, not another dashboard.</h2>
@@ -62,7 +64,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             <button type="button" onClick={() => setAnnual((value) => !value)} className={`mornai-billing-toggle ${annual ? 'is-active' : ''}`}><span className={annual ? 'is-on' : ''}>Annual</span><span className={!annual ? 'is-on' : ''}>Monthly</span></button>
           </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-5">
+          <div className="grid gap-3 pb-1 lg:grid-cols-3">
             {plans.map((plan) => (
               <div key={plan.name} className={`mornai-price-card ${plan.featured ? 'is-featured' : ''}`}>
                 {plan.featured && <span className="mornai-price-badge">Most useful</span>}
@@ -78,11 +83,13 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             ))}
           </div>
 
-          <div className="mt-5 rounded-[22px] border border-violet-100 bg-gradient-to-r from-violet-50/90 via-white to-sky-50/80 p-4">
+          <div className="mt-4 rounded-[22px] border border-violet-100 bg-gradient-to-r from-violet-50/90 via-white to-sky-50/80 p-4">
             <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-600">Pricing principle</p>
             <p className="mt-1 text-xs leading-5 text-slate-600">The marketplace stays useful for free. Premium is about speed, context, automation, and better decisions. That makes the paid value visible instead of holding basic networking hostage.</p>
           </div>
-        </motion.div>
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );
