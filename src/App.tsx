@@ -251,6 +251,14 @@ export default function App() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+
+  // Never leave an invisible AI drawer state behind while the startup context is unavailable.
+  useEffect(() => {
+    if (!activeStartupContext && isAiDrawerOpen) {
+      setIsAiDrawerOpen(false);
+    }
+  }, [activeStartupContext, isAiDrawerOpen]);
+
   // Authentication is always the first visible page. Existing Firebase sessions
   // are restored in the background and the auth page closes after a short delay.
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
