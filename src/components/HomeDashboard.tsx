@@ -30,6 +30,7 @@ interface HomeDashboardProps {
   previousVisitAt?: number;
   unreadNotificationCount: number;
   connections: ConnectionRequest[];
+  followedStartupIds: string[];
   dailyStreak: number;
   dailyActionsCompleted: number;
   onOpenNetwork: (tab?: 'people' | 'startups' | 'opportunities') => void;
@@ -50,6 +51,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   previousVisitAt,
   unreadNotificationCount,
   connections,
+  followedStartupIds,
   dailyStreak,
   dailyActionsCompleted,
   onOpenNetwork,
@@ -69,8 +71,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   );
 
   const notifications = useMemo(
-    () => buildMornaiNotifications(currentUser, liveStartups, appointments, connections),
-    [appointments, connections, currentUser, liveStartups],
+    () => buildMornaiNotifications(currentUser, liveStartups, appointments, connections, followedStartupIds),
+    [appointments, connections, currentUser, followedStartupIds, liveStartups],
   );
 
   const matchCards = useMemo(() => {
