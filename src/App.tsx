@@ -628,6 +628,7 @@ export default function App() {
     const preferred =
       savedStartup ||
       startups.find((startup) => startup.founderId === userId) ||
+      startups.find((startup) => startup.memberIds?.includes(userId)) ||
       startups.find((startup) => startup.members?.some((member) => member.userId === userId)) ||
       null;
 
@@ -1075,7 +1076,7 @@ export default function App() {
                 appointments={appointments}
                 onUpdateStartup={handleUpdateStartup}
                 onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
-                onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+                onOpenAiDrawer={handleOpenAiDrawer}
               />
             ) : (
               <div className="mx-auto max-w-3xl p-10 text-center text-sm text-slate-500">Loading your startup workspace…</div>
@@ -1087,7 +1088,7 @@ export default function App() {
               appointments={appointments}
               onBookAppointment={handleOpenBookingModal}
               onUpdateTaskStatus={handleUpdateTaskStatus}
-              onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+              onOpenAiDrawer={handleOpenAiDrawer}
             />
           )
         )}
