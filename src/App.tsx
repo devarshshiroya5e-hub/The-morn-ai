@@ -252,13 +252,6 @@ export default function App() {
 
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
 
-  // Never leave an invisible AI drawer state behind while the startup context is unavailable.
-  useEffect(() => {
-    if (!activeStartupContext && isAiDrawerOpen) {
-      setIsAiDrawerOpen(false);
-    }
-  }, [activeStartupContext, isAiDrawerOpen]);
-
   // Authentication is always the first visible page. Existing Firebase sessions
   // are restored in the background and the auth page closes after a short delay.
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -268,6 +261,13 @@ export default function App() {
   // Active startup for the Founder Workspace and AI Co-Founder Chat.
   // It is persisted per user so refreshes cannot silently switch a founder to a demo startup.
   const [activeStartupContext, setActiveStartupContext] = useState<Startup | null>(null);
+
+  // Never leave an invisible AI drawer state behind while the startup context is unavailable.
+  useEffect(() => {
+    if (!activeStartupContext && isAiDrawerOpen) {
+      setIsAiDrawerOpen(false);
+    }
+  }, [activeStartupContext, isAiDrawerOpen]);
 
   // Personal retention preferences live in the existing user preference path.
   // This keeps saved people/startups, notification state, and the last visit consistent across devices.
