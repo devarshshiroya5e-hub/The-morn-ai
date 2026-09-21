@@ -180,7 +180,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[.18em] text-violet-200">While you were away</p>
                 <p className="mt-1 text-sm font-black text-white">
-                  {unreadNotificationCount ? `${unreadNotificationCount} things need a look` : 'You're caught up'}
+                  {unreadNotificationCount ? `${unreadNotificationCount} things need a look` : "You're caught up"}
                 </p>
               </div>
               <Flame className="h-4 w-4 text-amber-300" />
