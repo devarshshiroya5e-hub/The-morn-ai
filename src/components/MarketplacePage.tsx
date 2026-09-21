@@ -21,10 +21,10 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { RolePost, Startup, User } from '../types';
+import { ConnectionRequest, RolePost, Startup, User } from '../types';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
 
-type MarketplaceTab = 'people' | 'startups' | 'opportunities';
+type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections';
 
 interface MarketplacePageProps {
   currentUser: User;
@@ -33,9 +33,12 @@ interface MarketplacePageProps {
   savedTalentIds: string[];
   savedStartupIds: string[];
   followedStartupIds: string[];
+  connections: ConnectionRequest[];
   onToggleSavedTalent: (id: string) => void;
   onToggleSavedStartup: (id: string) => void;
   onToggleFollowStartup: (id: string) => void;
+  onSendConnection: (user: User) => void;
+  onUpdateConnectionStatus: (connectionId: string, status: ConnectionRequest['status']) => void;
   onSelectStartup: (startup: Startup) => void;
   onBookAppointment: (startup: Startup, role?: RolePost) => void;
   initialTab?: MarketplaceTab;
@@ -48,9 +51,12 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   savedTalentIds,
   savedStartupIds,
   followedStartupIds,
+  connections,
   onToggleSavedTalent,
   onToggleSavedStartup,
   onToggleFollowStartup,
+  onSendConnection,
+  onUpdateConnectionStatus,
   onSelectStartup,
   onBookAppointment,
   initialTab,
@@ -101,10 +107,20 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
       .sort((a, b) => b.score - a.score);
   }, [currentUser, industry, openRoles, onlyStrongMatches, query]);
 
+  const incomingConnections = connections.filter((connection) => connection.toUserId === currentUser.id && connection.status === 'pending');
+  const outgoingConnections = connections.filter((connection) => connection.fromUserId === currentUser.id && connection.status === 'pending');
+  const acceptedConnections = connections.filter((connection) => connection.status === 'accepted');
+  const getConnectionFor = (userId: string) =>
+    connections.find((connection) =>
+      (connection.fromUserId === currentUser.id && connection.toUserId === userId) ||
+      (connection.toUserId === currentUser.id && connection.fromUserId === userId)
+    );
+
   const tabMeta = [
     { id: 'people' as const, label: 'People', icon: Users, count: rankedTalents.length },
     { id: 'startups' as const, label: 'Startups', icon: Sparkles, count: rankedStartups.length },
     { id: 'opportunities' as const, label: 'Opportunities', icon: BriefcaseBusiness, count: rankedRoles.length },
+    { id: 'connections' as const, label: 'Connections', icon: MessageCircle, count: incomingConnections.length },
   ];
 
   return (
@@ -212,7 +228,23 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
 
               <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3">
                 <button type="button" onClick={() => setSelectedTalent(talent)} className="mornai-market-secondary flex-1">View profile</button>
-                <button type="button" onClick={() => onOpenPeopleAction(talent, currentUser, startups, onSelectStartup)} className="mornai-market-primary"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>
+                {(() => {
+                  const connection = getConnectionFor(talent.id);
+                  const incoming = connection?.toUserId === currentUser.id && connection.status === 'pending';
+                  const outgoing = connection?.fromUserId === currentUser.id && connection.status === 'pending';
+                  const connected = connection?.status === 'accepted';
+                  return (
+                    <button
+                      type="button"
+                      disabled={outgoing || connected}
+                      onClick={() => incoming ? setActiveTab('connections') : onSendConnection(talent)}
+                      className={`mornai-market-primary flex-1 justify-center ${outgoing || connected ? 'cursor-default opacity-70' : ''}`}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      {connected ? 'Connected' : outgoing ? 'Requested' : incoming ? 'Respond' : 'Connect'}
+                    </button>
+                  );
+                })()}
               </div>
             </article>
           ))}
@@ -286,6 +318,85 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
         </section>
       )}
 
+      {activeTab === 'connections' && (
+        <section className="space-y-5">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="mornai-person-card">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <span className="mornai-section-kicker">Needs your reply</span>
+                  <h2 className="mt-3 text-lg font-black text-slate-950">Incoming connections</h2>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">People who want to build a relationship around your startup or network.</p>
+                </div>
+                <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-black text-violet-700">{incomingConnections.length}</span>
+              </div>
+              <div className="mt-4 space-y-2">
+                {incomingConnections.map((connection) => (
+                  <div key={connection.id} className="rounded-2xl border border-slate-200 bg-white/75 p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-600">
+                        {connection.fromAvatar ? <img src={connection.fromAvatar} alt="" className="h-full w-full object-cover" /> : <Users className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-black text-slate-950">{connection.fromName}</p>
+                        <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-500">{connection.roleTitle || connection.startupName || 'MornAI network connection'}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button type="button" onClick={() => onUpdateConnectionStatus(connection.id, 'declined')} className="mornai-market-secondary flex-1">Decline</button>
+                      <button type="button" onClick={() => onUpdateConnectionStatus(connection.id, 'accepted')} className="mornai-market-primary flex-1">Accept <CheckCircle2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </div>
+                ))}
+                {incomingConnections.length === 0 && <EmptyState title="No connection requests" body="When someone wants to connect with you, it will appear here." />}
+              </div>
+            </div>
+
+            <div className="mornai-person-card">
+              <div>
+                <span className="mornai-section-kicker">Your network</span>
+                <h2 className="mt-3 text-lg font-black text-slate-950">Connection history</h2>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">Keep the relationships that matter visible instead of losing them in a feed.</p>
+              </div>
+              <div className="mt-4 space-y-2">
+                {acceptedConnections.slice(0, 8).map((connection) => {
+                  const otherId = connection.fromUserId === currentUser.id ? connection.toUserId : connection.fromUserId;
+                  const otherName = connection.fromUserId === currentUser.id ? connection.toName : connection.fromName;
+                  const otherAvatar = connection.fromUserId === currentUser.id ? connection.toAvatar : connection.fromAvatar;
+                  return (
+                    <div key={connection.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-emerald-50 text-emerald-600">
+                        {otherAvatar ? <img src={otherAvatar} alt="" className="h-full w-full object-cover" /> : <Users className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-black text-slate-950">{otherName}</p>
+                        <p className="mt-0.5 truncate text-[10px] text-slate-500">{connection.startupName || 'Connected on MornAI'}</p>
+                      </div>
+                      <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700">Connected</span>
+                    </div>
+                  );
+                })}
+                {outgoingConnections.slice(0, 5).map((connection) => (
+                  <div key={connection.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-600">
+                      {connection.toAvatar ? <img src={connection.toAvatar} alt="" className="h-full w-full object-cover" /> : <Users className="h-4 w-4" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-black text-slate-950">{connection.toName}</p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">Waiting for response</p>
+                    </div>
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[9px] font-black text-amber-700">Pending</span>
+                  </div>
+                ))}
+                {acceptedConnections.length === 0 && outgoingConnections.length === 0 && (
+                  <EmptyState title="Your network is just getting started" body="Connect with a person whose skills or startup interests line up with yours." />
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="rounded-[24px] border border-violet-100 bg-gradient-to-r from-violet-50/90 via-white to-sky-50/80 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-violet-600 shadow-sm"><ShieldCheck className="h-4 w-4" /></div>
@@ -337,7 +448,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
 
               <div className="mt-5 flex gap-2">
                 <button type="button" onClick={() => onToggleSavedTalent(selectedTalent.id)} className="mornai-market-secondary flex-1"><Bookmark className="h-3.5 w-3.5" /> {savedTalentIds.includes(selectedTalent.id) ? 'Saved' : 'Save person'}</button>
-                <button type="button" onClick={() => setSelectedTalent(null)} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Continue</button>
+                <button type="button" onClick={() => { onSendConnection(selectedTalent); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>
               </div>
             </motion.div>
           </motion.div>
@@ -364,7 +475,3 @@ const MiniSignal = ({ label, value, icon }: { label: string; value: string; icon
 
 const NetworkDot = () => <span className="grid h-2 w-2 rounded-full bg-violet-500 shadow-[0_0_0_4px_rgba(124,58,237,.10)]" />;
 
-const onOpenPeopleAction = (talent: User, currentUser: User, startups: Startup[], onSelectStartup: (startup: Startup) => void) => {
-  const related = startups.find((startup) => startup.founderId === currentUser.id);
-  if (related) onSelectStartup(related);
-};
