@@ -58,28 +58,8 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  // Lock the document while the drawer is open so wheel/touch gestures belong
-  // to the AI panel instead of moving the page underneath it.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-    const previousHtmlOverflow = html.style.overflow;
-    const previousBodyOverflow = body.style.overflow;
-    const previousBodyOverscroll = body.style.overscrollBehavior;
-
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    body.style.overscrollBehavior = 'none';
-
-    return () => {
-      html.style.overflow = previousHtmlOverflow;
-      body.style.overflow = previousBodyOverflow;
-      body.style.overscrollBehavior = previousBodyOverscroll;
-    };
-  }, [isOpen]);
-
+  // Keep the document scrollable. The drawer is fixed to the viewport and the
+  // message area owns its own scroll, so opening AI can never strand the page.
   // Scroll only the message viewport. scrollIntoView() would also move the
   // document, which is exactly the weird page jump we do not want.
   useEffect(() => {
@@ -90,7 +70,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
     requestAnimationFrame(() => {
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'smooth',
+        behavior: 'auto',
       });
     });
   }, [messages, isOpen]);
