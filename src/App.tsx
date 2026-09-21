@@ -204,6 +204,9 @@ export default function App() {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Navigation: 'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'
+  const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('home');
+
   // Keep browser scroll restoration from reusing the previous document position.
   useEffect(() => {
     if (typeof window === 'undefined' || !('scrollRestoration' in window.history)) return;
@@ -237,7 +240,7 @@ export default function App() {
   }, [activeView, isLoggedIn, sessionRestoreComplete]);
 
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-  const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('home');
+
 
   // Modals & Drawers
   const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
