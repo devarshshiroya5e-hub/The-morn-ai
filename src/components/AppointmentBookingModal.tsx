@@ -302,6 +302,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           </form>
         )}
 
+        </div>
       </div>
     </div>
   );
