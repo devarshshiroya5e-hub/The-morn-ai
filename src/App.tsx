@@ -4,7 +4,6 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
-import { DiscoverStartups } from './components/DiscoverStartups';
 import { StartupDetailModal } from './components/StartupDetailModal';
 import { FounderWorkspace } from './components/FounderWorkspace';
 import { TalentWorkspace } from './components/TalentWorkspace';
@@ -17,6 +16,11 @@ import { ProfilePage } from './components/ProfilePage';
 import { ChatPage } from './components/ChatPage';
 import { LandingPage } from './components/LandingPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { HomeDashboard } from './components/HomeDashboard';
+import { MarketplacePage } from './components/MarketplacePage';
+import { NotificationCenter } from './components/NotificationCenter';
+import { PricingModal } from './components/PricingModal';
+import { buildMornaiNotifications, MornaiPreferences, normalizePreferences } from './components/mornaiSignals';
 
 import { 
   initialStartups, 
@@ -113,6 +117,9 @@ export default function App() {
 
   // State: all appointments (syncs between founders and talent)
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [preferences, setPreferences] = useState<MornaiPreferences>({});
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,7 +205,7 @@ export default function App() {
   }, [isLoggedIn]);
 
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-  const [activeView, setActiveView] = useState<'discover' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('discover');
+  const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('home');
 
   // Modals & Drawers
   const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
@@ -218,6 +225,73 @@ export default function App() {
   // Active startup for the Founder Workspace and AI Co-Founder Chat.
   // It is persisted per user so refreshes cannot silently switch a founder to a demo startup.
   const [activeStartupContext, setActiveStartupContext] = useState<Startup | null>(null);
+
+  // Personal retention preferences live in the existing user preference path.
+  // This keeps saved people/startups, notification state, and the last visit consistent across devices.
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser.id) {
+      setPreferences({});
+      return;
+    }
+
+    let cancelled = false;
+    const loadPreferences = async () => {
+      try {
+        const snapshot = await getDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'));
+        if (cancelled) return;
+        setPreferences(snapshot.exists() ? normalizePreferences(snapshot.data()) : {});
+      } catch (error) {
+        console.error('Failed to load MornAI preferences:', error);
+        if (!cancelled) setPreferences({});
+      }
+    };
+
+    void loadPreferences();
+    return () => { cancelled = true; };
+  }, [isLoggedIn, currentUser.id]);
+
+  const persistPreferences = (patch: Partial<MornaiPreferences>) => {
+    setPreferences((previous) => {
+      const next = { ...previous, ...patch };
+      void setDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'), next, { merge: true }).catch((error) => {
+        console.error('Failed to persist MornAI preference:', error);
+      });
+      return next;
+    });
+  };
+
+  // Record a completed app visit after the current session has had a moment to render.
+  // The previous timestamp remains available during the first render so Home can explain what changed.
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser.id) return;
+    const timer = window.setTimeout(() => {
+      persistPreferences({ lastVisitedAt: Date.now() });
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [isLoggedIn, currentUser.id]);
+
+  const togglePreferenceId = (field: 'savedTalentIds' | 'savedStartupIds' | 'followedStartupIds', id: string) => {
+    const current = preferences[field] || [];
+    const next = current.includes(id) ? current.filter((value) => value !== id) : [...current, id];
+    persistPreferences({ [field]: next });
+  };
+
+  const toggleSavedTalent = (id: string) => togglePreferenceId('savedTalentIds', id);
+  const toggleSavedStartup = (id: string) => togglePreferenceId('savedStartupIds', id);
+  const toggleFollowedStartup = (id: string) => togglePreferenceId('followedStartupIds', id);
+
+  const notificationItems = buildMornaiNotifications(currentUser, startups, appointments);
+  const unreadNotificationCount = notificationItems.filter((item) => !(preferences.readNotificationIds || []).includes(item.id)).length;
+
+  const markNotificationRead = (id: string) => {
+    const current = preferences.readNotificationIds || [];
+    if (current.includes(id)) return;
+    persistPreferences({ readNotificationIds: [...current, id] });
+  };
+
+  const markAllNotificationsRead = () => {
+    persistPreferences({ readNotificationIds: notificationItems.map((item) => item.id) });
+  };
 
   // Persisted startups are the source of truth for anything created inside the product.
   // Mock startups remain available for the demo network, while Firestore startups survive refreshes.
@@ -565,7 +639,7 @@ export default function App() {
   if (activeView === 'privacy') {
     return (
       <PrivacyPolicyPage
-        onBack={() => setActiveView(isLoggedIn ? 'discover' : 'discover')}
+        onBack={() => setActiveView(isLoggedIn ? 'home' : 'home')}
       />
     );
   }
@@ -592,11 +666,27 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         currentUser={currentUser}
-        activeTab={activeView === 'profile' ? 'profile' : activeView === 'messages' ? 'messages' : activeView === 'appointments' ? 'appointments' : activeView === 'workspace' ? 'workspace' : 'discover'}
-        setActiveTab={(tab) => setActiveView(tab === 'profile' ? 'profile' : tab === 'messages' ? 'messages' : tab === 'appointments' ? 'appointments' : tab === 'workspace' ? 'workspace' : 'discover')}
+        activeTab={
+          activeView === 'profile' ? 'profile' :
+          activeView === 'messages' ? 'messages' :
+          activeView === 'appointments' ? 'appointments' :
+          activeView === 'workspace' ? 'workspace' :
+          activeView === 'network' ? 'network' :
+          'home'
+        }
+        setActiveTab={(tab) => {
+          if (tab === 'profile') setActiveView('profile');
+          else if (tab === 'messages') setActiveView('messages');
+          else if (tab === 'appointments') setActiveView('appointments');
+          else if (tab === 'workspace') setActiveView('workspace');
+          else if (tab === 'network') setActiveView('network');
+          else setActiveView('home');
+        }}
         onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
         onOpenRegisterStartup={() => setIsRegisterModalOpen(true)}
-        onOpenPricing={() => {}}
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenNotifications={() => setIsNotificationCenterOpen(true)}
+        notificationCount={unreadNotificationCount}
         appointmentCount={appointments.length}
         onOpenAuthModal={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
       />
@@ -613,15 +703,47 @@ export default function App() {
             className="min-h-full"
           >
 
-        {/* VIEW 1: DISCOVER ONGOING STARTUPS */}
-        {activeView === 'discover' && (
-          <DiscoverStartups
-            startups={startups}
+        {/* VIEW 1: DAILY HOME / RETENTION HUB */}
+        {activeView === 'home' && (
+          <HomeDashboard
             currentUser={currentUser}
+            startups={startups}
+            appointments={appointments}
+            allTalents={mockTalentUsers}
+            previousVisitAt={preferences.lastVisitedAt}
+            unreadNotificationCount={unreadNotificationCount}
+            onOpenNetwork={(tab) => {
+              setActiveView('network');
+              if (tab) window.sessionStorage.setItem('mornai-network-tab', tab);
+            }}
+            onOpenWorkspace={() => setActiveView('workspace')}
+            onOpenMessages={() => setActiveView('messages')}
+            onOpenNotifications={() => setIsNotificationCenterOpen(true)}
+            onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
+            onOpenPricing={() => setIsPricingOpen(true)}
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
-            onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
-            onOpenWorldChat={() => setActiveView('messages')}
+          />
+        )}
+
+        {/* VIEW 2: TWO-SIDED STARTUP NETWORK */}
+        {activeView === 'network' && (
+          <MarketplacePage
+            currentUser={currentUser}
+            startups={startups}
+            allTalents={mockTalentUsers}
+            savedTalentIds={preferences.savedTalentIds || []}
+            savedStartupIds={preferences.savedStartupIds || []}
+            followedStartupIds={preferences.followedStartupIds || []}
+            onToggleSavedTalent={toggleSavedTalent}
+            onToggleSavedStartup={toggleSavedStartup}
+            onToggleFollowStartup={toggleFollowedStartup}
+            onSelectStartup={handleSelectStartup}
+            onBookAppointment={handleOpenBookingModal}
+            initialTab={
+              (window.sessionStorage.getItem('mornai-network-tab') as 'people' | 'startups' | 'opportunities' | null) ||
+              undefined
+            }
           />
         )}
 
@@ -632,7 +754,7 @@ export default function App() {
             selectedRole={bookingModalRole}
             currentUser={currentUser}
             onConfirmAppointment={handleConfirmAppointment}
-            onCancel={() => setActiveView('discover')}
+            onCancel={() => setActiveView('network')}
             onDone={() => setActiveView('appointments')}
           />
         )}
@@ -718,7 +840,7 @@ export default function App() {
               setSessionRestoreComplete(true);
               setIsAuthModalOpen(false);
               setAuthMode('login');
-                  setActiveView('discover');
+                  setActiveView('home');
             }}
           />
         )}
@@ -765,6 +887,31 @@ export default function App() {
         onClose={() => setIsRegisterModalOpen(false)}
         currentUser={currentUser}
         onRegisterStartup={handleRegisterStartup}
+      />
+
+      <NotificationCenter
+        isOpen={isNotificationCenterOpen}
+        currentUser={currentUser}
+        startups={startups}
+        appointments={appointments}
+        readNotificationIds={preferences.readNotificationIds || []}
+        onClose={() => setIsNotificationCenterOpen(false)}
+        onMarkRead={markNotificationRead}
+        onMarkAllRead={markAllNotificationsRead}
+        onOpenNetwork={(tab) => {
+          setIsNotificationCenterOpen(false);
+          setActiveView('network');
+          if (tab) window.sessionStorage.setItem('mornai-network-tab', tab);
+        }}
+        onOpenWorkspace={() => {
+          setIsNotificationCenterOpen(false);
+          setActiveView('workspace');
+        }}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
       />
 
       {/* Footer */}
