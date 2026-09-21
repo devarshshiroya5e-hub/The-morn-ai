@@ -14,16 +14,21 @@ import {
   ChevronDown,
   LogOut,
   Gauge,
+  Home,
+  BellRing,
+  Network,
 } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: User;
-  activeTab: 'discover' | 'workspace' | 'appointments' | 'messages' | 'talents' | 'profile';
-  setActiveTab: (tab: 'discover' | 'workspace' | 'appointments' | 'messages' | 'talents' | 'profile') => void;
+  activeTab: 'home' | 'network' | 'workspace' | 'appointments' | 'messages' | 'profile';
+  setActiveTab: (tab: 'home' | 'network' | 'workspace' | 'appointments' | 'messages' | 'profile') => void;
   onOpenAiDrawer: () => void;
   onOpenAuthModal: () => void;
   onOpenRegisterStartup: () => void;
   onOpenPricing: () => void;
+  onOpenNotifications: () => void;
+  notificationCount: number;
   appointmentCount: number;
 }
 
@@ -35,17 +40,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuthModal,
   onOpenRegisterStartup,
   onOpenPricing,
+  onOpenNotifications,
+  notificationCount,
   appointmentCount,
 }) => {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
 
   const navItems: Array<{
-    id: 'discover' | 'workspace' | 'messages';
+    id: 'home' | 'network' | 'workspace' | 'messages';
     label: string;
     icon: typeof Compass;
     badge?: number;
   }> = [
-    { id: 'discover' as const, label: 'Discover', icon: Compass },
+    { id: 'home' as const, label: 'Home', icon: Home },
+    { id: 'network' as const, label: 'Network', icon: Network },
     {
       id: 'workspace' as const,
       label: currentUser.role === 'founder' ? 'Workspace' : 'Dashboard',
@@ -136,6 +144,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Crown className="h-3.5 w-3.5 text-amber-500" />
             Pro
+          </button>
+
+          <button
+            id="header-notifications-btn"
+            type="button"
+            onClick={onOpenNotifications}
+            className="mornai-notification-trigger relative grid h-10 w-10 place-items-center rounded-2xl text-slate-500"
+            aria-label="Notifications"
+          >
+            <BellRing className="h-4 w-4" />
+            {notificationCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-violet-600 px-1 text-[9px] font-black text-white shadow-lg">
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </span>
+            )}
           </button>
 
           <div className="relative">
