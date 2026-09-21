@@ -192,6 +192,18 @@ export interface ChatMessage {
 }
 
 
+export interface MornaiPreferencesData {
+  lastVisitedAt?: number;
+  savedTalentIds?: string[];
+  savedStartupIds?: string[];
+  followedStartupIds?: string[];
+  readNotificationIds?: string[];
+  dailyFocus?: string;
+  dailyStreak?: number;
+  lastActiveDate?: string;
+  dailyActionsCompleted?: number;
+}
+
 export interface ConnectionRequest {
   id: string;
   fromUserId: string;
