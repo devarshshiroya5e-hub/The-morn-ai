@@ -260,8 +260,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-2 backdrop-blur-sm sm:p-4">
-      <div className="relative flex h-[calc(100dvh-1rem)] max-h-[920px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-[calc(100dvh-2rem)]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/55 p-2 backdrop-blur-sm sm:p-4">
+      <div className="relative mx-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2rem)]">
         
         {/* Close Button */}
         <button
