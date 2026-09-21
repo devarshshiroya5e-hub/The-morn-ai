@@ -606,3 +606,29 @@ select.mornai-memory-log-field{appearance:auto;cursor:pointer;}
   .mornai-website-preview-hero{grid-template-columns:1fr;}
 }
 
+
+
+/* Butter-smooth MornAI motion surfaces */
+.mornai-auth-scroll,
+.mornai-auth-surface,
+.mornai-main {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+.mornai-auth-surface {
+  transform-origin: 50% 50%;
+  will-change: transform, opacity, filter;
+}
+.mornai-main {
+  isolation: isolate;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mornai-auth-card,
+  .mornai-auth-feature,
+  .mornai-glass-button,
+  .mornai-glass-nav-link,
+  .mornai-nav-close {
+    transition-timing-function: cubic-bezier(.16,1,.3,1);
+  }
+}
