@@ -1,8 +1,8 @@
-import { Appointment, Startup, User } from '../types';
+import { Appointment, ConnectionRequest, Startup, User } from '../types';
 
 export interface MornaiNotification {
   id: string;
-  type: 'match' | 'message' | 'progress' | 'opportunity' | 'appointment';
+  type: 'match' | 'message' | 'progress' | 'opportunity' | 'appointment' | 'connection';
   title: string;
   description: string;
   timestamp: number;
@@ -66,6 +66,7 @@ export const buildMornaiNotifications = (
   user: User,
   startups: Startup[],
   appointments: Appointment[],
+  connections: ConnectionRequest[] = [],
   now = Date.now(),
 ): MornaiNotification[] => {
   const items: MornaiNotification[] = [];
@@ -116,6 +117,22 @@ export const buildMornaiNotifications = (
         });
       });
   }
+
+  connections
+    .filter((connection) => connection.toUserId === user.id && connection.status === 'pending')
+    .forEach((connection) => {
+      items.push({
+        id: `connection-${connection.id}`,
+        type: 'connection',
+        title: `${connection.fromName} wants to connect`,
+        description: connection.startupName
+          ? `${connection.fromName} reached out around ${connection.startupName}.`
+          : 'A MornAI member wants to add you to their network.',
+        timestamp: connection.createdAtClient || now,
+        action: 'Review connection',
+        startupId: connection.startupId,
+      });
+    });
 
   appointments
     .filter((appointment) => appointment.status === 'pending' || appointment.status === 'confirmed')
