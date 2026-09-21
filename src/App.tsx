@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
@@ -913,15 +913,13 @@ export default function App() {
 
       {/* Main Content View */}
       <main className="mornai-main flex-1 pb-16">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={activeView}
-            initial={{ opacity: 0, y: 12, scale: 0.997 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.998 }}
-            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
-            className="min-h-full"
-          >
+        <motion.div
+          key={activeView}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.14, ease: 'easeOut' }}
+          className="mornai-page-transition min-h-full"
+        >
 
         {/* VIEW 1: DAILY HOME / RETENTION HUB */}
         {activeView === 'home' && (
@@ -1073,8 +1071,7 @@ export default function App() {
           />
         )}
 
-          </motion.div>
-        </AnimatePresence>
+        </motion.div>
       </main>
 
       {/* MODALS */}
