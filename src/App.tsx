@@ -589,7 +589,7 @@ export default function App() {
     const startup = currentUser.role === 'founder'
       ? startups.find((candidate) => candidate.founderId === currentUser.id)
       : undefined;
-    const id = `connection-${currentUser.id}-${targetUser.id}-${startup?.id || 'network'}`;
+    const id = `connection-${crypto.randomUUID()}`;
 
     try {
       await setDoc(doc(db, 'connections', id), {
