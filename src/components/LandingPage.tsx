@@ -8,16 +8,16 @@ interface LandingPageProps {
 }
 
 const features = [
-  { icon: BrainCircuit, title: 'AI Co-Founder', desc: 'Use your startup context to get strategy, priorities, decisions and next actions without starting every conversation from zero.' },
-  { icon: Target, title: 'Living Roadmap', desc: 'Turn goals into milestones, tasks and priorities that evolve with your startup instead of sitting in a forgotten document.' },
-  { icon: UsersRound, title: 'Build the Right Team', desc: 'Find people by skills, goals and startup needs, then connect work to the roles your company actually requires.' },
-  { icon: BriefcaseBusiness, title: 'Execution Workspace', desc: 'Keep startup memory, work, appointments, people and progress in one operating layer built around the company.' },
+  { icon: UsersRound, title: 'Find Real People', desc: 'Discover contributors, founders and startup builders by skills, goals, experience and the work they actually want to do.' },
+  { icon: Target, title: 'Match the Need', desc: 'Turn an open startup problem into a clear opportunity so the right people can understand the work before they connect.' },
+  { icon: BrainCircuit, title: 'Use AI as Leverage', desc: 'Let MornAI keep company context, prepare conversations, organize decisions and help you move faster after the human connection.' },
+  { icon: BriefcaseBusiness, title: 'Keep the Company Together', desc: 'Store startup memory, roadmaps, appointments, people and execution in one operating layer instead of another pile of tabs.' },
 ];
 
 const steps = [
-  ['01', 'Create your startup context', 'Tell MornAI what you are building, where you are today and what matters next.'],
-  ['02', 'Let the AI organize the work', 'Your context becomes a living strategy, roadmap and set of actionable priorities.'],
-  ['03', 'Bring in the right humans', 'Discover talent and connect skills to the problems your startup needs solved.'],
+  ['01', 'Describe the problem', 'Tell MornAI what your startup needs, the role you need and what success looks like.'],
+  ['02', 'Meet the right people', 'Browse real contributor profiles and opportunities, compare fit, save promising people and connect.'],
+  ['03', 'Let AI handle the context', 'Keep the relationship, roadmap and company memory connected after the conversation starts.'],
 ];
 
 const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
@@ -48,7 +48,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
             </motion.span>
             <div>
               <b className="text-lg tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
-              <p className="hidden text-[9px] font-bold uppercase tracking-[.18em] text-slate-400 sm:block">Startup operating platform</p>
+              <p className="hidden text-[9px] font-bold uppercase tracking-[.18em] text-slate-400 sm:block">Human startup network + AI operating layer</p>
             </div>
           </div>
           <div className="hidden items-center gap-7 text-xs font-semibold text-slate-500 md:flex">
@@ -63,16 +63,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
       <main className="relative z-10">
         <section className="px-5 pb-20 pt-36 text-center sm:px-8 sm:pt-44">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .24 }} className="mx-auto max-w-5xl">
-            <span className="mornai-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-indigo-700"><Bot className="h-4 w-4" /> Your startup gets an AI operating layer</span>
+            <span className="mornai-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-indigo-700"><UsersRound className="h-4 w-4" /> Meet the people your startup actually needs</span>
             <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04, duration: .28 }} className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-[-.04em] text-slate-950 sm:text-6xl md:text-7xl">
-              Build the company.<br /><span className="text-indigo-600">Keep the context.</span>
+              Find the people.<br /><span className="text-indigo-600">Build the company.</span>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .07 }} className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-500 sm:text-lg">
-              MornAI combines an AI Co-Founder, startup memory, living roadmaps, execution tools and human talent discovery in one workspace designed around your company.
+              MornAI connects startup owners with real people who have the skills they need, then adds an AI operating layer that keeps the context, work and relationships moving.
             </motion.p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('signup')} className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-bold text-white shadow-xl shadow-slate-300/50 transition-colors hover:bg-indigo-700">
-                Start building <ArrowRight className="h-4 w-4" />
+                Find your network <ArrowRight className="h-4 w-4" />
               </motion.button>
               <motion.button whileHover={{ y: -2 }} onClick={() => onOpenAuth('login')} className="mornai-glass-button rounded-full px-7 py-4 text-sm font-bold text-slate-700 hover:text-indigo-700">
                 I already have an account
@@ -84,7 +84,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
             <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:p-7">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="flex gap-2"><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/></div>
-                <span className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup command center</span>
+                <span className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Live startup network</span>
               </div>
               <div className="mt-6 grid gap-4 md:grid-cols-3">
                 {[
@@ -100,9 +100,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
         <section id="features" className="px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-6xl">
             <div className="max-w-2xl">
-              <span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">What MornAI does</span>
-              <h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">One system for the messy middle between idea and company.</h2>
-              <p className="mt-4 leading-7 text-slate-500">Instead of scattering strategy across chats, task managers and spreadsheets, MornAI keeps the company context connected to decisions, people and execution.</p>
+              <span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">The MornAI loop</span>
+              <h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">People first. Context second. AI everywhere it helps.</h2>
+              <p className="mt-4 leading-7 text-slate-500">Instead of treating networking as a directory and AI as a chatbot, MornAI connects the human relationship to the actual startup problem, then keeps the context useful after the introduction.</p>
             </div>
             <div className="mt-10 grid gap-5 md:grid-cols-2">
               {features.map((feature, i) => { const Icon = feature.icon; return <motion.div key={feature.title} initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ delay: i * .06 }} whileHover={{ y: -5 }} className="mornai-glass-card rounded-[26px] p-7 shadow-sm transition-shadow hover:shadow-xl"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600"><Icon className="h-6 w-6"/></span><h3 className="mt-6 text-xl font-extrabold text-slate-950">{feature.title}</h3><p className="mt-3 leading-7 text-slate-500">{feature.desc}</p></motion.div>; })}
@@ -113,8 +113,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
         <section id="how-it-works" className="bg-white px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-              <div><span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">How it works</span><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950">From context to coordinated action.</h2></div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-500"/> Built around your startup context</div>
+              <div><span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">How it works</span><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950">From startup need to real contribution.</h2></div>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-500"/> Human relationships, connected to company context</div>
             </div>
             <div className="mt-12 grid gap-5 md:grid-cols-3">
               {steps.map(([num, title, text], i) => <motion.div key={num} whileHover={{ y: -5 }} className="mornai-glass-card relative rounded-[26px] p-7"><span className="text-xs font-black tracking-[.2em] text-indigo-600">{num}</span><h3 className="mt-5 text-xl font-extrabold text-slate-950">{title}</h3><p className="mt-3 leading-7 text-slate-500">{text}</p>{i < steps.length - 1 && <span className="absolute right-[-18px] top-1/2 hidden h-px w-9 bg-slate-200 md:block"/>}</motion.div>)}
@@ -125,9 +125,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
         <section className="px-5 py-20 sm:px-8">
           <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-3">
             {[
-              [Zap, 'AI-first', 'Your startup context becomes useful input for planning, decisions and execution.'],
-              [BarChart3, 'Progress-aware', 'Roadmaps and work can evolve as your startup changes instead of staying static.'],
-              [UsersRound, 'Human + AI', 'AI handles context and coordination while real people contribute real skills.'],
+              [UsersRound, 'Human-first', 'MornAI exists to help real startup owners and real contributors find each other.'],
+              [Zap, 'AI-assisted', 'AI handles context, preparation and coordination so human work starts with less friction.'],
+              [BarChart3, 'Compounding context', 'Every useful conversation, role and contribution can make the next recommendation more relevant.'],
             ].map(([Icon, title, text]) => <motion.div key={title as string} whileInView={{ opacity: [0, 1], y: [18, 0] }} viewport={{ once: true }} transition={{ duration: .24 }} className="mornai-glass-card rounded-2xl p-6 shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white"><Icon className="h-5 w-5"/></span><b className="mt-5 block text-lg text-slate-950">{title as string}</b><p className="mt-2 text-sm leading-6 text-slate-500">{text as string}</p></motion.div>)}
           </div>
         </section>
@@ -136,9 +136,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
           <div className="mx-auto max-w-3xl">
             <div className="text-center"><span className="text-xs font-bold uppercase tracking-[.22em] text-indigo-600">FAQ</span><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-950">Questions founders usually ask.</h2></div>
             <div className="mt-10 space-y-3">
-              <FAQItem question="What is MornAI?" answer="MornAI is a startup operating platform that combines persistent startup context, AI strategy, roadmaps, work coordination and talent discovery." />
-              <FAQItem question="Is it only an AI chatbot?" answer="No. The goal is to connect the AI with startup memory, decisions, roadmap items, people and execution rather than keeping everything inside a chat window." />
-              <FAQItem question="Who is it for?" answer="It is designed for founders and startup builders who need help turning an idea or growing company into coordinated work with the right people." />
+              <FAQItem question="What is MornAI?" answer="MornAI is a startup network and operating platform. Founders can find people for real startup work, while the AI layer keeps company context, planning and execution connected." />
+              <FAQItem question="Is MornAI mainly for AI teams?" answer="No. The core value is the human network. AI is the leverage layer that helps founders prepare, organize and continue the work after people connect." />
+              <FAQItem question="Who is it for?" answer="Founders who need skilled people, and contributors who want meaningful startup work with enough context to know what they are joining." />
               <FAQItem question="Can human team members join?" answer="Yes. Talent can create a profile, add skills and discover startups or opportunities that match the kind of work they want to do." />
             </div>
           </div>
@@ -146,8 +146,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
 
         <section className="px-5 py-24 text-center sm:px-8">
           <motion.div initial={{ opacity: 0, scale: .97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="mornai-glass-panel mx-auto max-w-4xl rounded-[34px] bg-white/[0.55] p-10 shadow-xl shadow-indigo-100/50 backdrop-blur-xl sm:p-14">
-            <h2 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">Your startup has enough tabs open.</h2>
-            <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-500">Give the work one operating layer that remembers the company, organizes the next move and helps you find the people to execute it.</p>
+            <h2 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">Your startup needs the right people, not another lonely dashboard.</h2>
+            <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-500">Use MornAI to discover the right people, organize the work and keep the context that usually disappears between the first message and the next milestone.</p>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('signup')} className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-950 px-7 py-4 text-sm font-bold text-white hover:bg-indigo-700">Create your MornAI workspace <ArrowRight className="h-4 w-4"/></motion.button>
           </motion.div>
         </section>
@@ -155,7 +155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
 
       <footer className="border-t border-white/70 bg-white/55 px-5 py-8 text-xs text-slate-500 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">
-          <div><b className="text-slate-800">MORN<span className="text-indigo-600">AI</span></b><span className="ml-2">AI startup operating platform</span></div>
+          <div><b className="text-slate-800">MORN<span className="text-indigo-600">AI</span></b><span className="ml-2">Human startup network + AI operating layer</span></div>
           <div className="flex items-center gap-4">
             <button onClick={onOpenPrivacy} className="font-semibold text-slate-500 hover:text-indigo-600">Privacy Policy</button>
             <button onClick={() => onOpenAuth('login')} className="font-semibold text-slate-500 hover:text-indigo-600">Log in</button>
