@@ -187,8 +187,8 @@ service cloud.firestore {
       allow read: if
         signedIn()
         && (
-          resource.data.founderId == request.auth.uid
-          || resource.data.talentId == request.auth.uid
+          resource.data.fromUserId == request.auth.uid
+          || resource.data.toUserId == request.auth.uid
         );
 
       allow create: if
@@ -347,8 +347,8 @@ service cloud.firestore {
       allow read: if
         signedIn()
         && (
-          resource.data.fromUserId == request.auth.uid
-          || resource.data.toUserId == request.auth.uid
+          resource.data.founderId == request.auth.uid
+          || resource.data.talentId == request.auth.uid
         );
 
       allow create: if
