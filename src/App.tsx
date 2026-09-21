@@ -68,6 +68,11 @@ const normalizeStartup = (raw: Partial<Startup>): Startup => {
   };
 };
 
+const stripUndefinedPreferenceFields = <T extends Record<string, unknown>>(value: T): Partial<T> =>
+  Object.fromEntries(
+    Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined),
+  ) as Partial<T>;
+
 const normalizeUser = (raw: User): User => ({
   id: typeof raw.id === 'string' ? raw.id : '',
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Member',
@@ -258,7 +263,8 @@ export default function App() {
   const persistPreferences = (patch: Partial<MornaiPreferences>) => {
     setPreferences((previous) => {
       const next = { ...previous, ...patch };
-      void setDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'), next, { merge: true }).catch((error) => {
+      const persisted = stripUndefinedPreferenceFields(next);
+      void setDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'), persisted, { merge: true }).catch((error) => {
         console.error('Failed to persist MornAI preference:', error);
       });
       return next;
@@ -272,9 +278,10 @@ export default function App() {
     const timer = window.setTimeout(() => {
       setPreferences((previous) => {
         const next = { ...nextDailyState(previous), lastVisitedAt: Date.now() };
+        const persisted = stripUndefinedPreferenceFields(next);
         void setDoc(
           doc(db, 'users', currentUser.id, 'preferences', 'mornai'),
-          next,
+          persisted,
           { merge: true },
         ).catch((error) => console.error('Failed to persist daily activity:', error));
         return next;
@@ -286,7 +293,8 @@ export default function App() {
   const completeDailyAction = () => {
     setPreferences((previous) => {
       const next = { ...previous, dailyActionsCompleted: Math.min(3, (previous.dailyActionsCompleted || 0) + 1) };
-      void setDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'), next, { merge: true }).catch((error) => console.error('Failed to persist daily action:', error));
+      const persisted = stripUndefinedPreferenceFields(next);
+      void setDoc(doc(db, 'users', currentUser.id, 'preferences', 'mornai'), persisted, { merge: true }).catch((error) => console.error('Failed to persist daily action:', error));
       return next;
     });
   };
