@@ -882,6 +882,8 @@ export default function App() {
             previousVisitAt={preferences.lastVisitedAt}
             unreadNotificationCount={unreadNotificationCount}
             connections={connections}
+            dailyStreak={preferences.dailyStreak || 0}
+            dailyActionsCompleted={preferences.dailyActionsCompleted || 0}
             onOpenNetwork={(tab) => {
               completeDailyAction();
               setActiveView('network');
