@@ -27,7 +27,7 @@ import {
   mockTalentUsers, 
   mockFounderUser
 } from './data/mockData';
-import { Startup, User, RolePost, Appointment, TaskItem } from './types';
+import { ConnectionRequest, Startup, User, RolePost, Appointment, TaskItem } from './types';
 
 const normalizeStartup = (raw: Partial<Startup>): Startup => {
   const safeName = typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Untitled startup';
@@ -117,6 +117,8 @@ export default function App() {
 
   // State: all appointments (syncs between founders and talent)
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [talentUsers, setTalentUsers] = useState<User[]>(mockTalentUsers);
+  const [connections, setConnections] = useState<ConnectionRequest[]>([]);
   const [preferences, setPreferences] = useState<MornaiPreferences>({});
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
@@ -280,7 +282,7 @@ export default function App() {
   const toggleSavedStartup = (id: string) => togglePreferenceId('savedStartupIds', id);
   const toggleFollowedStartup = (id: string) => togglePreferenceId('followedStartupIds', id);
 
-  const notificationItems = buildMornaiNotifications(currentUser, startups, appointments);
+  const notificationItems = buildMornaiNotifications(currentUser, startups, appointments, connections);
   const unreadNotificationCount = notificationItems.filter((item) => !(preferences.readNotificationIds || []).includes(item.id)).length;
 
   const markNotificationRead = (id: string) => {
@@ -292,6 +294,105 @@ export default function App() {
   const markAllNotificationsRead = () => {
     persistPreferences({ readNotificationIds: notificationItems.map((item) => item.id) });
   };
+
+  // Mirror only safe public-profile fields so the network can discover real contributors.
+  // Sensitive account data remains private in /users/{uid}.
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser.id) {
+      setTalentUsers(mockTalentUsers);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(
+      collection(db, 'publicProfiles'),
+      (snapshot) => {
+        const remote = snapshot.docs
+          .map((profileDoc) => normalizeUser({ ...(profileDoc.data() as User), id: profileDoc.id }))
+          .filter((profile) => profile.id !== currentUser.id && profile.role === 'employee');
+
+        const remoteIds = new Set(remote.map((profile) => profile.id));
+        setTalentUsers([
+          ...remote,
+          ...mockTalentUsers.filter((profile) => !remoteIds.has(profile.id)),
+        ]);
+      },
+      (error) => {
+        console.error('Failed to load public network profiles:', error);
+        setTalentUsers(mockTalentUsers);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [isLoggedIn, currentUser.id]);
+
+  // Keep the signed-in member discoverable without exposing their private profile document.
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser.id) return;
+    const publicProfile = {
+      id: currentUser.id,
+      name: currentUser.name,
+      role: currentUser.role,
+      avatar: currentUser.avatar,
+      title: currentUser.title,
+      bio: currentUser.bio,
+      skills: currentUser.skills,
+      hourlyRate: currentUser.hourlyRate || null,
+      equityPreference: currentUser.equityPreference || null,
+      reputationScore: currentUser.reputationScore || null,
+      completedMilestones: currentUser.completedMilestones || 0,
+      updatedAt: serverTimestamp(),
+    };
+
+    void setDoc(doc(db, 'publicProfiles', currentUser.id), publicProfile, { merge: true }).catch((error) => {
+      console.error('Failed to sync public network profile:', error);
+    });
+  }, [
+    isLoggedIn,
+    currentUser.id,
+    currentUser.name,
+    currentUser.role,
+    currentUser.avatar,
+    currentUser.title,
+    currentUser.bio,
+    currentUser.skills,
+    currentUser.hourlyRate,
+    currentUser.equityPreference,
+    currentUser.reputationScore,
+    currentUser.completedMilestones,
+  ]);
+
+  // Network connection requests are centralized so both sides can see the relationship in real time.
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setConnections([]);
+      return;
+    }
+
+    const connectionsQuery = query(
+      collection(db, 'connections'),
+      where('participants', 'array-contains', currentUser.id),
+    );
+
+    const unsubscribe = onSnapshot(
+      connectionsQuery,
+      (snapshot) => {
+        const remoteConnections = snapshot.docs
+          .map((connectionDoc) => ({
+            ...(connectionDoc.data() as ConnectionRequest),
+            id: connectionDoc.id,
+          }))
+          .sort((a, b) => b.createdAtClient - a.createdAtClient);
+
+        setConnections(remoteConnections);
+      },
+      (error) => {
+        console.error('Failed to load network connections:', error);
+        setConnections([]);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [isLoggedIn, currentUser.id]);
 
   // Persisted startups are the source of truth for anything created inside the product.
   // Mock startups remain available for the demo network, while Firestore startups survive refreshes.
@@ -467,6 +568,61 @@ export default function App() {
     setIsDetailModalOpen(false);
     setSelectedStartupForDetail(null);
     setActiveView('booking');
+  };
+
+  // Create a two-sided network connection request.
+  const handleSendConnection = async (targetUser: User) => {
+    if (!targetUser.id || targetUser.id === currentUser.id) return;
+
+    const existing = connections.find((connection) =>
+      (connection.fromUserId === currentUser.id && connection.toUserId === targetUser.id) ||
+      (connection.toUserId === currentUser.id && connection.fromUserId === targetUser.id)
+    );
+
+    if (existing && ['pending', 'accepted'].includes(existing.status)) {
+      showToast(existing.status === 'accepted'
+        ? `You're already connected with ${targetUser.name}.`
+        : `Connection request already sent to ${targetUser.name}.`);
+      return;
+    }
+
+    const startup = currentUser.role === 'founder'
+      ? startups.find((candidate) => candidate.founderId === currentUser.id)
+      : undefined;
+    const id = `connection-${currentUser.id}-${targetUser.id}-${startup?.id || 'network'}`;
+
+    try {
+      await setDoc(doc(db, 'connections', id), {
+        id,
+        fromUserId: currentUser.id,
+        fromName: currentUser.name,
+        fromAvatar: currentUser.avatar,
+        toUserId: targetUser.id,
+        toName: targetUser.name,
+        toAvatar: targetUser.avatar,
+        participants: [currentUser.id, targetUser.id],
+        startupId: startup?.id || null,
+        startupName: startup?.name || null,
+        status: 'pending',
+        createdAtClient: Date.now(),
+        createdAt: serverTimestamp(),
+      });
+
+      showToast(`Connection request sent to ${targetUser.name}.`);
+    } catch (error) {
+      console.error('Failed to send connection request:', error);
+      showToast('Connection request could not be sent.');
+    }
+  };
+
+  const handleUpdateConnectionStatus = async (connectionId: string, status: ConnectionRequest['status']) => {
+    try {
+      await updateDoc(doc(db, 'connections', connectionId), { status });
+      showToast(status === 'accepted' ? 'Connection accepted.' : 'Connection request updated.');
+    } catch (error) {
+      console.error('Failed to update connection request:', error);
+      showToast('Could not update the connection.');
+    }
   };
 
   // Confirm appointment and persist the full request in Firestore.
@@ -709,9 +865,10 @@ export default function App() {
             currentUser={currentUser}
             startups={startups}
             appointments={appointments}
-            allTalents={mockTalentUsers}
+            allTalents={talentUsers}
             previousVisitAt={preferences.lastVisitedAt}
             unreadNotificationCount={unreadNotificationCount}
+            connections={connections}
             onOpenNetwork={(tab) => {
               setActiveView('network');
               if (tab) window.sessionStorage.setItem('mornai-network-tab', tab);
@@ -731,13 +888,16 @@ export default function App() {
           <MarketplacePage
             currentUser={currentUser}
             startups={startups}
-            allTalents={mockTalentUsers}
+            allTalents={talentUsers}
             savedTalentIds={preferences.savedTalentIds || []}
             savedStartupIds={preferences.savedStartupIds || []}
             followedStartupIds={preferences.followedStartupIds || []}
             onToggleSavedTalent={toggleSavedTalent}
             onToggleSavedStartup={toggleSavedStartup}
             onToggleFollowStartup={toggleFollowedStartup}
+            connections={connections}
+            onSendConnection={handleSendConnection}
+            onUpdateConnectionStatus={handleUpdateConnectionStatus}
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
             initialTab={
@@ -766,7 +926,7 @@ export default function App() {
               <FounderWorkspace
                 startup={activeStartupContext}
                 currentUser={currentUser}
-                allTalents={mockTalentUsers}
+                allTalents={talentUsers}
                 appointments={appointments}
                 onUpdateStartup={handleUpdateStartup}
                 onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
@@ -894,6 +1054,7 @@ export default function App() {
         currentUser={currentUser}
         startups={startups}
         appointments={appointments}
+        connections={connections}
         readNotificationIds={preferences.readNotificationIds || []}
         onClose={() => setIsNotificationCenterOpen(false)}
         onMarkRead={markNotificationRead}
