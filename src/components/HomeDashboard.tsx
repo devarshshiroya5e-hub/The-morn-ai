@@ -66,7 +66,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const isFounder = currentUser.role === 'founder';
   const liveStartups = useMemo(() => startups.filter((startup) => startup.persisted), [startups]);
   const relatedStartup = useMemo(
-    () => startups.find((startup) => startup.founderId === currentUser.id) || startups.find((startup) => startup.members.some((member) => member.userId === currentUser.id)),
+    () => startups.find((startup) => startup.founderId === currentUser.id)
+      || startups.find((startup) => startup.memberIds?.includes(currentUser.id))
+      || startups.find((startup) => startup.members.some((member) => member.userId === currentUser.id)),
     [currentUser.id, startups],
   );
 
