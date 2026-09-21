@@ -298,7 +298,7 @@ export default function App() {
   const toggleSavedStartup = (id: string) => togglePreferenceId('savedStartupIds', id);
   const toggleFollowedStartup = (id: string) => togglePreferenceId('followedStartupIds', id);
 
-  const notificationItems = buildMornaiNotifications(currentUser, startups, appointments, connections);
+  const notificationItems = buildMornaiNotifications(currentUser, startups, appointments, connections, preferences.followedStartupIds || []);
   const unreadNotificationCount = notificationItems.filter((item) => !(preferences.readNotificationIds || []).includes(item.id)).length;
 
   const markNotificationRead = (id: string) => {
