@@ -190,3 +190,22 @@ export interface ChatMessage {
   startupId?: string;
   recipientId?: string;
 }
+
+
+export interface ConnectionRequest {
+  id: string;
+  fromUserId: string;
+  fromName: string;
+  fromAvatar?: string;
+  toUserId: string;
+  toName: string;
+  toAvatar?: string;
+  participants: string[];
+  startupId?: string;
+  startupName?: string;
+  roleId?: string;
+  roleTitle?: string;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled';
+  createdAt?: unknown;
+  createdAtClient: number;
+}
