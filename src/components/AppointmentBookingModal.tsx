@@ -122,8 +122,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/55 backdrop-blur-sm p-3 sm:p-6">
+      <div className="relative mx-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-3rem)]">
         
         {/* Close Button */}
         <button
@@ -186,6 +186,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         </div>
 
         {/* Form Body */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isSubmitted ? (
           <div className="p-8 text-center space-y-3">
             <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
