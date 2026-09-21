@@ -37,6 +37,7 @@ interface MarketplacePageProps {
   onToggleSavedTalent: (id: string) => void;
   onToggleSavedStartup: (id: string) => void;
   onToggleFollowStartup: (id: string) => void;
+  onToggleSavedStartup: (id: string) => void;
   onSendConnection: (user: User) => void;
   onUpdateConnectionStatus: (connectionId: string, status: ConnectionRequest['status']) => void;
   onSelectStartup: (startup: Startup) => void;
@@ -55,6 +56,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   onToggleSavedTalent,
   onToggleSavedStartup,
   onToggleFollowStartup,
+  onToggleSavedStartup,
   onSendConnection,
   onUpdateConnectionStatus,
   onSelectStartup,
@@ -274,7 +276,10 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                     <h3 className="truncate text-sm font-black text-slate-950">{startup.name}</h3>
                     <p className="mt-0.5 text-[10px] font-semibold text-slate-500">{startup.industry} • {startup.stage}</p>
                   </div>
-                  <button type="button" onClick={() => onToggleFollowStartup(startup.id)} className={`mornai-save-btn ${followedStartupIds.includes(startup.id) ? 'is-saved' : ''}`} aria-label="Follow startup"><Heart className="h-3.5 w-3.5" /></button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button type="button" onClick={() => onToggleSavedStartup(startup.id)} className={`mornai-save-btn ${savedStartupIds.includes(startup.id) ? 'is-saved' : ''}`} aria-label="Save startup"><Bookmark className="h-3.5 w-3.5" /></button>
+                    <button type="button" onClick={() => onToggleFollowStartup(startup.id)} className={`mornai-save-btn ${followedStartupIds.includes(startup.id) ? 'is-saved' : ''}`} aria-label="Follow startup"><Heart className="h-3.5 w-3.5" /></button>
+                  </div>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between rounded-2xl bg-slate-50/80 px-3 py-2.5">
