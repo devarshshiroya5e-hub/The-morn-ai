@@ -19,7 +19,13 @@ import {
   ShieldCheck,
   Video,
   Lightbulb,
-  FileText
+  FileText,
+  Globe2,
+  ImagePlus,
+  UploadCloud,
+  Monitor,
+  Smartphone,
+  X
 } from 'lucide-react';
 
 interface FounderWorkspaceProps {
