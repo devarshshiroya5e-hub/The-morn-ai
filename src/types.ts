@@ -34,7 +34,29 @@ export interface User {
     focusAreas?: string;
     achievements?: string;
     idealStartup?: string;
+    region?: string;
+    countryCode?: string;
   };
+}
+
+export type PartnershipMode =
+  | 'equity'
+  | 'helper'
+  | 'pay_on_delivery'
+  | 'pay_per_hour'
+  | 'pay_per_task'
+  | 'fixed_project'
+  | 'revenue_share'
+  | 'equity_plus_cash';
+
+export interface RolePartnership {
+  mode: PartnershipMode;
+  label: string;
+  equityPercent?: string;
+  amountUsd?: number;
+  unit?: string;
+  milestone?: string;
+  details?: string;
 }
 
 export interface StartupHistoryLog {
@@ -76,9 +98,10 @@ export interface RolePost {
   startupName: string;
   startupLogo?: string;
   title: string;
-  type: 'Equity + Stipend' | 'Equity Only' | 'Milestone Stipend';
+  type: string;
   equityRange: string;
   stipendRange: string;
+  partnership?: RolePartnership;
   commitment: string;
   skills: string[];
   description: string;
@@ -151,7 +174,9 @@ export interface Startup {
   openRoles: RolePost[];
   tasks: TaskItem[];
   fundingRaised: string;
+  valuationUsd?: number;
   location: string;
+  currencyCode?: string;
   investorReadinessScore: number;
   growthVelocityScore: number;
   verified: boolean;
