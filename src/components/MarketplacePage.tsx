@@ -25,7 +25,6 @@ import {
 import { ConnectionRequest, RolePost, Startup, User } from '../types';
 import { useLocalizedCurrency } from '../lib/currency';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
-import { useLocalizedCurrency } from '../lib/currency';
 
 type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections' | 'saved';
 
@@ -70,7 +69,6 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const [industry, setIndustry] = useState('All');
   const [selectedTalent, setSelectedTalent] = useState<User | null>(null);
   const [onlyStrongMatches, setOnlyStrongMatches] = useState(false);
-  const { format: formatMoney } = useLocalizedCurrency(currentUser);
   const { format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const networkStartups = useMemo(() => startups, [startups]);
