@@ -257,7 +257,39 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
       )}
 
       {activeTab === 'startups' && (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <>
+          <section className="mornai-market-panel rounded-[24px] border border-violet-100 bg-white/70 p-4 shadow-[0_18px_48px_rgba(124,58,237,.07)] backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[.16em] text-violet-600">Open roles</p>
+                <h2 className="mt-1 text-base font-black text-slate-950">Work available across the network</h2>
+                <p className="mt-1 text-[11px] text-slate-500">Choose a role directly to open its conversation form.</p>
+              </div>
+              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[9px] font-black text-violet-700">{openRoles.length} open</span>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {openRoles.map(({ startup, role }) => (
+                <button
+                  key={role.id}
+                  type="button"
+                  onClick={() => onBookAppointment(startup, role)}
+                  className="group flex items-center gap-3 rounded-2xl border border-violet-100 bg-white/80 p-3 text-left transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_14px_32px_rgba(124,58,237,.10)]"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-violet-200 bg-violet-50 text-violet-600 shadow-sm">
+                    <span className="text-lg font-black leading-none">+</span>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-black text-violet-800 group-hover:text-violet-700">{role.title}</span>
+                    <span className="mt-0.5 block truncate text-[9px] font-semibold text-slate-500">{startup.name}</span>
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-violet-300 group-hover:text-violet-600" />
+                </button>
+              ))}
+              {openRoles.length === 0 && <EmptyState title="No open roles yet" body="Startups will appear here as they publish new opportunities." />}
+            </div>
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {rankedStartups.map(({ startup, score }) => (
             <article key={startup.id} className="mornai-startup-network-card">
               <div className="relative h-28 overflow-hidden rounded-[20px] bg-gradient-to-br from-violet-100 via-white to-sky-100">
@@ -443,8 +475,8 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
       <AnimatePresence>
         {selectedTalent && (
           <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="flex min-h-full items-start justify-center sm:items-center">
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-talent-modal my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:my-0 sm:max-h-[calc(100dvh-2.5rem)]">
+            <div className="flex min-h-full items-center justify-center">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-talent-modal my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:max-h-[calc(100dvh-3rem)]">
               <div className="shrink-0 p-5 pb-0 sm:p-6 sm:pb-0">
                 <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-3">
