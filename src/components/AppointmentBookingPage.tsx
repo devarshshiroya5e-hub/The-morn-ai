@@ -89,8 +89,20 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+
+    if (currentUser.id === startup.founderId) {
+      setSubmitError('You are the founder of this startup. Switch to a contributor account to request a founder conversation.');
+      return;
+    }
+
+    if (!roleTitle.trim()) {
+      setSubmitError('Select an available role before booking the conversation.');
+      return;
+    }
+
     const newAppointment: Appointment = {
       id: `apt-${Date.now()}`,
+      participants: [startup.founderId, currentUser.id],
       startupId: startup.id,
       startupName: startup.name,
       founderId: startup.founderId,
