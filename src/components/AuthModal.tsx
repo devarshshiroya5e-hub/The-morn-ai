@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { auth, db, googleProvider } from '../lib/firebase';
 import { User, UserRole } from '../types';
+import { detectCountryCode } from '../lib/currency';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -118,6 +119,12 @@ const skillsList = [
   'Travel Planning','Real Estate','Property Management','Interior Styling','Customer Service','Retail Management'
 ];
 
+const REGION_OPTIONS = [
+  ['IN', 'India'], ['US', 'United States'], ['AE', 'United Arab Emirates'], ['GB', 'United Kingdom'],
+  ['DE', 'Germany'], ['FR', 'France'], ['CA', 'Canada'], ['AU', 'Australia'], ['SG', 'Singapore'],
+  ['JP', 'Japan'], ['BR', 'Brazil'], ['ZA', 'South Africa'], ['OTHER', 'Other / prefer not to say'],
+] as const;
+
 const avatar = (name: string) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Member')}&background=5B5CF0&color=fff&bold=true`;
 
@@ -202,6 +209,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [workStyle, setWorkStyle] = useState('');
   const [motivation, setMotivation] = useState('');
   const [story, setStory] = useState('');
+  const [countryCode, setCountryCode] = useState(detectCountryCode());
   const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -274,6 +282,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setWorkStyle('');
     setMotivation('');
     setStory('');
+    setCountryCode(detectCountryCode());
     setError('');
   };
 
@@ -332,6 +341,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       );
     }
     if (step === 5) {
+      if (!countryCode) return 'Choose your region.';
       if (!availability) return 'Choose your availability.';
       if (!workStyle) return 'Choose your preferred work style.';
       return (
@@ -358,6 +368,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       profileTitle: profileTitle.trim(),
       contribution: contribution.trim(),
       motivation: motivation.trim(),
+      region: REGION_OPTIONS.find(([code]) => code === countryCode)?.[1] || countryCode,
+      countryCode,
       ...(role === 'founder'
         ? {
             startupName: startup.trim(),
@@ -800,9 +812,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           <>
                             <Head n="05" title="Give your profile a point of view" text="These answers make your profile human, useful and specific instead of another empty résumé." />
                             <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                              <Select p="Your region / country" value={countryCode} set={setCountryCode} options={REGION_OPTIONS.map(([code, label]) => `${code} — ${label}`)} />
                               <Select p="Availability" value={availability} set={setAvailability} options={['5–10 hours / week','10–20 hours / week','20+ hours / week','Full-time']} />
                               <Select p="Preferred work style" value={workStyle} set={setWorkStyle} options={['Remote','Hybrid','In-person','Flexible']} />
                             </div>
+                            <p className="mt-2 text-[10px] leading-5 text-slate-400">Your region controls how MornAI displays money such as startup valuation, role compensation and Pro pricing. You can change it later in your profile.</p>
                             <TextArea label="What do you want to accomplish in the next 90 days? (minimum 30 characters)" value={goal} set={setGoal} min={30} rows={3} />
                             <TextArea label="Why do you want to build or work with startups? (minimum 30 characters)" value={motivation} set={setMotivation} min={30} rows={3} />
                             <TextArea label="Write a strong profile story: experience, strengths, interests and what kind of impact you want to create. (minimum 60 characters)" value={story} set={setStory} min={60} rows={6} />
