@@ -695,7 +695,22 @@ export default function App() {
 
   // Confirm appointment and persist the full request in Firestore.
   const handleConfirmAppointment = async (newAppointment: Appointment) => {
+    if (!currentUser.id || !newAppointment.founderId || !newAppointment.talentId) {
+      throw new Error('Your account session is still loading. Please try the request again.');
+    }
+
+    if (currentUser.id === newAppointment.founderId) {
+      throw new Error('A founder cannot book a conversation with their own startup from the contributor flow.');
+    }
+
+    if (newAppointment.talentId !== currentUser.id) {
+      throw new Error('The appointment must belong to the signed-in contributor.');
+    }
+
     const participants = Array.from(new Set([newAppointment.founderId, newAppointment.talentId]));
+    if (participants.length !== 2) {
+      throw new Error('The founder and contributor must be two different accounts.');
+    }
 
     await setDoc(doc(db, 'appointments', newAppointment.id), {
       ...newAppointment,
