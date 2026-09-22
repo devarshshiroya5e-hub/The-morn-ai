@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, Crown, Sparkles, X, Zap } from 'lucide-react';
+import { User } from '../types';
+import { useLocalizedCurrency } from '../lib/currency';
 
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser: User;
 }
 
-export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
+export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, currentUser }) => {
   const [annual, setAnnual] = useState(true);
+  const { format: formatMoney } = useLocalizedCurrency(currentUser);
 
   if (!isOpen) return null;
 
-  const proPrice = annual ? 699 : 899;
-  const teamPrice = annual ? 1499 : 1899;
+  const proPriceUsd = annual ? 9 : 12;
+  const teamPriceUsd = annual ? 19 : 25;
 
   const plans = [
     {
       name: 'Free',
-      price: '₹0',
+      price: formatMoney(0),
       caption: 'Build your network',
       features: ['Create your profile', 'Discover startups and people', 'Basic matching', 'Messages', 'Limited opportunities'],
       cta: 'Keep using free',
@@ -26,7 +30,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
     },
     {
       name: 'Pro',
-      price: `₹${proPrice}`,
+      price: formatMoney(proPriceUsd),
       suffix: '/month',
       caption: 'For serious founders & builders',
       features: ['Advanced Match Radar', 'Unlimited saved searches', 'AI opportunity + profile tools', 'Company Brain', 'AI website builder', 'Advanced hiring signals', 'Priority discovery'],
@@ -35,7 +39,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
     },
     {
       name: 'Team',
-      price: `₹${teamPrice}`,
+      price: formatMoney(teamPriceUsd),
       suffix: '/month',
       caption: 'For active startup teams',
       features: ['Everything in Pro', 'Team workspace', 'Advanced company memory', 'Hiring pipeline', 'Collaboration insights', 'Team-level AI automations', 'Priority support'],
