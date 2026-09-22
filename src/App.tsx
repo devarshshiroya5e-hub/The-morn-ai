@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { StartupDetailModal } from './components/StartupDetailModal';
@@ -67,6 +67,34 @@ const normalizeStartup = (raw: Partial<Startup>): Startup => {
       : undefined,
   };
 };
+
+const buildStartupListing = (startup: Startup) => ({
+  id: startup.id,
+  name: startup.name,
+  tagline: startup.tagline,
+  logo: startup.logo,
+  coverImage: startup.coverImage || null,
+  industry: startup.industry,
+  stage: startup.stage,
+  pitch: startup.pitch,
+  techStack: startup.techStack,
+  website: startup.website,
+  foundedYear: startup.foundedYear,
+  founderId: startup.founderId,
+  founderName: startup.founderName,
+  founderAvatar: startup.founderAvatar,
+  fundingRaised: startup.fundingRaised,
+  location: startup.location,
+  investorReadinessScore: startup.investorReadinessScore,
+  growthVelocityScore: startup.growthVelocityScore,
+  verified: startup.verified,
+  openRoles: startup.openRoles.map((role) => ({
+    ...role,
+    responsibilities: role.responsibilities?.slice(0, 5) || [],
+    skills: role.skills?.slice(0, 12) || [],
+  })),
+  updatedAt: serverTimestamp(),
+});
 
 const stripUndefinedPreferenceFields = <T extends Record<string, unknown>>(value: T): Partial<T> =>
   Object.fromEntries(
@@ -450,68 +478,32 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn, currentUser.id]);
 
-  // Persisted startups are the source of truth for anything created inside the product.
-  // Mock startups remain available for the demo network, while Firestore startups survive refreshes.
+  // Public discovery reads only startup listing documents. Private startup records stay
+  // behind founder/member rules and are loaded only for the active workspace context.
   useEffect(() => {
     if (!isLoggedIn) return;
 
     const unsubscribe = onSnapshot(
-      collection(db, 'startups'),
+      query(collection(db, 'startupListings'), limit(100)),
       (snapshot) => {
         const remoteStartups = snapshot.docs
-          .map((startupDoc) => normalizeStartup({ ...(startupDoc.data() as Partial<Startup>), id: startupDoc.id }))
-          .map((startup) => {
-            startup.persisted = true;
-            const activeMemberIds = Array.from(new Set([
-              startup.founderId,
-              ...(startup.members || [])
-                .filter((member) => member.status === 'active')
-                .map((member) => member.userId),
-            ].filter(Boolean)));
-
-            // Backfill a compact membership index so chat authorization does not
-            // depend on a nested member document existing on an older startup.
-            if (
-              startup.founderId === currentUser.id &&
-              JSON.stringify(startup.memberIds || []) !== JSON.stringify(activeMemberIds)
-            ) {
-              void setDoc(
-                doc(db, 'startups', startup.id),
-                { memberIds: activeMemberIds },
-                { merge: true },
-              ).catch((error) => {
-                console.error('Failed to sync startup membership index:', error);
-              });
-            }
-
-            if (startup.founderId !== currentUser.id || !currentUser.onboarding) return {
-              ...startup,
-              memberIds: activeMemberIds,
-            };
-
-            return {
-              ...startup,
-              memberIds: activeMemberIds,
-              members: (startup.members || []).map((member) =>
-                member.userId === currentUser.id
-                  ? { ...member, profileDetails: currentUser.onboarding }
-                  : member
-              ),
-            };
-          });
+          .map((startupDoc) => ({
+            ...normalizeStartup({ ...(startupDoc.data() as Partial<Startup>), id: startupDoc.id }),
+            persisted: true,
+          }));
         const remoteIds = new Set(remoteStartups.map((startup) => startup.id));
         const demoStartups = initialStartups.filter((startup) => !remoteIds.has(startup.id));
         setStartups([...remoteStartups, ...demoStartups]);
       },
       (error) => {
-        console.error('Failed to load startups from Firestore:', error);
+        console.error('Failed to load startup listings from Firestore:', error);
       },
     );
 
     return () => unsubscribe();
   }, [isLoggedIn]);
 
-  // Appointments are persisted centrally and scoped by the participants list.
+  // Appointments are persisted centrally and scoped by the participants list.  // Appointments are persisted centrally and scoped by the participants list.
   // Using the participants index keeps this listener compatible with existing deployed
   // Firebase rules while the repository rules also support explicit founder/talent IDs.
   useEffect(() => {
@@ -545,63 +537,67 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn, currentUser.id]);
 
-  // Keep the active workspace attached to the startup owned/joined by this user.
-  // Prefer the user's last selected startup, then their founder startup, then a joined startup.
+  // Load one private startup record only when the current user is entitled to it.
+  // Discovery never hydrates private tasks, history, or member records.
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || !currentUser.id) {
       setActiveStartupContext(null);
       return;
     }
 
-    if (!startups.length) {
-      setActiveStartupContext(null);
-      return;
-    }
+    let cancelled = false;
 
-    const userId = currentUser.id;
-    const isRelatedToUser = (startup: Startup) =>
-      startup.founderId === userId
-      || startup.memberIds?.includes(userId)
-      || startup.members?.some((member) => member.userId === userId);
+    const loadActiveStartup = async () => {
+      try {
+        const savedId = typeof window !== 'undefined'
+          ? window.localStorage.getItem(`mornai-active-startup:${currentUser.id}`)
+          : null;
 
-    const latestActive = activeStartupContext
-      ? startups.find((startup) => startup.id === activeStartupContext.id)
-      : null;
+        let preferredId = savedId || '';
 
-    if (latestActive && isRelatedToUser(latestActive)) {
-      if (latestActive !== activeStartupContext) {
-        setActiveStartupContext(latestActive);
+        if (!preferredId && currentUser.role === 'founder') {
+          preferredId = startups.find((startup) => startup.founderId === currentUser.id)?.id || '';
+        }
+
+        if (!preferredId) {
+          const contextSnapshot = await getDocs(collection(db, 'users', currentUser.id, 'startupContexts'));
+          const validContexts = contextSnapshot.docs
+            .map((contextDoc) => ({ ...(contextDoc.data() as { startupId?: string; role?: string }) }))
+            .filter((context) => context.role === currentUser.role && typeof context.startupId === 'string');
+          preferredId = validContexts[0]?.startupId || '';
+        }
+
+        if (!preferredId) {
+          if (!cancelled) setActiveStartupContext(null);
+          return;
+        }
+
+        const privateStartup = await getDoc(doc(db, 'startups', preferredId));
+        if (!privateStartup.exists()) {
+          if (!cancelled) setActiveStartupContext(null);
+          return;
+        }
+
+        const startup = {
+          ...normalizeStartup({ ...(privateStartup.data() as Partial<Startup>), id: privateStartup.id }),
+          persisted: true,
+        };
+
+        if (!cancelled) {
+          setActiveStartupContext(startup);
+          window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, startup.id);
+        }
+      } catch (error) {
+        console.error('Failed to load private startup context:', error);
+        if (!cancelled) setActiveStartupContext(null);
       }
-      return;
-    }
+    };
 
-    const savedId = typeof window !== 'undefined'
-      ? window.localStorage.getItem(`mornai-active-startup:${userId}`)
-      : null;
+    void loadActiveStartup();
+    return () => { cancelled = true; };
+  }, [isLoggedIn, currentUser.id, currentUser.role, startups.length]);
 
-    const savedStartup = savedId
-      ? startups.find((startup) => startup.id === savedId && isRelatedToUser(startup))
-      : undefined;
-
-    const preferred =
-      savedStartup ||
-      startups.find((startup) => startup.founderId === userId) ||
-      startups.find((startup) => startup.memberIds?.includes(userId)) ||
-      startups.find((startup) => startup.members?.some((member) => member.userId === userId)) ||
-      null;
-
-    setActiveStartupContext(preferred);
-
-    if (typeof window !== 'undefined') {
-      if (preferred) {
-        window.localStorage.setItem(`mornai-active-startup:${userId}`, preferred.id);
-      } else {
-        window.localStorage.removeItem(`mornai-active-startup:${userId}`);
-      }
-    }
-  }, [isLoggedIn, startups, currentUser.id, activeStartupContext]);
-
-  // Toast feedback banner
+  // Toast feedback banner  // Toast feedback banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -730,6 +726,11 @@ export default function App() {
       ...updatedStartup,
       memberIds,
     });
+    await setDoc(
+      doc(db, 'startupListings', updatedStartup.id),
+      buildStartupListing({ ...updatedStartup, memberIds }),
+      { merge: true },
+    );
 
     // Mirror selected team members into protected member documents.
     // A founder selecting/onboarding someone therefore unlocks their private startup chat.
@@ -768,6 +769,10 @@ export default function App() {
       ...newStartup,
       memberIds,
     });
+    await setDoc(
+      doc(db, 'startupListings', newStartup.id),
+      buildStartupListing({ ...newStartup, memberIds }),
+    );
 
     const founderMember = newStartup.members.find((member) => member.userId === currentUser.id);
     if (founderMember) {
