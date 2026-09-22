@@ -136,6 +136,7 @@ const PARTNERSHIP_MODES: Array<{ value: PartnershipMode; label: string; descript
   { value: 'pay_per_task', label: 'Pay per work / task', description: 'Cash for each defined piece of work.' },
   { value: 'fixed_project', label: 'Fixed project fee', description: 'One agreed amount for the complete project.' },
   { value: 'revenue_share', label: 'Revenue share', description: 'Share a percentage of revenue generated.' },
+  { value: 'work_exchange', label: 'Pay or work', description: 'The contributor can choose a cash route or a defined work-for-value exchange.' },
   { value: 'equity_plus_cash', label: 'Equity + cash', description: 'Combine ownership with cash compensation.' },
 ];
 
@@ -750,7 +751,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                         </div>
                       )}
 
-                      {['pay_on_delivery', 'pay_per_hour', 'pay_per_task', 'fixed_project', 'equity_plus_cash'].includes(partnership.mode) && (
+                      {['pay_on_delivery', 'pay_per_hour', 'pay_per_task', 'fixed_project', 'work_exchange', 'equity_plus_cash'].includes(partnership.mode) && (
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <div>
                             <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Cash amount</label>
@@ -784,6 +785,20 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                         <div className="mt-3">
                           <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Helper arrangement</label>
                           <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. Volunteer experience + certificate + founder mentorship" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                        </div>
+                      )}
+
+                      {partnership.mode === 'work_exchange' && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Cash option (optional)</label>
+                            <input type="number" min="0" value={partnership.amountUsd ?? ''} onChange={(event) => updatePartnership(role, { amountUsd: Number(event.target.value) })} placeholder="USD base amount" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                            <p className="mt-1 text-[9px] text-slate-400">Displayed to contributors in their local currency.</p>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Work exchange terms</label>
+                            <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. 5 hours of design for product access + mentorship" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                          </div>
                         </div>
                       )}
 
