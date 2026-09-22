@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowRight,
@@ -68,7 +69,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const [selectedTalent, setSelectedTalent] = useState<User | null>(null);
   const [onlyStrongMatches, setOnlyStrongMatches] = useState(false);
 
-  const networkStartups = useMemo(() => startups.filter((startup) => startup.persisted), [startups]);
+  const networkStartups = useMemo(() => startups, [startups]);
   const savedPeople = useMemo(() => allTalents.filter((person) => savedTalentIds.includes(person.id)), [allTalents, savedTalentIds]);
   const savedStartups = useMemo(() => networkStartups.filter((startup) => savedStartupIds.includes(startup.id)), [networkStartups, savedStartupIds]);
   const industries = useMemo(() => ['All', ...Array.from(new Set(networkStartups.map((startup) => startup.industry))).slice(0, 8)], [networkStartups]);
@@ -473,58 +474,61 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
         </div>
       </div>
 
-      <AnimatePresence>
-        {selectedTalent && (
-          <motion.div className="pointer-events-none fixed inset-0 z-50 overflow-hidden bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="flex min-h-full items-center justify-center">
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="pointer-events-auto mornai-talent-modal my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:max-h-[calc(100dvh-3rem)]">
-              <div className="shrink-0 p-5 pb-0 sm:p-6 sm:pb-0">
-                <div className="flex items-start justify-between gap-4">
-                <div className="flex gap-3">
-                  <img src={selectedTalent.avatar} alt="" className="h-16 w-16 rounded-[22px] object-cover shadow-xl" />
-                  <div>
-                    <div className="flex items-center gap-2"><h2 className="text-lg font-black text-slate-950">{selectedTalent.name}</h2><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div>
-                    <p className="mt-1 text-xs font-bold text-violet-600">{selectedTalent.title}</p>
-                    <p className="mt-1 text-[11px] text-slate-500">{selectedTalent.hourlyRate || selectedTalent.equityPreference || 'Open to startup opportunities'}</p>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {selectedTalent && (
+            <motion.div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="flex min-h-full items-center justify-center">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="pointer-events-auto mornai-talent-modal my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:max-h-[calc(100dvh-3rem)]">
+                  <div className="shrink-0 p-5 pb-0 sm:p-6 sm:pb-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex gap-3">
+                        <img src={selectedTalent.avatar} alt="" className="h-16 w-16 rounded-[22px] object-cover shadow-xl" />
+                        <div>
+                          <div className="flex items-center gap-2"><h2 className="text-lg font-black text-slate-950">{selectedTalent.name}</h2><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div>
+                          <p className="mt-1 text-xs font-bold text-violet-600">{selectedTalent.title}</p>
+                          <p className="mt-1 text-[11px] text-slate-500">{selectedTalent.hourlyRate || selectedTalent.equityPreference || 'Open to startup opportunities'}</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => setSelectedTalent(null)} className="mornai-close-btn"><X className="h-4 w-4" /></button>
+                    </div>
                   </div>
-                </div>
-                <button type="button" onClick={() => setSelectedTalent(null)} className="mornai-close-btn"><X className="h-4 w-4" /></button>
-                </div>
-              </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <MiniSignal label="Reputation" value={`${selectedTalent.reputationScore || 82}/100`} icon={<Star className="h-3.5 w-3.5" />} />
-                <MiniSignal label="Milestones" value={String(selectedTalent.completedMilestones || 0)} icon={<Zap className="h-3.5 w-3.5" />} />
-                <MiniSignal label="Skills" value={String(selectedTalent.skills.length)} icon={<Sparkles className="h-3.5 w-3.5" />} />
-              </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      <MiniSignal label="Reputation" value={`${selectedTalent.reputationScore || 82}/100`} icon={<Star className="h-3.5 w-3.5" />} />
+                      <MiniSignal label="Milestones" value={String(selectedTalent.completedMilestones || 0)} icon={<Zap className="h-3.5 w-3.5" />} />
+                      <MiniSignal label="Skills" value={String(selectedTalent.skills.length)} icon={<Sparkles className="h-3.5 w-3.5" />} />
+                    </div>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="mornai-modal-label">About</p>
-                  <p className="mt-2 text-xs leading-6 text-slate-600">{selectedTalent.bio}</p>
-                </div>
-                <div>
-                  <p className="mornai-modal-label">Skills</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">{selectedTalent.skills.map((skill) => <span key={skill} className="mornai-market-skill">{skill}</span>)}</div>
-                </div>
-              </div>
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mornai-modal-label">About</p>
+                        <p className="mt-2 text-xs leading-6 text-slate-600">{selectedTalent.bio}</p>
+                      </div>
+                      <div>
+                        <p className="mornai-modal-label">Skills</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">{selectedTalent.skills.map((skill) => <span key={skill} className="mornai-market-skill">{skill}</span>)}</div>
+                      </div>
+                    </div>
 
-              <div className="mt-6 rounded-[22px] border border-violet-100 bg-violet-50/70 p-4">
-                <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-600">Why this profile matters</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">MornAI uses skills, contribution history, reputation, and stated preferences to make human matches easier to evaluate.</p>
-              </div>
+                    <div className="mt-6 rounded-[22px] border border-violet-100 bg-violet-50/70 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-600">Why this profile matters</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">MornAI uses skills, contribution history, reputation, and stated preferences to make human matches easier to evaluate.</p>
+                    </div>
 
-              <div className="mt-5 flex gap-2">
-                <button type="button" onClick={() => onToggleSavedTalent(selectedTalent.id)} className="mornai-market-secondary flex-1"><Bookmark className="h-3.5 w-3.5" /> {savedTalentIds.includes(selectedTalent.id) ? 'Saved' : 'Save person'}</button>
-                <button type="button" onClick={() => { onSendConnection(selectedTalent); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>
+                    <div className="mt-5 flex gap-2">
+                      <button type="button" onClick={() => onToggleSavedTalent(selectedTalent.id)} className="mornai-market-secondary flex-1"><Bookmark className="h-3.5 w-3.5" /> {savedTalentIds.includes(selectedTalent.id) ? 'Saved' : 'Save person'}</button>
+                      <button type="button" onClick={() => { onSendConnection(selectedTalent); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </div>
             </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 };
