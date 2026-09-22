@@ -75,9 +75,11 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const industries = useMemo(() => ['All', ...Array.from(new Set(networkStartups.map((startup) => startup.industry))).slice(0, 8)], [networkStartups]);
 
   const openRoles = useMemo(
-    () => networkStartups.flatMap((startup) => startup.persisted
-      ? startup.openRoles.filter((role) => role.status === 'open').map((role) => ({ startup, role }))
-      : []),
+    () => networkStartups.flatMap((startup) =>
+      startup.openRoles
+        .filter((role) => role.status === 'open')
+        .map((role) => ({ startup, role })),
+    ),
     [networkStartups],
   );
 
@@ -275,7 +277,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                 <button
                   key={role.id}
                   type="button"
-                  onClick={() => onBookAppointment(startup, role)}
+                  onClick={() => startup.persisted ? onBookAppointment(startup, role) : onSelectStartup(startup)}
                   className="group flex items-center gap-3 rounded-2xl border border-violet-100 bg-white/80 p-3 text-left transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_14px_32px_rgba(124,58,237,.10)]"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-violet-200 bg-violet-50 text-violet-600 shadow-sm">
@@ -284,6 +286,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-black text-violet-800 group-hover:text-violet-700">{role.title}</span>
                     <span className="mt-0.5 block truncate text-[9px] font-semibold text-slate-500">{startup.name}</span>
+                    <span className="mt-1 block truncate text-[9px] text-slate-400">{role.commitment} • {role.equityRange}</span>
                   </span>
                   <ArrowRight className="h-3.5 w-3.5 shrink-0 text-violet-300 group-hover:text-violet-600" />
                 </button>
