@@ -220,4 +220,5 @@ export interface ConnectionRequest {
   status: 'pending' | 'accepted' | 'declined' | 'cancelled';
   createdAt?: unknown;
   createdAtClient: number;
+  updatedAtClient?: number;
 }
