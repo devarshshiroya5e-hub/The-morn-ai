@@ -639,6 +639,11 @@ export default function App() {
 
   // Open dedicated booking page
   const handleOpenBookingModal = (startup: Startup, role?: RolePost) => {
+    if (!startup.persisted) {
+      showToast('This startup is only a preview. Sync requests are available after the startup is published.');
+      return;
+    }
+
     setBookingModalStartup(startup);
     setBookingModalRole(role);
     setIsDetailModalOpen(false);
