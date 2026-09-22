@@ -693,7 +693,7 @@ export default function App() {
 
   const handleUpdateConnectionStatus = async (connectionId: string, status: ConnectionRequest['status']) => {
     try {
-      await updateDoc(doc(db, 'connections', connectionId), { status });
+      await updateDoc(doc(db, 'connections', connectionId), { status, updatedAtClient: Date.now(), updatedAt: serverTimestamp() });
       showToast(status === 'accepted' ? 'Connection accepted.' : 'Connection request updated.');
     } catch (error) {
       console.error('Failed to update connection request:', error);
