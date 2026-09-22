@@ -145,6 +145,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     founderName: 'Alex Vance',
     founderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
     fundingRaised: '$280,000 Angel Round',
+    valuationUsd: 4200000,
     location: 'San Francisco, CA / Remote',
     investorReadinessScore: 84,
     growthVelocityScore: 91,
@@ -235,6 +236,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     openRoles: [
       {
         id: 'role-1',
+        partnership: { mode: 'equity_plus_cash', label: 'Equity + cash', equityPercent: '2.0', amountUsd: 2500, unit: 'sprint', milestone: 'Per delivery sprint', details: 'Own the clinical AI dashboard.' },
         startupId: 'startup-1',
         startupName: 'NeuroPulse AI',
         startupLogo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80',
@@ -257,6 +259,7 @@ export const INITIAL_STARTUPS: Startup[] = [
       },
       {
         id: 'role-2',
+        partnership: { mode: 'pay_on_delivery', label: 'Pay when made', amountUsd: 1200, unit: 'milestone', milestone: 'Pilot-to-paid outreach system', details: 'Payment after the agreed outreach system is delivered.' },
         startupId: 'startup-1',
         startupName: 'NeuroPulse AI',
         startupLogo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80',
@@ -336,6 +339,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     founderName: 'Maya Lin',
     founderAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=250&q=80',
     fundingRaised: '$750,000 Seed Round',
+    valuationUsd: 12000000,
     location: 'Austin, TX / Remote',
     investorReadinessScore: 89,
     growthVelocityScore: 86,
@@ -378,6 +382,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     openRoles: [
       {
         id: 'role-201',
+        partnership: { mode: 'pay_per_hour', label: 'Pay per hour', amountUsd: 55, unit: 'hour', milestone: '15 hrs/week target' },
         startupId: 'startup-2',
         startupName: 'GreenGrid Network',
         startupLogo: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=120&q=80',
@@ -399,6 +404,7 @@ export const INITIAL_STARTUPS: Startup[] = [
       },
       {
         id: 'role-202',
+        partnership: { mode: 'revenue_share', label: 'Revenue share', equityPercent: '3.0', unit: 'revenue', details: 'Share applies to revenue generated from contributor-sourced energy deployments.' },
         startupId: 'startup-2',
         startupName: 'GreenGrid Network',
         startupLogo: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=120&q=80',
@@ -434,6 +440,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     founderName: 'Jordan Reed',
     founderAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
     fundingRaised: '$150,000 Pre-Seed',
+    valuationUsd: 3000000,
     location: 'Seattle, WA / Remote',
     investorReadinessScore: 78,
     growthVelocityScore: 88,
@@ -465,6 +472,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     openRoles: [
       {
         id: 'role-301',
+        partnership: { mode: 'equity', label: 'Equity', equityPercent: '3.0', details: 'Long-term ownership for a core design engineering lead.' },
         startupId: 'startup-3',
         startupName: 'Omnilink DevTools',
         startupLogo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=120&q=80',
@@ -486,6 +494,7 @@ export const INITIAL_STARTUPS: Startup[] = [
       },
       {
         id: 'role-302',
+        partnership: { mode: 'helper', label: 'Helper', details: 'Volunteer contribution with portfolio credit, references and founder mentorship.' },
         startupId: 'startup-3',
         startupName: 'Omnilink DevTools',
         startupLogo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=120&q=80',
@@ -522,6 +531,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     founderName: 'Priya Shah',
     founderAvatar: 'https://images.unsplash.com/photo-1598550874175-4d0ef436c9aa?auto=format&fit=crop&w=250&q=80',
     fundingRaised: '$1.1M Seed Round',
+    valuationUsd: 9000000,
     location: 'Bengaluru, India / Remote',
     investorReadinessScore: 87,
     growthVelocityScore: 82,
@@ -554,6 +564,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     openRoles: [
       {
         id: 'role-401',
+        partnership: { mode: 'fixed_project', label: 'Fixed project fee', amountUsd: 3500, unit: 'project', milestone: 'Reconciliation engine delivery' },
         startupId: 'startup-4',
         startupName: 'LedgerLane',
         startupLogo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=120&q=80',
@@ -572,6 +583,7 @@ export const INITIAL_STARTUPS: Startup[] = [
       },
       {
         id: 'role-402',
+        partnership: { mode: 'pay_per_task', label: 'Pay per work / task', amountUsd: 250, unit: 'policy pack', milestone: 'Each audit-ready policy pack' },
         startupId: 'startup-4',
         startupName: 'LedgerLane',
         startupLogo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=120&q=80',
@@ -607,6 +619,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     founderName: 'Omar Hassan',
     founderAvatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=250&q=80',
     fundingRaised: 'Bootstrapped',
+    valuationUsd: 1800000,
     location: 'Dubai / Remote',
     investorReadinessScore: 76,
     growthVelocityScore: 79,
@@ -639,6 +652,7 @@ export const INITIAL_STARTUPS: Startup[] = [
     openRoles: [
       {
         id: 'role-501',
+        partnership: { mode: 'pay_on_delivery', label: 'Pay when made', amountUsd: 500, unit: 'project', milestone: 'Learning track delivered and tested' },
         startupId: 'startup-5',
         startupName: 'SkillForge',
         startupLogo: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=120&q=80',
@@ -657,6 +671,7 @@ export const INITIAL_STARTUPS: Startup[] = [
       },
       {
         id: 'role-502',
+        partnership: { mode: 'equity_plus_cash', label: 'Equity + cash', equityPercent: '1.0', amountUsd: 400, unit: 'month', milestone: 'Monthly creator partnership sprint' },
         startupId: 'startup-5',
         startupName: 'SkillForge',
         startupLogo: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=120&q=80',
