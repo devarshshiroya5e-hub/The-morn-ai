@@ -816,3 +816,55 @@ body {
   border-color:transparent !important;
   color:#0f172a;
 }
+
+
+/* Smooth interaction layer */
+html {
+  scroll-behavior: smooth;
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  transition-timing-function: cubic-bezier(.22,1,.36,1);
+}
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+.mornai-page-transition,
+.mornai-startup-explorer,
+.mornai-person-card,
+.mornai-startup-network-card,
+.mornai-role-card,
+.mornai-market-panel,
+.mornai-market-secondary,
+.mornai-market-primary,
+.mornai-close-btn {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+.mornai-pull-refresh {
+  transform: translateZ(0);
+  animation: mornai-pull-pop .22s cubic-bezier(.22,1,.36,1);
+}
+@keyframes mornai-pull-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
