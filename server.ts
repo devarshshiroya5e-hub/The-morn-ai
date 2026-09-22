@@ -68,6 +68,28 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+let fxCache: { fetchedAt: number; rates: Record<string, number> } | null = null;
+
+app.get("/api/fx-rates", async (_req, res) => {
+  try {
+    const now = Date.now();
+    if (fxCache && now - fxCache.fetchedAt < 6 * 60 * 60 * 1000) {
+      return res.json({ base: "USD", rates: fxCache.rates, fetchedAt: fxCache.fetchedAt });
+    }
+
+    const response = await fetch("https://api.frankfurter.app/latest?from=USD");
+    if (!response.ok) throw new Error("FX provider returned an error");
+
+    const payload = await response.json() as { rates?: Record<string, number> };
+    const rates = payload.rates || {};
+    fxCache = { fetchedAt: now, rates };
+    return res.json({ base: "USD", rates, fetchedAt: now });
+  } catch (error) {
+    console.error("FX rate fetch failed:", error);
+    return res.status(503).json({ error: "FX rates temporarily unavailable" });
+  }
+});
+
 // 1. AI Co-Founder & Business Strategist Chat
 app.post("/api/ai/co-founder-chat", async (req, res) => {
   try {
