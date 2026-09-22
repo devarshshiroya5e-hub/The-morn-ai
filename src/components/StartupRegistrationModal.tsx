@@ -172,10 +172,14 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const { currency, format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const roleSuggestions = React.useMemo(() => {
-    const list = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
+    const industryRoles = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
+    const leadershipRoles = ['Chief Executive Officer (CEO)', 'Chief Technology Officer (CTO)', 'Chief Operating Officer (COO)', 'Chief Marketing Officer (CMO)', 'Marketing Expert'];
     const query = normalizeRole(roleInput);
-    if (!query) return list.slice(0, 8);
-    return list.filter((role) => normalizeRole(role).includes(query)).slice(0, 8);
+    const source = query ? ALL_ROLE_OPTIONS : [...industryRoles, ...leadershipRoles];
+    return source
+      .filter((role, index, list) => list.findIndex((item) => normalizeRole(item) === normalizeRole(role)) === index)
+      .filter((role) => !query || normalizeRole(role).includes(query))
+      .slice(0, 10);
   }, [industry, roleInput]);
 
   const roleKeywords = React.useMemo(() => {
