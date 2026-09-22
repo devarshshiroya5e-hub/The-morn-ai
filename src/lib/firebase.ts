@@ -5,26 +5,19 @@ import { getStorage } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
-const requiredConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-const missingConfig = Object.entries(requiredConfig)
-  .filter(([, value]) => !value)
-  .map(([key]) => key);
-
-if (missingConfig.length) {
-  throw new Error(`Missing Firebase client configuration: ${missingConfig.join(', ')}. Configure the values in .env.local using .env.example.`);
-}
-
+// Firebase Web configuration is not a server secret. It identifies the Firebase
+// project; authorization is enforced by Firebase Auth + Firestore/Storage rules.
+// Environment variables can override these values in local/production builds,
+// but the fallback keeps the hosted frontend bootable when Vite env injection
+// is not configured.
 const firebaseConfig = {
-  ...requiredConfig,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || undefined,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBDSpsFJ9Z0-7EXVLleO7MQgsYLhAZK8N8',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'themorn-ai.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'themorn-ai',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'themorn-ai.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '753741589591',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:753741589591:web:b7d75cc2eee68b4c920712',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-QKMT76SRKH',
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
