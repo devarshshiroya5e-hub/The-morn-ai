@@ -114,8 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-          {currentUser.role === 'founder' && (
-            <button
+          <button
               id="header-register-startup-btn"
               onClick={onOpenRegisterStartup}
               className="mornai-app-ghost-btn hidden items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold lg:inline-flex"
@@ -123,7 +122,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <PlusCircle className="h-4 w-4 text-indigo-600" />
               New startup
             </button>
-          )}
 
           <button
             id="open-ai-strategist-btn"
