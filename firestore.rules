@@ -389,11 +389,11 @@ service cloud.firestore {
       allow create: if
         signedIn()
         && request.resource.data.startupId is string
-        && startupExists(request.resource.data.startupId)
+        && exists(/databases/$(database)/documents/startupListings/$(request.resource.data.startupId))
         && request.resource.data.founderId is string
-        && request.resource.data.talentId == request.auth.uid
         && request.resource.data.talentId is string
-        && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId == request.resource.data.founderId
+        && request.resource.data.talentId == request.auth.uid
+        && get(/databases/$(database)/documents/startupListings/$(request.resource.data.startupId)).data.founderId == request.resource.data.founderId
         && request.resource.data.participants is list
         && request.resource.data.participants.size() == 2
         && request.resource.data.founderId in request.resource.data.participants
