@@ -429,6 +429,7 @@ export default function App() {
       equityPreference: currentUser.equityPreference || null,
       reputationScore: currentUser.reputationScore || null,
       completedMilestones: currentUser.completedMilestones || 0,
+      onboarding: currentUser.onboarding || null,
       updatedAt: serverTimestamp(),
     };
 
@@ -448,6 +449,7 @@ export default function App() {
     currentUser.equityPreference,
     currentUser.reputationScore,
     currentUser.completedMilestones,
+    currentUser.onboarding,
   ]);
 
   // Network connection requests are centralized so both sides can see the relationship in real time.
