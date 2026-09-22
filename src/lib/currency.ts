@@ -50,7 +50,7 @@ export const currencyForCountry = (countryCode?: string): CurrencyCode =>
   COUNTRY_TO_CURRENCY[(countryCode || '').toUpperCase()] || 'USD';
 
 export const currencyForUser = (user?: User): CurrencyCode =>
-  currencyForCountry(user?.onboarding?.countryCode);
+  currencyForCountry(user?.onboarding?.countryCode || detectCountryCode());
 
 export const currencyMeta: Record<CurrencyCode, { locale: string; symbol: string }> = {
   USD: { locale: 'en-US', symbol: '$' },
