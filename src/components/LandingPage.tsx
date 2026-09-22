@@ -36,6 +36,33 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPrivacy }) => {
+  const [side, setSide] = useState<'owner' | 'freelancer'>('owner');
+
+  const sideContent = {
+    owner: {
+      title: 'For startup owners',
+      intro: 'Turn a real company need into a clear opportunity, then keep the work connected after the first conversation.',
+      features: [
+        ['Publish roles', 'Create focused opportunities with skills, responsibilities and startup context.'],
+        ['Find contributors', 'Browse real people, compare evidence and start a founder conversation.'],
+        ['Operate the work', 'Track tasks, roadmap, startup memory, appointments and team context.'],
+      ],
+      chat: '“I need a growth marketer who can own the launch loop.”',
+      reply: 'MornAI turns that need into a structured opportunity and shows the people whose profiles match it.'
+    },
+    freelancer: {
+      title: 'For contributors',
+      intro: 'Show what you can actually do, discover real startup work and understand the company before you join.',
+      features: [
+        ['Build your profile', 'Make your skills, experience and goals searchable to founders.'],
+        ['Discover opportunities', 'See startup roles with the work, skills and context in one place.'],
+        ['Start the conversation', 'Send a focused appointment request instead of another generic application.'],
+      ],
+      chat: '“I want early-stage work where I can own a real outcome.”',
+      reply: 'MornAI surfaces startup opportunities around your skills and lets your context travel with the introduction.'
+    }
+  } as const;
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8fafc] font-['Plus_Jakarta_Sans'] text-slate-900">
       <div className="mornai-ambient pointer-events-none fixed inset-0 -z-0" aria-hidden="true"><span className="mornai-orb mornai-orb-one" /><span className="mornai-orb mornai-orb-two" /><span className="mornai-orb mornai-orb-three" /></div>
@@ -95,6 +122,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
               </div>
             </div>
           </motion.div>
+        </section>
+
+        <section className="px-5 py-10 sm:px-8">
+          <div className="mx-auto max-w-6xl overflow-hidden rounded-[32px] border border-white/80 bg-white/55 shadow-[0_28px_90px_rgba(79,70,229,.10)] backdrop-blur-2xl">
+            <div className="grid lg:grid-cols-[.8fr_1.2fr]">
+              <div className="border-b border-white/70 bg-gradient-to-br from-violet-50/85 via-white/75 to-sky-50/75 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+                <div className="flex items-center gap-2 rounded-2xl border border-white/80 bg-white/70 p-1 shadow-sm">
+                  <button type="button" onClick={() => setSide('owner')} className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${side === 'owner' ? 'bg-slate-950 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}>Owner</button>
+                  <button type="button" onClick={() => setSide('freelancer')} className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${side === 'freelancer' ? 'bg-violet-600 text-white shadow-lg shadow-violet-200' : 'text-slate-500 hover:bg-white'}`}>Freelancer</button>
+                </div>
+                <span className="mt-8 inline-flex rounded-full bg-violet-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-[.16em] text-violet-700">Two-sided platform</span>
+                <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{sideContent[side].title}</h2>
+                <p className="mt-4 text-sm leading-7 text-slate-500">{sideContent[side].intro}</p>
+              </div>
+
+              <div className="p-6 sm:p-8">
+                <div className="grid gap-3 md:grid-cols-3">
+                  {sideContent[side].features.map(([title, text]) => (
+                    <div key={title} className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 shadow-sm">
+                      <p className="text-sm font-black text-slate-950">{title}</p>
+                      <p className="mt-2 text-[11px] leading-5 text-slate-500">{text}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 rounded-[24px] border border-violet-100 bg-gradient-to-br from-violet-50/85 via-white/90 to-sky-50/85 p-5">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-600 text-white shadow-lg shadow-violet-200"><Sparkles className="h-4 w-4" /></span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[.14em] text-violet-600">MornAI conversation</p>
+                      <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{sideContent[side].chat}</p>
+                      <div className="mt-3 rounded-2xl border border-white bg-white/80 p-3 text-[11px] leading-5 text-slate-500 shadow-sm">{sideContent[side].reply}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section id="features" className="px-5 py-20 sm:px-8">
