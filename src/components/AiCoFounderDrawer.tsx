@@ -43,14 +43,23 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
     {
       id: 'm-welcome',
       sender: 'ai',
-      text: `Hello ${currentUser.name}! I am your automated AI Co-Founder and Business Strategist for **${activeStartup.name}**.\n\nI have indexed all ${activeStartup.historyLogs.length} historical logs, pivots, and team commitments. How can I help steer our company roadmap, optimize role postings, or unblock our next sprint today?`,
+      text: currentUser.role === 'employee'
+        ? `Hi ${currentUser.name}. I’m your MornAI Career & Startup Coach.\n\nAsk me how to get a job, how to pitch yourself to a founder, what role fits your skills, how to price your work, or how to improve your profile. You do not need to own a startup to use this assistant.`
+        : `Hello ${currentUser.name}! I am your automated AI Co-Founder and Business Strategist for **${activeStartup.name}**.\n\nI have indexed the startup context and can help steer the roadmap, role strategy, hiring and next sprint.`,
       timestamp: 'Just now',
-      suggestions: [
-        'Analyze bottlenecks in our current Phase 1 sprint',
-        'Suggest which high-impact role we need to hire next',
-        'Review our investor readiness score and how to reach 95+',
-        'How should we structure equity vs stipend for new joiners?',
-      ],
+      suggestions: currentUser.role === 'employee'
+        ? [
+            'How can I get a job through MornAI?',
+            'How should I pitch myself to a founder?',
+            'Which role fits my skills best?',
+            'What should I charge for my work?',
+          ]
+        : [
+            'Analyze bottlenecks in our current sprint',
+            'Suggest the next role we should hire',
+            'Review our investor readiness',
+            'How should we structure a partnership for a new role?',
+          ],
     },
   ]);
 
@@ -98,8 +107,11 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           startup: activeStartup,
+          message: textToSend,
           userPrompt: textToSend,
           userRole: currentUser.role,
+          userProfile: currentUser,
+          chatHistory: messages.slice(-8),
         }),
       });
 
@@ -143,14 +155,16 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-sm sm:text-base font-['Outfit']">
-                AI Co-Founder & Strategist
+                {currentUser.role === 'employee' ? 'AI Career & Startup Coach' : 'AI Co-Founder & Strategist'}
               </h3>
               <span className="px-1.5 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
-                Active Memory
+                {currentUser.role === 'employee' ? 'Career Mode' : 'Active Memory'}
               </span>
             </div>
             <p className="text-[11px] text-slate-300">
-              Grounded in {activeStartup.historyLogs.length} historical logs & roadmap
+              {currentUser.role === 'employee'
+                ? 'Jobs • pitching • pricing • role fit • profile help'
+                : 'Grounded in ' + activeStartup.historyLogs.length + ' historical logs & roadmap'}
             </p>
           </div>
         </div>
@@ -163,7 +177,8 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
         </button>
       </div>
 
-      {/* Startup Context Switcher */}
+      {/* Context Switcher */}
+      {currentUser.role === 'founder' && (
       <div className="px-4 py-2 bg-indigo-50/60 border-b border-indigo-100 flex items-center justify-between text-xs flex-shrink-0">
         <span className="text-slate-500 font-medium">Advising Startup:</span>
         <select
@@ -181,6 +196,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
           ))}
         </select>
       </div>
+      )}
 
       {/* Chat Messages Body */}
       <div ref={chatScrollRef} className="mornai-ai-chat min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 bg-slate-50/50 touch-pan-y">
@@ -264,7 +280,9 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
           <input
             type="text"
             id="ai-co-founder-chat-input"
-            placeholder="Ask anything (e.g. roadmap, hiring post, sprint delegation)..."
+            placeholder={currentUser.role === 'employee'
+              ? 'Ask about jobs, pitching, role fit, pricing or your profile...'
+              : 'Ask anything about roadmap, hiring, roles or sprint delegation...'}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isLoading}
@@ -280,7 +298,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
           </button>
         </form>
         <p className="text-[10px] text-slate-400 mt-1.5 text-center">
-          Powered by Gemini 2.5 Flash • Context: {activeStartup.name}
+          Powered by MornAI AI • {currentUser.role === 'employee' ? 'Career & contributor coaching' : 'Startup context: ' + activeStartup.name}
         </p>
       </div>
 
