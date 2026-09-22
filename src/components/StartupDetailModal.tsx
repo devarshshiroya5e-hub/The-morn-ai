@@ -5,18 +5,13 @@ import {
   BriefcaseBusiness,
   Calendar,
   CheckCircle2,
-  Clock3,
   Code2,
   DollarSign,
-  ExternalLink,
-  Layers,
   MapPin,
   Rocket,
   Sparkles,
   TrendingUp,
-  Users,
   X,
-  Zap,
 } from 'lucide-react';
 import { RolePost, Startup, StartupMember, User } from '../types';
 
