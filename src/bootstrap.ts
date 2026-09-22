@@ -19,5 +19,6 @@ const loadFirebaseHostingConfig = async () => {
   }
 };
 
-await loadFirebaseHostingConfig();
-await import('./main.tsx');
+loadFirebaseHostingConfig()
+  .catch(() => undefined)
+  .finally(() => import('./main.tsx'));
