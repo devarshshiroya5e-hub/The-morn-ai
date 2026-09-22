@@ -626,12 +626,13 @@ export default function App() {
   // AI Co-Founder always needs a real startup context. Never open a hidden/empty
   // drawer when that context is still loading or unavailable.
   const handleOpenAiDrawer = () => {
+    if (currentUser.role === 'employee') {
+      setIsAiDrawerOpen(true);
+      return;
+    }
+
     if (!activeStartupContext) {
-      showToast(
-        currentUser.role === 'founder'
-          ? 'Create or select a startup before opening AI Co-Founder.'
-          : 'Join a startup before opening AI Co-Founder.',
-      );
+      showToast('Create or select a startup before opening AI Co-Founder.');
       setIsAiDrawerOpen(false);
       return;
     }
@@ -1141,11 +1142,11 @@ export default function App() {
       />
 
       {/* AI Co-Founder & Strategist Slide-out Drawer */}
-      {activeStartupContext && (
+      {isAiDrawerOpen && (
         <AiCoFounderDrawer
           isOpen={isAiDrawerOpen}
           onClose={() => setIsAiDrawerOpen(false)}
-          activeStartup={activeStartupContext}
+          activeStartup={activeStartupContext || startups[0]}
           currentUser={currentUser}
           allStartups={startups}
           onSelectStartup={(s) => {
@@ -1187,6 +1188,7 @@ export default function App() {
 
       <PricingModal
         isOpen={isPricingOpen}
+        currentUser={currentUser}
         onClose={() => setIsPricingOpen(false)}
       />
 
