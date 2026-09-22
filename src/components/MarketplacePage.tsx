@@ -475,9 +475,9 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
 
       <AnimatePresence>
         {selectedTalent && (
-          <motion.div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div className="pointer-events-none fixed inset-0 z-50 overflow-hidden bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="flex min-h-full items-center justify-center">
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-talent-modal my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:max-h-[calc(100dvh-3rem)]">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="pointer-events-auto mornai-talent-modal my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] sm:max-h-[calc(100dvh-3rem)]">
               <div className="shrink-0 p-5 pb-0 sm:p-6 sm:pb-0">
                 <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-3">
