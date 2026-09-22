@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Startup, User, RolePost, StartupMember } from '../types';
-import { 
-  X, 
-  Sparkles, 
-  MapPin, 
-  DollarSign, 
-  Calendar, 
-  CheckCircle2, 
-  Briefcase, 
-  BrainCircuit, 
-  Users, 
-  Layers, 
+import {
   ArrowRight,
+  BrainCircuit,
+  BriefcaseBusiness,
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  Code2,
+  DollarSign,
+  ExternalLink,
+  Layers,
+  MapPin,
+  Rocket,
+  Sparkles,
   TrendingUp,
-  AlertCircle,
-  ExternalLink
+  Users,
+  X,
+  Zap,
 } from 'lucide-react';
+import { RolePost, Startup, StartupMember, User } from '../types';
 
 interface StartupDetailModalProps {
   startup: Startup | null;
@@ -26,6 +29,8 @@ interface StartupDetailModalProps {
   onConsultAi: (startup: Startup) => void;
 }
 
+type ExplorerTab = 'overview' | 'roles' | 'team' | 'memory' | 'roadmap';
+
 export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
   startup,
   isOpen,
@@ -34,21 +39,19 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
   onBookAppointment,
   onConsultAi,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'memory' | 'roadmap' | 'roles' | 'team'>('overview');
+  const [activeTab, setActiveTab] = useState<ExplorerTab>('overview');
   const [selectedTeamMember, setSelectedTeamMember] = useState<StartupMember | null>(null);
 
   useEffect(() => {
-    if (!selectedTeamMember) return;
-    const frame = requestAnimationFrame(() => {
-      document.getElementById('team-profile-details')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [selectedTeamMember]);
+    if (!isOpen) {
+      setActiveTab('overview');
+      setSelectedTeamMember(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen || !startup) return null;
+
+  const openRoles = startup.openRoles.filter((role) => role.status === 'open');
 
   const selectedProfileDetails =
     selectedTeamMember?.profileDetails ||
@@ -78,578 +81,446 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
       ].filter(([, value]) => typeof value === 'string' && value.trim())
     : [];
 
+  const tabs: Array<{ id: ExplorerTab; label: string; count?: number }> = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'roles', label: 'Open roles', count: openRoles.length },
+    { id: 'team', label: 'Team', count: startup.members.length },
+    { id: 'memory', label: 'Memory', count: startup.historyLogs.length },
+    { id: 'roadmap', label: 'Roadmap', count: startup.roadmap.length },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/55 backdrop-blur-sm p-3 sm:p-5">
+    <div className="fixed inset-0 z-[80] bg-slate-950/55 backdrop-blur-sm p-2 sm:p-4">
       <button
+        type="button"
         onClick={onClose}
-        className="fixed right-5 top-5 z-[70] grid h-10 w-10 place-items-center rounded-full border border-white/30 bg-black/35 text-white shadow-xl backdrop-blur-md transition hover:bg-black/55 sm:right-7 sm:top-7"
+        className="fixed right-3 top-3 z-[100] grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-2xl backdrop-blur-md transition hover:bg-slate-950/80 sm:right-6 sm:top-6"
         aria-label="Close startup explorer"
       >
         <X className="h-5 w-5" />
       </button>
 
-      <div className="relative mx-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2.5rem)]">
-        
-        {/* Header Cover Banner */}
-        <div className="h-36 sm:h-44 bg-slate-800 relative overflow-hidden flex-shrink-0">
-          {startup.coverImage ? (
-            <img
-              src={startup.coverImage}
-              alt={startup.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-          {/* Quick Header Tags */}
-          <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold bg-white text-slate-900 rounded-md shadow-sm">
-              {startup.stage} Stage
-            </span>
-            <span className="px-2.5 py-1 text-xs font-semibold bg-black/40 backdrop-blur text-white rounded-md border border-white/20">
-              {startup.industry}
-            </span>
-          </div>
-        </div>
-
-        {/* Profile Card Header Info */}
-        <div className="px-6 pb-4 pt-5 border-b border-slate-200 bg-white relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mt-0 mb-4">
-            
-            <div className="flex items-center gap-3.5">
-              <img
-                src={startup.logo}
-                alt={startup.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border border-slate-200 shadow-md bg-white flex-shrink-0"
-              />
-              <div className="mb-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-['Outfit']">
-                    {startup.name}
-                  </h2>
-                  {startup.verified && (
-                    <CheckCircle2 className="w-5 h-5 text-indigo-600 fill-indigo-100" />
-                  )}
-                </div>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium line-clamp-1">{startup.tagline}</p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 self-stretch sm:self-auto">
-              <button
-                id="modal-consult-ai-btn"
-                onClick={() => onConsultAi(startup)}
-                className="flex-1 sm:flex-initial px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5"
-              >
-                <BrainCircuit className="w-4 h-4 text-indigo-600" />
-                AI Strategist
-              </button>
-
-              <button
-                id="modal-book-sync-btn"
-                onClick={() => onBookAppointment(startup, startup.openRoles[0])}
-                className="flex-1 sm:flex-initial px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Calendar className="w-4 h-4" />
-                Book Founder Appointment
-              </button>
-            </div>
-
-          </div>
-
-          {/* Key Metrics Bar */}
-          <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-xs text-slate-600 pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="text-slate-400">Funding:</span>
-              <span className="font-semibold text-slate-900">{startup.fundingRaised}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-slate-400" />
-              <span>{startup.location}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-slate-400">Investor Readiness:</span>
-              <span className="font-bold text-slate-900">{startup.investorReadinessScore}/100</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="text-slate-400">Growth Velocity:</span>
-              <span className="font-bold text-slate-900">{startup.growthVelocityScore}/100</span>
-            </div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 mt-4 overflow-x-auto pb-1 text-xs">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-3.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors ${
-                activeTab === 'overview'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              Overview & Pitch
-            </button>
-            <button
-              onClick={() => setActiveTab('memory')}
-              className={`px-3.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                activeTab === 'memory'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <BrainCircuit className="w-3.5 h-3.5 text-indigo-600" />
-              Memory & History ({startup.historyLogs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('roadmap')}
-              className={`px-3.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                activeTab === 'roadmap'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              Strategic Roadmap ({startup.roadmap.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('roles')}
-              className={`px-3.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                activeTab === 'roles'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              Open Roles ({startup.openRoles.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('team')}
-              className={`px-3.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                activeTab === 'team'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              Team ({startup.members.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Content Body */}
-        <div className="bg-slate-50/50 p-6 space-y-6">
-          
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              
-              {/* What this startup does */}
-              <div className="rounded-[24px] border border-violet-100 bg-gradient-to-br from-violet-50/90 via-white to-sky-50/80 p-5 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-[.16em] text-violet-600">What this startup does</p>
-                <h3 className="mt-2 text-lg font-black tracking-tight text-slate-950">{startup.tagline}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{startup.pitch || 'This startup has not added a detailed description yet.'}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-slate-600">{startup.industry}</span>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-slate-600">{startup.stage}</span>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-slate-600">{startup.location}</span>
-                </div>
-              </div>
-
-              {/* Pitch Statement */}
-              <div className="bg-white p-5 rounded-xl border border-slate-200">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Executive Pitch & Problem Solution
-                </h3>
-                <p className="text-sm text-slate-700 leading-relaxed font-normal">
-                  {startup.pitch}
-                </p>
-              </div>
-
-              {/* Tech Stack */}
-              <div className="bg-white p-5 rounded-xl border border-slate-200">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                  Core Technologies & Architecture
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {(startup.techStack || []).map((tech) => (
-                    <span
-                      key={tech}
-                      className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Founder Information */}
-              <div className="bg-white p-5 rounded-xl border border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={startup.founderAvatar}
-                    alt={startup.founderName}
-                    className="w-12 h-12 rounded-xl object-cover"
-                  />
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">{startup.founderName}</h4>
-                    <p className="text-xs text-slate-500">Founder & Registered Startup Owner</p>
-                    <p className="text-xs text-indigo-600 font-medium mt-0.5">Founded {startup.foundedYear} • {startup.location}</p>
+      <div className="mx-auto flex h-full max-w-6xl items-start justify-center">
+        <div className="mornai-startup-explorer my-1 flex max-h-[calc(100dvh-0.5rem)] w-full flex-col overflow-y-auto overscroll-contain rounded-[28px] border border-white/70 bg-white shadow-[0_30px_100px_rgba(15,23,42,.28)] sm:my-2 sm:max-h-[calc(100dvh-1rem)]">
+          <div className="relative h-48 shrink-0 overflow-hidden sm:h-60">
+            {startup.coverImage ? (
+              <img src={startup.coverImage} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-end justify-between gap-4 sm:bottom-6 sm:left-6 sm:right-6">
+              <div className="flex items-end gap-3">
+                <img
+                  src={startup.logo}
+                  alt={startup.name}
+                  className="h-20 w-20 rounded-[22px] border-4 border-white object-cover bg-white shadow-2xl sm:h-24 sm:w-24"
+                />
+                <div className="pb-1 text-white">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.14em] backdrop-blur-md">{startup.stage}</span>
+                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.14em] backdrop-blur-md">{startup.industry}</span>
+                    {startup.verified && (
+                      <span className="rounded-full bg-emerald-400/20 px-2.5 py-1 text-[9px] font-black text-emerald-100 backdrop-blur-md">
+                        <CheckCircle2 className="mr-1 inline h-3 w-3" /> Verified
+                      </span>
+                    )}
                   </div>
+                  <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">{startup.name}</h1>
+                  <p className="mt-1 max-w-3xl text-xs font-medium text-white/80 sm:text-sm">{startup.tagline}</p>
                 </div>
+              </div>
+            </div>
+          </div>
 
+          <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Metric label="Funding" value={startup.fundingRaised || 'Bootstrapped'} icon={<DollarSign className="h-3.5 w-3.5" />} />
+                <Metric label="Location" value={startup.location || 'Remote'} icon={<MapPin className="h-3.5 w-3.5" />} />
+                <Metric label="Investor readiness" value={`${startup.investorReadinessScore}/100`} icon={<Sparkles className="h-3.5 w-3.5" />} />
+                <Metric label="Growth velocity" value={`${startup.growthVelocityScore}/100`} icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
                 <button
-                  id="overview-contact-founder-btn"
-                  onClick={() => onBookAppointment(startup, startup.openRoles[0])}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  type="button"
+                  onClick={() => onConsultAi(startup)}
+                  className="mornai-market-secondary justify-center px-4"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
-                  Schedule Sync
+                  <BrainCircuit className="h-4 w-4" /> AI Strategist
                 </button>
-              </div>
-
-              {/* People currently working on this startup */}
-              <div className="bg-white p-5 rounded-xl border border-slate-200">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-slate-900">People working on this project</h3>
-                    <p className="mt-1 text-xs text-slate-500">See the active contributors and open a compact profile for each person.</p>
-                  </div>
-                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-extrabold text-indigo-700">{startup.members?.length || 0} people</span>
-                </div>
-
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {(startup.members || []).slice(0, 4).map((member) => (
-                    <div key={member.userId} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-                      <img src={member.avatar} alt={member.name} className="h-10 w-10 rounded-xl object-cover" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-extrabold text-slate-900">{member.name}</p>
-                        <p className="truncate text-[11px] text-slate-500">{member.role}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTeamMember(member)}
-                        className="shrink-0 rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
-                      >
-                        View Profile
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {startup.members?.length > 4 && (
+                {openRoles.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setActiveTab('team')}
-                    className="mt-3 text-[10px] font-extrabold text-indigo-700 hover:text-indigo-900"
+                    onClick={() => onBookAppointment(startup, openRoles[0])}
+                    className="mornai-market-primary justify-center px-4"
                   >
-                    View all {startup.members.length} team members
+                    <Calendar className="h-4 w-4" /> Start with a role
                   </button>
                 )}
               </div>
-
             </div>
-          )}
 
-          {/* TAB 2: AI MEMORY & HISTORY VAULT */}
-          {activeTab === 'memory' && (
-            <div className="space-y-4">
-              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-start gap-3">
-                <BrainCircuit className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <span className="font-bold text-indigo-900 block mb-1">
-                    Continuous AI Strategic Memory
-                  </span>
-                  <p className="text-indigo-800/90 leading-relaxed">
-                    Our AI Co-Founder continuously remembers each pivotal moment, previous experiment, tech decision, and current bottleneck recorded below. When new employees join, the AI delegates tasks informed by this exact memory.
-                  </p>
-                </div>
+            <div className="sticky top-0 z-20 mt-4 -mx-4 overflow-x-auto border-t border-slate-100 bg-white/95 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6">
+              <div className="flex min-w-max gap-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`rounded-xl px-3 py-2 text-[10px] font-black transition ${activeTab === tab.id ? 'bg-violet-50 text-violet-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                  >
+                    {tab.label}
+                    {typeof tab.count === 'number' && <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px]">{tab.count}</span>}
+                  </button>
+                ))}
               </div>
+            </div>
+          </div>
 
-              <div className="relative pl-6 border-l-2 border-indigo-200 space-y-6 my-4">
-                {(startup.historyLogs || []).map((log) => (
-                  <div key={log.id} className="relative group">
-                    {/* Timeline Node Dot */}
-                    <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-white border-4 border-indigo-600 shadow-sm" />
+          <div className="bg-slate-50/70 px-4 py-5 sm:px-6 sm:py-6">
+            {activeTab === 'overview' && (
+              <div className="space-y-5">
+                <div className="grid gap-5 lg:grid-cols-[1.45fr_.75fr]">
+                  <div className="space-y-5">
+                    <section className="rounded-[24px] border border-violet-100 bg-gradient-to-br from-violet-50/95 via-white to-sky-50/90 p-5">
+                      <span className="text-[10px] font-black uppercase tracking-[.16em] text-violet-600">What this startup does</span>
+                      <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">{startup.tagline}</h2>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{startup.pitch || 'This startup has not added a full description yet.'}</p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {[startup.industry, startup.stage, startup.location].filter(Boolean).map((item) => (
+                          <span key={item} className="rounded-full bg-white px-3 py-1.5 text-[9px] font-black text-slate-600 shadow-sm">{item}</span>
+                        ))}
+                      </div>
+                    </section>
 
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${
-                            log.type === 'pivot' ? 'bg-amber-100 text-amber-800' :
-                            log.type === 'bottleneck' ? 'bg-rose-100 text-rose-800' :
-                            log.type === 'traction' ? 'bg-emerald-100 text-emerald-800' :
-                            'bg-indigo-100 text-indigo-800'
-                          }`}>
-                            {log.type}
-                          </span>
-                          <h4 className="font-bold text-slate-900 text-sm">{log.title}</h4>
+                    <section className="grid gap-4 sm:grid-cols-2">
+                      <InfoCard title="Technology" icon={<Code2 className="h-4 w-4" />}>
+                        <div className="flex flex-wrap gap-2">
+                          {(startup.techStack || []).map((tech) => (
+                            <span key={tech} className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[10px] font-bold text-slate-700">{tech}</span>
+                          ))}
                         </div>
-                        <span className="text-xs text-slate-400 font-medium">{log.date}</span>
-                      </div>
-
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        {log.description}
-                      </p>
-
-                      <div className="mt-2.5 pt-2 border-t border-slate-100 text-xs flex items-center gap-1 text-slate-700">
-                        <span className="font-semibold text-slate-900">Strategic Impact:</span>
-                        <span>{log.impact}</span>
-                      </div>
-                    </div>
+                      </InfoCard>
+                      <InfoCard title="Company snapshot" icon={<Rocket className="h-4 w-4" />}>
+                        <div className="space-y-2 text-[11px] text-slate-600">
+                          <Row label="Founded" value={startup.foundedYear} />
+                          <Row label="Website" value={startup.website || 'Not listed'} />
+                          <Row label="Open roles" value={String(openRoles.length)} />
+                          <Row label="Team size" value={String(startup.members.length)} />
+                        </div>
+                      </InfoCard>
+                    </section>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* TAB 3: STRATEGIC ROADMAP */}
-          {activeTab === 'roadmap' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  AI-Synthesized Startup Milestones
-                </span>
-                <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  Current: Phase 1 Active
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {(startup.roadmap || []).map((milestone, idx) => (
-                  <div
-                    key={milestone.id}
-                    className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <aside className="space-y-5">
+                    <section className="rounded-[24px] border border-slate-200 bg-white p-5">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center justify-center">
-                          {idx + 1}
-                        </span>
-                        <h4 className="font-bold text-slate-900 text-sm">{milestone.phase}</h4>
+                        <img src={startup.founderAvatar} alt="" className="h-11 w-11 rounded-2xl object-cover" />
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-[.14em] text-slate-400">Founder</p>
+                          <h3 className="truncate text-sm font-black text-slate-950">{startup.founderName}</h3>
+                          <p className="text-[10px] text-slate-500">Registered startup owner</p>
+                        </div>
                       </div>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                        {milestone.duration}
-                      </span>
-                    </div>
+                      <button
+                        type="button"
+                        onClick={() => onBookAppointment(startup, openRoles[0])}
+                        disabled={openRoles.length === 0}
+                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[10px] font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Calendar className="h-3.5 w-3.5" /> Schedule founder conversation
+                      </button>
+                    </section>
 
-                    <h5 className="text-xs font-semibold text-indigo-900 mb-1">{milestone.title}</h5>
-                    <p className="text-xs text-slate-600 mb-3">{milestone.description}</p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-xs">
-                      <div>
-                        <span className="text-slate-400 block font-medium">Target KPI:</span>
-                        <span className="font-semibold text-slate-800">{milestone.kpiTarget}</span>
+                    <section className="rounded-[24px] border border-slate-200 bg-white p-5">
+                      <div className="flex items-center gap-2">
+                        <BriefcaseBusiness className="h-4 w-4 text-violet-600" />
+                        <h3 className="text-sm font-black text-slate-950">Roles at a glance</h3>
                       </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">Roles Critical to this Phase:</span>
-                        <span className="font-semibold text-indigo-700">{milestone.talentNeeded.join(', ')}</span>
+                      <div className="mt-3 space-y-2">
+                        {openRoles.slice(0, 4).map((role) => (
+                          <button
+                            key={role.id}
+                            type="button"
+                            onClick={() => onBookAppointment(startup, role)}
+                            className="group flex w-full items-center gap-2 rounded-2xl border border-violet-100 bg-violet-50/45 p-2.5 text-left transition hover:border-violet-300"
+                          >
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-violet-200 bg-white text-violet-600"><span className="text-base font-black">+</span></span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[10px] font-black text-violet-800">{role.title}</span>
+                              <span className="mt-0.5 block text-[9px] text-slate-500">{role.commitment}</span>
+                            </span>
+                            <ArrowRight className="h-3.5 w-3.5 shrink-0 text-violet-300 group-hover:text-violet-600" />
+                          </button>
+                        ))}
+                        {openRoles.length === 0 && <p className="text-[10px] text-slate-500">No open roles right now.</p>}
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: OPEN ROLES */}
-          {activeTab === 'roles' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Opportunities to Join & Earn
-                </span>
-                <span className="text-xs text-slate-500">
-                  {startup.openRoles?.length || 0} Active Positions
-                </span>
-              </div>
-
-              {startup.openRoles?.map((role) => (
-                <div
-                  key={role.id}
-                  className="bg-white p-5 rounded-xl border border-slate-200 hover:border-indigo-300 transition-colors shadow-sm space-y-3"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-base">{role.title}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 rounded">
-                          {role.type}
-                        </span>
-                        <span className="text-xs text-slate-500 font-medium">
-                          Equity: {role.equityRange} • Stipend: {role.stipendRange}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      id={`apply-role-btn-${role.id}`}
-                      onClick={() => onBookAppointment(startup, role)}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto"
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                      Book Appointment for Role
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">{role.description}</p>
-
-                  <div className="pt-2">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                      Required Skills
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {role.skills?.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-0.5 text-[11px] font-medium bg-slate-100 text-slate-700 rounded"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                    </section>
+                  </aside>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* TAB 5: TEAM */}
-          {activeTab === 'team' && (
-            <div className="space-y-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Active Contributors & Founders
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {startup.members?.map((member) => (
-                  <div
-                    key={member.userId}
-                    className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3"
-                  >
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-11 h-11 rounded-xl object-cover"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-slate-900 text-sm truncate">{member.name}</h4>
-                      <p className="text-xs text-slate-500 truncate">{member.role}</p>
-                      <p className="text-[11px] text-indigo-600 font-medium mt-0.5 truncate">{member.equityOrStipend}</p>
+                <section className="rounded-[24px] border border-slate-200 bg-white p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-[.14em] text-slate-400">People building it</span>
+                      <h3 className="mt-1 text-base font-black text-slate-950">Current team</h3>
                     </div>
+                    <button type="button" onClick={() => setActiveTab('team')} className="text-[10px] font-black text-violet-700">View team <ArrowRight className="ml-1 inline h-3 w-3" /></button>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {(startup.members || []).slice(0, 6).map((member) => (
+                      <TeamCard key={member.userId} member={member} onClick={() => setSelectedTeamMember(member)} />
+                    ))}
+                    {startup.members.length === 0 && <EmptyState title="Team not listed yet" body="This startup has not added public team members." />}
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {activeTab === 'roles' && (
+              <RolesPanel startup={startup} openRoles={openRoles} onBookAppointment={onBookAppointment} />
+            )}
+
+            {activeTab === 'team' && (
+              <section className="space-y-4">
+                <SectionHeading eyebrow="Team" title="People currently building this startup." body="Open a profile to review the contributor details they shared during onboarding." />
+                <div className="grid gap-3 md:grid-cols-2">
+                  {startup.members.map((member) => (
                     <button
+                      key={member.userId}
                       type="button"
                       onClick={() => setSelectedTeamMember(member)}
-                      className="shrink-0 rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                      className="flex items-center gap-3 rounded-[22px] border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_34px_rgba(124,58,237,.08)]"
                     >
-                      View Profile
+                      <img src={member.avatar} alt="" className="h-12 w-12 rounded-2xl object-cover" />
+                      <span className="min-w-0 flex-1">
+                        <strong className="block truncate text-xs font-black text-slate-950">{member.name}</strong>
+                        <span className="mt-0.5 block truncate text-[10px] text-slate-500">{member.role}</span>
+                        <span className="mt-1 block text-[9px] font-semibold text-violet-700">{(member.skills || []).slice(0, 3).join(' • ')}</span>
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-slate-300" />
                     </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {selectedTeamMember && (
-          <div
-            id="team-profile-details"
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/30 p-4 sm:p-8 backdrop-blur-xl"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-[28px] border border-white/80 bg-white/95 p-6 shadow-[0_30px_100px_rgba(15,23,42,.3)]">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={selectedTeamMember.avatar}
-                    alt={selectedTeamMember.name}
-                    className="h-14 w-14 rounded-2xl object-cover border border-slate-200"
-                  />
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-950">{selectedTeamMember.name}</h3>
-                    <p className="text-xs font-semibold text-indigo-600">{selectedTeamMember.role}</p>
-                  </div>
+                  ))}
+                  {startup.members.length === 0 && <EmptyState title="No public team members" body="The founder has not added a team roster yet." />}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTeamMember(null)}
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100"
-                  aria-label="Close profile"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              </section>
+            )}
 
-              <div className="mt-5 space-y-3">
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-slate-400">Profile ID</p>
-                  <p className="mt-1 break-all text-sm font-extrabold text-slate-900">{selectedTeamMember.userId}</p>
+            {activeTab === 'memory' && (
+              <section className="space-y-4">
+                <SectionHeading eyebrow="AI memory" title="Startup history, decisions and turning points." body="This is the context the AI layer can use to understand how the company got here." />
+                <div className="rounded-[24px] border border-violet-100 bg-violet-50/70 p-4 text-xs leading-6 text-violet-900">
+                  <BrainCircuit className="mr-2 inline h-4 w-4" />
+                  Continuous context helps the founder and future contributors work from the same history instead of rebuilding it from zero.
                 </div>
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-slate-400">Joined</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">{selectedTeamMember.joinedDate}</p>
-                </div>
-                {selectedTeamMember.skills?.length ? (
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                    <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-slate-400">Skills</p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {selectedTeamMember.skills.map((skill) => (
-                        <span key={skill} className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-600 border border-slate-200">{skill}</span>
-                      ))}
+                <div className="space-y-3">
+                  {(startup.historyLogs || []).map((log, index) => (
+                    <div key={log.id} className="relative rounded-[22px] border border-slate-200 bg-white p-4 pl-12">
+                      <span className="absolute left-4 top-5 grid h-6 w-6 place-items-center rounded-full bg-violet-50 text-[9px] font-black text-violet-700">{index + 1}</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-black uppercase tracking-[.1em] text-slate-600">{log.type}</span>
+                        <span className="text-[10px] font-bold text-slate-400">{log.date}</span>
+                      </div>
+                      <h3 className="mt-2 text-sm font-black text-slate-950">{log.title}</h3>
+                      <p className="mt-2 text-[11px] leading-5 text-slate-600">{log.description}</p>
+                      <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-[10px] font-semibold text-slate-600">Impact: {log.impact}</p>
                     </div>
+                  ))}
+                  {startup.historyLogs.length === 0 && <EmptyState title="No memory logs yet" body="The startup has not added strategic history." />}
+                </div>
+              </section>
+            )}
+
+            {activeTab === 'roadmap' && (
+              <section className="space-y-4">
+                <SectionHeading eyebrow="Roadmap" title="Where the startup is headed next." body="Review milestones, timing, KPI targets and the skills the team expects to need." />
+                <div className="space-y-3">
+                  {(startup.roadmap || []).map((milestone, index) => (
+                    <div key={milestone.id} className="rounded-[24px] border border-slate-200 bg-white p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex gap-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-[10px] font-black text-violet-700">{String(index + 1).padStart(2, '0')}</span>
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-[.14em] text-violet-600">{milestone.phase}</p>
+                            <h3 className="mt-1 text-sm font-black text-slate-950">{milestone.title}</h3>
+                          </div>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${milestone.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : milestone.status === 'in_progress' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {milestone.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-[11px] leading-6 text-slate-600">{milestone.description}</p>
+                      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                        <MiniFact label="Duration" value={milestone.duration} />
+                        <MiniFact label="KPI target" value={milestone.kpiTarget} />
+                        <MiniFact label="Talent needed" value={(milestone.talentNeeded || []).join(', ') || '—'} />
+                      </div>
+                      {milestone.riskFactors && (
+                        <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-[10px] font-semibold text-rose-700">Risk: {milestone.riskFactors}</div>
+                      )}
+                    </div>
+                  ))}
+                  {startup.roadmap.length === 0 && <EmptyState title="No roadmap published" body="The founder has not published a roadmap yet." />}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {selectedTeamMember && (
+            <div className="border-t border-slate-200 bg-white px-4 py-5 sm:px-6">
+              <div id="team-profile-details" className="rounded-[24px] border border-violet-100 bg-gradient-to-br from-violet-50/80 via-white to-sky-50/70 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <img src={selectedTeamMember.avatar} alt="" className="h-14 w-14 rounded-2xl object-cover shadow-md" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-black text-slate-950">{selectedTeamMember.name}</h3>
+                      <span className="rounded-full bg-white px-2 py-1 text-[9px] font-black text-violet-700">{selectedTeamMember.role}</span>
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-500">{(selectedTeamMember.skills || []).join(' • ')}</p>
                   </div>
-                ) : null}
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-indigo-500">Contribution</p>
-                  <p className="mt-1 text-sm font-semibold text-indigo-900">{selectedTeamMember.equityOrStipend}</p>
+                  <button type="button" onClick={() => setSelectedTeamMember(null)} className="mornai-market-secondary shrink-0">Close profile</button>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 p-3">
+                    <p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Contribution</p>
+                    <p className="mt-1.5 text-[11px] leading-5 text-slate-600">{selectedTeamMember.profileDetails?.contribution || 'Not provided in this startup roster.'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 p-3">
+                    <p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Equity / stipend</p>
+                    <p className="mt-1.5 text-[11px] leading-5 text-slate-600">{selectedTeamMember.equityOrStipend || 'Not listed'}</p>
+                  </div>
                 </div>
 
                 {onboardingAnswers.length > 0 && (
-                  <div className="pt-2">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-[.14em] text-indigo-500">Onboarding context</p>
-                        <p className="mt-1 text-xs text-slate-500">Every answer this person provided during MornAI signup.</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {onboardingAnswers.map(([label, value]) => (
+                      <div key={label} className="rounded-2xl border border-slate-200 bg-white/80 p-3">
+                        <p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">{label}</p>
+                        <p className="mt-1.5 whitespace-pre-line text-[11px] leading-5 text-slate-600">{value}</p>
                       </div>
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-extrabold text-indigo-700">
-                        {onboardingAnswers.length} answers
-                      </span>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {onboardingAnswers.map(([label, value]) => (
-                        <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-                          <p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">{label}</p>
-                          <p className="mt-1.5 whitespace-pre-wrap text-xs leading-6 font-semibold text-slate-800">{value}</p>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Modal Footer */}
-        <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-          <span>Registered on MornAI Ecosystem</span>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-700 hover:bg-slate-100 font-semibold rounded-lg transition-colors"
-          >
-            Close
-          </button>
+          )}
         </div>
-
       </div>
     </div>
   );
 };
+
+const RolesPanel = ({
+  startup,
+  openRoles,
+  onBookAppointment,
+}: {
+  startup: Startup;
+  openRoles: RolePost[];
+  onBookAppointment: (startup: Startup, role?: RolePost) => void;
+}) => (
+  <section className="space-y-4">
+    <SectionHeading eyebrow="Open roles" title="Choose the work you want to discuss." body="Every role shows the commitment, compensation and skills before you start a conversation." />
+    <div className="grid gap-3 lg:grid-cols-2">
+      {openRoles.map((role) => (
+        <article key={role.id} className="rounded-[24px] border border-violet-100 bg-white p-5 shadow-[0_14px_38px_rgba(124,58,237,.06)]">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-violet-200 bg-violet-50 text-violet-700">
+              <BriefcaseBusiness className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap gap-2">
+                <h3 className="text-sm font-black text-slate-950">{role.title}</h3>
+                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700">Open</span>
+              </div>
+              <p className="mt-1 text-[10px] text-slate-500">{role.commitment} • {role.type}</p>
+            </div>
+          </div>
+
+          <p className="mt-4 text-[11px] leading-5 text-slate-600">{role.description}</p>
+
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {role.skills.map((skill) => <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-bold text-slate-700">{skill}</span>)}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <MiniFact label="Equity" value={role.equityRange} />
+            <MiniFact label="Stipend" value={role.stipendRange} />
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-slate-50 p-3">
+            <p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Ideal candidate</p>
+            <p className="mt-1.5 text-[10px] leading-5 text-slate-600">{role.idealCandidate}</p>
+          </div>
+
+          <button type="button" onClick={() => onBookAppointment(startup, role)} className="mornai-market-primary mt-4 w-full justify-center">
+            Discuss this role <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </article>
+      ))}
+      {openRoles.length === 0 && <EmptyState title="No open roles" body="This startup is not hiring for a public role right now." />}
+    </div>
+  </section>
+);
+
+const Metric = ({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) => (
+  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[.1em] text-slate-400">{icon}{label}</div>
+    <p className="mt-1 truncate text-[10px] font-black text-slate-900">{value}</p>
+  </div>
+);
+
+const InfoCard = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
+  <section className="rounded-[24px] border border-slate-200 bg-white p-5">
+    <div className="flex items-center gap-2 text-sm font-black text-slate-950">{icon}<span>{title}</span></div>
+    <div className="mt-4">{children}</div>
+  </section>
+);
+
+const Row = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+    <span>{label}</span>
+    <span className="max-w-[65%] text-right font-bold text-slate-800">{value || '—'}</span>
+  </div>
+);
+
+const MiniFact = ({ label, value }: { label: string; value: string }) => (
+  <div className="rounded-2xl bg-slate-50 p-3">
+    <p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">{label}</p>
+    <p className="mt-1.5 text-[10px] font-bold leading-5 text-slate-700">{value || '—'}</p>
+  </div>
+);
+
+const TeamCard = ({ member, onClick }: { member: StartupMember; onClick: () => void }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50/70 p-3 text-left transition hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white"
+  >
+    <img src={member.avatar} alt="" className="h-11 w-11 rounded-2xl object-cover" />
+    <span className="min-w-0 flex-1">
+      <strong className="block truncate text-xs font-black text-slate-950">{member.name}</strong>
+      <span className="mt-0.5 block truncate text-[10px] text-slate-500">{member.role}</span>
+    </span>
+    <ArrowRight className="h-4 w-4 text-slate-300" />
+  </button>
+);
+
+const SectionHeading = ({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) => (
+  <div>
+    <p className="text-[10px] font-black uppercase tracking-[.16em] text-violet-600">{eyebrow}</p>
+    <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">{title}</h2>
+    <p className="mt-1.5 max-w-2xl text-[11px] leading-5 text-slate-500">{body}</p>
+  </div>
+);
+
+const EmptyState = ({ title, body }: { title: string; body: string }) => (
+  <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/70 p-8 text-center">
+    <Sparkles className="mx-auto h-6 w-6 text-slate-300" />
+    <p className="mt-3 text-xs font-black text-slate-900">{title}</p>
+    <p className="mx-auto mt-1 max-w-md text-[10px] leading-5 text-slate-500">{body}</p>
+  </div>
+);
