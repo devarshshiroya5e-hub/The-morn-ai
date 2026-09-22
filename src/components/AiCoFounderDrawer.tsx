@@ -17,7 +17,7 @@ import {
 interface AiCoFounderDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  activeStartup: Startup;
+  activeStartup: Startup | null;
   currentUser: User;
   allStartups: Startup[];
   onSelectStartup: (startup: Startup) => void;
@@ -106,7 +106,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          startup: activeStartup,
+          startup: currentUser.role === 'founder' ? activeStartup : null,
           message: textToSend,
           userPrompt: textToSend,
           userRole: currentUser.role,
@@ -185,7 +185,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
       </div>
 
       {/* Context Switcher */}
-      {currentUser.role === 'founder' && (
+      {currentUser.role === 'founder' && activeStartup && (
       <div className="px-4 py-2 bg-indigo-50/60 border-b border-indigo-100 flex items-center justify-between text-xs flex-shrink-0">
         <span className="text-slate-500 font-medium">Advising Startup:</span>
         <select
