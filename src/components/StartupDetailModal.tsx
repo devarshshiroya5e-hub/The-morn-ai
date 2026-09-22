@@ -489,7 +489,7 @@ const MiniFact = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const TeamCard = ({ member, onClick }: { member: StartupMember; onClick: () => void }) => (
+const TeamCard: React.FC<{ member: StartupMember; onClick: () => void }> = ({ member, onClick }) => (
   <button
     type="button"
     onClick={onClick}
