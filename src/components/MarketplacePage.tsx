@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { ConnectionRequest, RolePost, Startup, User } from '../types';
+import { useLocalizedCurrency } from '../lib/currency';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
 
 type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections' | 'saved';
@@ -68,6 +69,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const [industry, setIndustry] = useState('All');
   const [selectedTalent, setSelectedTalent] = useState<User | null>(null);
   const [onlyStrongMatches, setOnlyStrongMatches] = useState(false);
+  const { format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const networkStartups = useMemo(() => startups, [startups]);
   const savedPeople = useMemo(() => allTalents.filter((person) => savedTalentIds.includes(person.id)), [allTalents, savedTalentIds]);
@@ -324,6 +326,26 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                 </div>
 
                 <p className="mt-3 line-clamp-2 text-[11px] leading-5 text-slate-500">{startup.tagline}</p>
+
+                <div className="mt-3 space-y-1.5">
+                  {startup.openRoles.filter((role) => role.status === 'open').slice(0, 3).map((role) => (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => onBookAppointment(startup, role)}
+                      className="group flex w-full items-center gap-2 rounded-xl border border-violet-100 bg-violet-50/40 px-2.5 py-2 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white"
+                    >
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-violet-200 bg-white text-violet-600">
+                        <span className="text-base font-black leading-none">+</span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[10px] font-black text-violet-800">{role.title}</span>
+                        <span className="mt-0.5 block truncate text-[9px] font-semibold text-slate-500">{getPartnershipText(role, formatMoney)}</span>
+                      </span>
+                      <ArrowRight className="h-3 w-3 shrink-0 text-violet-300 transition group-hover:text-violet-600" />
+                    </button>
+                  ))}
+                </div>
 
                 <div className="mt-4 flex gap-2">
                   <button type="button" onClick={() => onSelectStartup(startup)} className="mornai-market-secondary flex-1">Explore</button>
@@ -594,6 +616,22 @@ const getProfileDetails = (user: User): Array<{ label: string; value: string }> 
   return [...shared, ...roleSpecific]
     .filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
     .map(([label, value]) => ({ label, value: value.trim() }));
+};
+
+const getPartnershipText = (role: RolePost, formatMoney: (usd: number) => string) => {
+  const p = role.partnership;
+  if (!p) return role.type || 'Founder-defined partnership';
+  switch (p.mode) {
+    case 'equity': return p.equityPercent ? p.equityPercent + '% equity' : 'Equity';
+    case 'helper': return 'Helper / volunteer';
+    case 'pay_on_delivery': return p.amountUsd ? formatMoney(p.amountUsd) + ' on delivery' : 'Pay on delivery';
+    case 'pay_per_hour': return p.amountUsd ? formatMoney(p.amountUsd) + ' / hour' : 'Pay per hour';
+    case 'pay_per_task': return p.amountUsd ? formatMoney(p.amountUsd) + ' / task' : 'Pay per task';
+    case 'fixed_project': return p.amountUsd ? formatMoney(p.amountUsd) + ' fixed' : 'Fixed project fee';
+    case 'revenue_share': return p.equityPercent ? p.equityPercent + '% revenue share' : 'Revenue share';
+    case 'equity_plus_cash': return p.equityPercent && p.amountUsd ? p.equityPercent + '% equity + ' + formatMoney(p.amountUsd) : 'Equity + cash';
+    default: return p.label || role.type || 'Founder-defined partnership';
+  }
 };
 
 const EmptyState = ({ title, body }: { title: string; body: string }) => (
