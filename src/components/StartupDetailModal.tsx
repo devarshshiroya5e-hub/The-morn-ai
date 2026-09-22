@@ -424,7 +424,7 @@ const Row = ({ label, value, icon }: { label: string; value: string; icon?: Reac
   </div>
 );
 
-const RoleCompact = ({ role, onClick, formatMoney }: { role: RolePost; onClick: () => void; formatMoney: (usd: number) => string }) => (
+const RoleCompact: React.FC<{ role: RolePost; onClick: () => void; formatMoney: (usd: number) => string }> = ({ role, onClick, formatMoney }) => (
   <button type="button" onClick={onClick} className="group flex w-full items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white">
     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-violet-200 bg-white text-violet-600">
       <span className="text-lg font-black">+</span>
@@ -437,7 +437,7 @@ const RoleCompact = ({ role, onClick, formatMoney }: { role: RolePost; onClick: 
   </button>
 );
 
-const RoleCard = ({ startup, role, onBookAppointment, formatMoney }: { startup: Startup; role: RolePost; onBookAppointment: (startup: Startup, role?: RolePost) => void; formatMoney: (usd: number) => string }) => (
+const RoleCard: React.FC<{ startup: Startup; role: RolePost; onBookAppointment: (startup: Startup, role?: RolePost) => void; formatMoney: (usd: number) => string }> = ({ startup, role, onBookAppointment, formatMoney }) => (
   <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,.05)]">
     <div className="flex items-start gap-3">
       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-violet-200 bg-violet-50 text-violet-700">
@@ -474,7 +474,7 @@ const RoleCard = ({ startup, role, onBookAppointment, formatMoney }: { startup: 
   </article>
 );
 
-const TeamCard = ({ member, onClick }: { member: StartupMember; onClick: () => void }) => (
+const TeamCard: React.FC<{ member: StartupMember; onClick: () => void }> = ({ member, onClick }) => (
   <button type="button" onClick={onClick} className="flex items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50/70 p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white">
     <img src={member.avatar} alt="" className="h-11 w-11 rounded-2xl object-cover" />
     <span className="min-w-0 flex-1">
