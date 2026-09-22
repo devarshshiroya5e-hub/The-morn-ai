@@ -147,6 +147,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [pitch, setPitch] = useState('');
   const [techStackInput, setTechStackInput] = useState('React, TypeScript, Python, Gemini API');
   const [fundingRaised, setFundingRaised] = useState('$150,000');
+  const [valuationUsd, setValuationUsd] = useState('2500000');
   const [location, setLocation] = useState('San Francisco, CA (Remote)');
   const [roleInput, setRoleInput] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -155,6 +156,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const { currency, format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const roleSuggestions = React.useMemo(() => {
     const list = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
@@ -242,6 +244,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       founderName: currentUser.name,
       founderAvatar: currentUser.avatar,
       fundingRaised,
+      valuationUsd: Number(valuationUsd) || 0,
+      currencyCode: currency,
       investorReadinessScore: 84,
       growthVelocityScore: 88,
       verified: true,
@@ -396,6 +400,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       setName('');
       setTagline('');
       setPitch('');
+      setValuationUsd('2500000');
       setRoleInput('');
       setSelectedRoles([]);
       setIsSynthesizing(false);
@@ -502,7 +507,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Current Stage
@@ -531,6 +536,19 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Company Valuation (USD base)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={valuationUsd}
+                onChange={(e) => setValuationUsd(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+              />
+              <p className="mt-1 text-[9px] text-slate-400">Displayed to viewers in their regional currency.</p>
+            </div>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Location
