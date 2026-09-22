@@ -514,6 +514,26 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                       </div>
                     </div>
 
+                    {getProfileDetails(selectedTalent).length > 0 && (
+                      <section className="mt-6">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="mornai-modal-label">Profile details</p>
+                            <p className="mt-1 text-[10px] text-slate-400">Answers shared during signup</p>
+                          </div>
+                          <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[9px] font-black text-violet-700">{getProfileDetails(selectedTalent).length} details</span>
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          {getProfileDetails(selectedTalent).map(({ label, value }) => (
+                            <div key={label} className="rounded-2xl border border-slate-200 bg-white/70 p-3">
+                              <p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">{label}</p>
+                              <p className="mt-1.5 whitespace-pre-line text-[11px] leading-5 text-slate-600">{value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
                     <div className="mt-6 rounded-[22px] border border-violet-100 bg-violet-50/70 p-4">
                       <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-600">Why this profile matters</p>
                       <p className="mt-1 text-xs leading-5 text-slate-600">MornAI uses skills, contribution history, reputation, and stated preferences to make human matches easier to evaluate.</p>
@@ -533,6 +553,44 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
       )}
     </div>
   );
+};
+
+
+const getProfileDetails = (user: User): Array<{ label: string; value: string }> => {
+  const onboarding = user.onboarding;
+  if (!onboarding) return [];
+
+  const shared = [
+    ['Profile title', onboarding.profileTitle],
+    ['Experience level', onboarding.experienceLevel],
+    ['What they contribute', onboarding.contribution],
+    ['Availability', onboarding.availability],
+    ['Work style', onboarding.workStyle],
+    ['90-day goal', onboarding.goal],
+    ['Motivation', onboarding.motivation],
+    ['Profile story', onboarding.story],
+  ] as Array<[string, string | undefined]>;
+
+  const roleSpecific = user.role === 'founder'
+    ? [
+        ['Startup / project', onboarding.startupName],
+        ['Startup stage', onboarding.startupStage],
+        ['Industry', onboarding.industry],
+        ['Problem being solved', onboarding.problem],
+        ['Target customer', onboarding.targetCustomer],
+        ['Traction', onboarding.traction],
+        ['Previous wins', onboarding.previousWins],
+      ]
+    : [
+        ['Desired role', onboarding.desiredRole],
+        ['Focus areas', onboarding.focusAreas],
+        ['Achievements / proof of work', onboarding.achievements],
+        ['Ideal startup', onboarding.idealStartup],
+      ];
+
+  return [...shared, ...roleSpecific]
+    .filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
+    .map(([label, value]) => ({ label, value: value.trim() }));
 };
 
 const EmptyState = ({ title, body }: { title: string; body: string }) => (
