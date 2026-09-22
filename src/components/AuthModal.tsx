@@ -122,7 +122,7 @@ const avatar = (name: string) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Member')}&background=5B5CF0&color=fff&bold=true`;
 
 const AUTH_RATE_LIMIT_KEY = 'mornai-auth-attempts-v1';
-const AUTH_RATE_WINDOW_MS = 10 * 60 * 1000;
+const AUTH_RATE_WINDOW_MS = 4 * 60 * 1000;
 const AUTH_RATE_MAX = 6;
 
 const consumeAuthAttempt = () => {
