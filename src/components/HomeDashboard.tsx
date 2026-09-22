@@ -237,6 +237,37 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </div>
       </div>
 
+      {isFounder && relatedStartup && relatedStartup.tasks.length > 0 && (
+        <section className="mornai-home-panel rounded-[28px] p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <span className="mornai-section-kicker">Current sprint</span>
+              <h2 className="mt-3 text-xl font-black text-slate-950">The three tasks currently visible to your startup team</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">These are the active work items attached to {relatedStartup.name}.</p>
+            </div>
+            <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[9px] font-black text-violet-700">{Math.min(3, relatedStartup.tasks.length)} tasks</span>
+          </div>
+          <div className="mt-5 grid gap-2 md:grid-cols-3">
+            {relatedStartup.tasks.slice(0, 3).map((task, index) => (
+              <div key={task.id} className="rounded-[20px] border border-slate-200 bg-white/75 p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-violet-50 text-violet-600 text-[10px] font-black">{index + 1}</span>
+                  <span className={`rounded-full px-2 py-1 text-[8px] font-black uppercase tracking-[.08em] ${
+                    task.priority === 'High' ? 'bg-rose-50 text-rose-600' : task.priority === 'Medium' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                  }`}>{task.priority}</span>
+                </div>
+                <h3 className="mt-3 text-xs font-black leading-5 text-slate-950">{task.title}</h3>
+                <p className="mt-1.5 line-clamp-3 text-[10px] leading-5 text-slate-500">{task.description}</p>
+                <div className="mt-3 flex items-center justify-between gap-2 text-[9px] font-bold text-slate-400">
+                  <span>{task.deadline}</span>
+                  <span className="capitalize">{task.status.replace('_', ' ')}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {statCards.map((item) => {
           const Icon = item.icon;
