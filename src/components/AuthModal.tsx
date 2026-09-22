@@ -311,23 +311,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const onboarding = {
       story: story.trim(),
       goal: goal.trim(),
-      startupName: role === 'founder' ? startup.trim() : undefined,
-      startupStage: role === 'founder' ? stage : undefined,
-      industry: role === 'founder' ? industry.trim() : undefined,
       availability,
       workStyle,
       experienceLevel,
       profileTitle: profileTitle.trim(),
       contribution: contribution.trim(),
       motivation: motivation.trim(),
-      problem: role === 'founder' ? problem.trim() : undefined,
-      targetCustomer: role === 'founder' ? targetCustomer.trim() : undefined,
-      traction: role === 'founder' ? traction : undefined,
-      previousWins: role === 'founder' ? previousWins.trim() : undefined,
-      desiredRole: role === 'employee' ? desiredRole.trim() : undefined,
-      focusAreas: role === 'employee' ? focusAreas.trim() : undefined,
-      achievements: role === 'employee' ? achievements.trim() : undefined,
-      idealStartup: role === 'employee' ? idealStartup.trim() : undefined,
+      ...(role === 'founder'
+        ? {
+            startupName: startup.trim(),
+            startupStage: stage,
+            industry: industry.trim(),
+            problem: problem.trim(),
+            targetCustomer: targetCustomer.trim(),
+            traction,
+            previousWins: previousWins.trim(),
+          }
+        : {
+            desiredRole: desiredRole.trim(),
+            focusAreas: focusAreas.trim(),
+            achievements: achievements.trim(),
+            idealStartup: idealStartup.trim(),
+          }),
     };
 
     const profile: User = {
