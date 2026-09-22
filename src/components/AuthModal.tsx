@@ -812,7 +812,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           <>
                             <Head n="05" title="Give your profile a point of view" text="These answers make your profile human, useful and specific instead of another empty résumé." />
                             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                              <Select p="Your region / country" value={countryCode} set={setCountryCode} options={REGION_OPTIONS.map(([code, label]) => `${code} — ${label}`)} />
+                              <label className="block">
+                                <span className="mb-2 block text-xs font-bold text-slate-500">Your region / country</span>
+                                <select
+                                  required
+                                  value={countryCode}
+                                  onChange={(event) => setCountryCode(event.target.value)}
+                                  className="mornai-signup-field w-full rounded-2xl px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-2xl transition-all focus:bg-white/80"
+                                >
+                                  {REGION_OPTIONS.map(([code, label]) => (
+                                    <option key={code} value={code}>{label}</option>
+                                  ))}
+                                </select>
+                              </label>
                               <Select p="Availability" value={availability} set={setAvailability} options={['5–10 hours / week','10–20 hours / week','20+ hours / week','Full-time']} />
                               <Select p="Preferred work style" value={workStyle} set={setWorkStyle} options={['Remote','Hybrid','In-person','Flexible']} />
                             </div>
