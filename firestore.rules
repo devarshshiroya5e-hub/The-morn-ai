@@ -236,8 +236,9 @@ service cloud.firestore {
     // STARTUPS
     // ---------------------------------------------------------
 
+    // Private startup records: only the founder or an active member may read them.
     match /startups/{startupId} {
-      allow read: if signedIn();
+      allow read: if isMember(startupId);
 
       allow create: if
         signedIn()
@@ -340,6 +341,32 @@ service cloud.firestore {
     match /worldChat/messages/{messageId} {
       allow read: if signedIn();
       allow create, update, delete: if false;
+    }
+
+    // ---------------------------------------------------------
+    // PUBLIC STARTUP LISTINGS
+    // Discovery-safe startup metadata only. Sensitive history/tasks/team
+    // records remain in /startups/{startupId} and are member-scoped.
+    // ---------------------------------------------------------
+
+    match /startupListings/{startupId} {
+      allow read: if signedIn();
+
+      allow create: if
+        isFounder(startupId)
+        && request.resource.data.id == startupId
+        && request.resource.data.founderId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.openRoles is list;
+
+      allow update: if
+        isFounder(startupId)
+        && request.resource.data.id == startupId
+        && request.resource.data.founderId == request.auth.uid
+        && request.resource.data.openRoles is list;
+
+      allow delete: if isFounder(startupId);
     }
 
     // ---------------------------------------------------------
