@@ -14,6 +14,97 @@ const ROLE_SUGGESTIONS: Record<string, string[]> = {
   'HealthTech': ['AI Engineer', 'Backend Developer', 'Frontend Developer', 'Full-Stack Developer', 'Health Data Analyst', 'Product Manager', 'UI/UX Designer', 'Clinical Operations Specialist', 'Growth Marketer', 'Video Editor'],
 };
 
+const ALL_ROLE_OPTIONS = [
+  // Engineering & software
+  'Software Engineer','Software Developer','Coder','Programmer','Frontend Developer','Backend Developer','Full-Stack Developer',
+  'Web Developer','Mobile App Developer','Android Developer','iOS Developer','React Developer','React Native Developer',
+  'Next.js Developer','Vue.js Developer','Angular Developer','Node.js Developer','Python Developer','Java Developer','C++ Developer',
+  'C# Developer','.NET Developer','Go Developer','Rust Developer','PHP Developer','Ruby Developer','Swift Developer','Kotlin Developer',
+  'Flutter Developer','Dart Developer','WordPress Developer','Shopify Developer','Webflow Developer','Framer Developer',
+  'API Developer','API Integration Specialist','Database Developer','Database Administrator','SQL Developer','QA Engineer',
+  'QA Tester','Automation Tester','Test Engineer','SDET','DevOps Engineer','DevSecOps Engineer','Cloud Engineer',
+  'Cloud Architect','Solutions Architect','Software Architect','Site Reliability Engineer','Platform Engineer','Infrastructure Engineer',
+  'Systems Engineer','Network Engineer','Network Administrator','IT Administrator','IT Support Specialist','Technical Support Engineer',
+  'Release Engineer','Build Engineer','Embedded Systems Engineer','Firmware Engineer','Hardware Engineer','Robotics Engineer',
+  'IoT Engineer','Game Developer','Unity Developer','Unreal Engine Developer','Blockchain Developer','Web3 Developer',
+  'Smart Contract Developer','Cybersecurity Engineer','Security Engineer','Ethical Hacker','Penetration Tester','Security Analyst',
+  'Security Architect',
+
+  // AI, data & research
+  'AI Engineer','AI Developer','AI Agent Developer','AI Researcher','AI Research Engineer','Machine Learning Engineer',
+  'ML Engineer','Deep Learning Engineer','NLP Engineer','Computer Vision Engineer','Generative AI Engineer','LLM Engineer',
+  'RAG Engineer','MLOps Engineer','Prompt Engineer','AI Product Manager','AI Project Manager','AI Solutions Architect',
+  'AI Operations Specialist','AI Automation Specialist','Data Engineer','Data Scientist','Data Analyst','Business Intelligence Analyst',
+  'BI Developer','Analytics Engineer','Data Architect','Data Quality Analyst','Data Labeling Specialist','Research Analyst',
+  'Research Scientist','Market Research Analyst','Business Analyst','Operations Research Analyst','Statistician',
+
+  // Product & design
+  'Product Manager','Associate Product Manager','Technical Product Manager','Product Owner','Product Operations Manager',
+  'Product Analyst','Product Researcher','Program Manager','Project Manager','Project Coordinator','Scrum Master','Agile Coach',
+  'UX Designer','UI Designer','UI/UX Designer','Product Designer','UX Researcher','UX Writer','Interaction Designer',
+  'Visual Designer','Graphic Designer','Brand Designer','Brand Strategist','Design Lead','Design Systems Designer',
+  'Web Designer','Mobile App Designer','Motion Designer','3D Designer','3D Artist','3D Modeler','3D Animator',
+  'Illustrator','Presentation Designer','Logo Designer','Creative Director','Art Director','Design Director','Figma Designer',
+
+  // Marketing, content & media
+  'Marketing Manager','Marketing Specialist','Marketing Strategist','Growth Marketer','Growth Manager','Growth Hacker',
+  'Digital Marketing Specialist','Performance Marketer','Product Marketer','Content Marketer','Content Strategist',
+  'SEO Specialist','Technical SEO Specialist','Local SEO Specialist','SEM Specialist','Google Ads Specialist','Meta Ads Specialist',
+  'Social Media Manager','Social Media Specialist','Community Manager','Community Builder','Influencer Marketing Manager',
+  'Creator Partnerships Manager','Affiliate Marketing Manager','Email Marketing Specialist','Lifecycle Marketing Manager',
+  'CRM Specialist','Marketing Automation Specialist','PR Specialist','Public Relations Manager','Communications Manager',
+  'Copywriter','Content Writer','Technical Writer','Script Writer','Creative Writer','Editor','Proofreader','Blogger',
+  'Newsletter Writer','Content Creator','Creator Manager','YouTube Manager','Instagram Manager','TikTok Manager',
+  'Video Editor','Short-form Video Editor','Long-form Video Editor','Video Producer','Video Director','Filmmaker',
+  'Motion Graphics Artist','VFX Artist','Colorist','Color Grading Specialist','Sound Designer','Audio Editor',
+  'Podcast Producer','Voice-over Artist','Photographer','Product Photographer','Thumbnail Designer',
+
+  // Sales, business & partnerships
+  'Sales Manager','Sales Specialist','Sales Executive','Business Development Manager','Business Development Executive',
+  'Business Development Representative','Sales Development Representative','Account Executive','Account Manager',
+  'Key Account Manager','Enterprise Sales Specialist','B2B Sales Specialist','B2C Sales Specialist','Inside Sales Representative',
+  'Partnerships Manager','Partnerships Specialist','Channel Partnerships Manager','Customer Success Manager','Customer Success Specialist',
+  'Customer Support Specialist','Customer Experience Specialist','Client Success Manager','Solutions Consultant',
+  'Sales Operations Specialist','Revenue Operations Manager','Sales Enablement Specialist','Lead Generation Specialist',
+  'Appointment Setter','Recruitment Sales Specialist',
+
+  // Startup leadership & operations
+  'Co-Founder','Chief Executive Officer (CEO)','Chief Technology Officer (CTO)','Chief Operating Officer (COO)',
+  'Chief Marketing Officer (CMO)','Chief Product Officer (CPO)','Chief Financial Officer (CFO)','Chief Growth Officer (CGO)',
+  'Chief Revenue Officer (CRO)','Chief People Officer (CPO)','Chief of Staff','Startup Operator','Startup Generalist',
+  'Operations Manager','Business Operations Manager','Operations Specialist','Strategy Manager','Business Strategy Consultant',
+  'Management Consultant','Strategy Consultant','Program Operations Manager','Project Operations Manager','Executive Assistant',
+  'Virtual Assistant','Office Manager','Founder Associate','Business Operations Analyst','Process Improvement Specialist',
+
+  // Finance, legal & compliance
+  'Financial Analyst','Finance Manager','FP&A Analyst','Accountant','Bookkeeper','Financial Controller','Auditor',
+  'Tax Specialist','GST Specialist','Investment Analyst','Financial Planner','Financial Modeling Analyst','Risk Analyst',
+  'Risk Manager','Treasury Specialist','Credit Analyst','Procurement Specialist','Vendor Manager','Legal Counsel',
+  'Corporate Lawyer','Contract Lawyer','Legal Researcher','Contract Manager','Compliance Specialist','Privacy Specialist',
+  'Data Protection Specialist','Regulatory Affairs Specialist','Intellectual Property Specialist','Paralegal',
+
+  // People & recruiting
+  'HR Manager','HR Specialist','People Operations Manager','People Operations Specialist','Talent Acquisition Specialist',
+  'Recruiter','Technical Recruiter','Executive Recruiter','Talent Sourcer','Recruitment Coordinator','People Partner',
+  'Learning & Development Specialist','Training Manager','Employee Experience Manager','Employer Branding Specialist',
+  'Compensation & Benefits Specialist','HR Analyst','Leadership Coach','Career Coach','Mentor','Trainer','Facilitator',
+
+  // Healthcare, science & education
+  'Healthcare Manager','Healthcare Administrator','Medical Researcher','Clinical Researcher','Clinical Operations Specialist',
+  'Public Health Specialist','Health Data Analyst','Nutritionist','Fitness Coach','Pharmaceutical Researcher','Biotech Researcher',
+  'Biotechnology Engineer','Life Sciences Researcher','Laboratory Technician','Scientific Writer','Science Communicator',
+  'Teacher','Tutor','Instructor','Course Creator','Instructional Designer','Curriculum Designer','E-learning Specialist',
+  'Educational Technology Specialist','Language Teacher','Translator','Localization Specialist',
+
+  // Practical, creative & specialist roles
+  'Civil Engineer','Mechanical Engineer','Electrical Engineer','Chemical Engineer','Industrial Engineer','Architect',
+  'Construction Manager','CAD Designer','AutoCAD Designer','Manufacturing Engineer','Quality Assurance Specialist',
+  'Quality Control Specialist','Supply Chain Manager','Logistics Manager','Inventory Manager','Event Manager',
+  'Hospitality Manager','Travel Planner','Real Estate Specialist','Property Manager','Interior Designer','Interior Stylist',
+  'Fashion Designer','Music Producer','Music Composer','DJ','Actor','Voice Actor','Streamer','Gamer','Esports Manager',
+  'Community Moderator','Customer Service Representative','Retail Manager','General Virtual Assistant'
+];
+
 const ROLE_KEYWORDS: Record<string, string[]> = {
   'AI Engineer': ['Python', 'Machine Learning', 'LLM', 'RAG', 'AI'],
   'AI Product Manager': ['Product', 'AI', 'Roadmaps', 'User Research'],
@@ -472,7 +563,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
               <PlusCircle className="h-4 w-4 text-violet-600" />
               <div>
                 <p className="text-xs font-extrabold text-violet-950">What roles do you need?</p>
-                <p className="text-[10px] text-violet-700">Start typing a role. Pick a suggested keyword or use your own title.</p>
+                <p className="text-[10px] text-violet-700">Search across the full role directory, then select one or add your own custom role.</p>
               </div>
             </div>
 
