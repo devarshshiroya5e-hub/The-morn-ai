@@ -48,6 +48,10 @@ const getPartnershipText = (role: RolePost, formatMoney: (usd: number) => string
       return p.amountUsd ? formatMoney(p.amountUsd) + ' fixed project' : 'Fixed project fee';
     case 'revenue_share':
       return p.equityPercent ? p.equityPercent + '% revenue share' : 'Revenue share';
+    case 'work_exchange':
+      return p.amountUsd && p.details
+        ? formatMoney(p.amountUsd) + ' cash or work exchange'
+        : p.details || 'Pay or work';
     case 'equity_plus_cash':
       return p.equityPercent && p.amountUsd
         ? p.equityPercent + '% equity + ' + formatMoney(p.amountUsd)
