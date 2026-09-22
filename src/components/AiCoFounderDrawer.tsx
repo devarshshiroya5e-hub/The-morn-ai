@@ -121,11 +121,18 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
         sender: 'ai',
         text: data.reply || "Based on our roadmap and historical data, let's keep laser-focused on MVP deliverability.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        suggestions: [
-          'Generate next sprint task delegation',
-          'Create high-converting job post for this',
-          'Review latest historical pivot impact',
-        ],
+        suggestions: currentUser.role === 'employee'
+          ? [
+              'How can I get a job through MornAI?',
+              'How should I pitch myself to a founder?',
+              'Which role fits my skills best?',
+              'Help me improve my profile.',
+            ]
+          : [
+              'Generate next sprint task delegation',
+              'Create a high-converting role post',
+              'Review the latest historical pivot impact',
+            ],
       };
 
       setMessages(prev => [...prev, aiReply]);
