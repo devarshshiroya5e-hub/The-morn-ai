@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { RolePost, Startup, StartupMember, User } from '../types';
-import { useLocalizedCurrency } from '../lib/currency';
+import { CurrencyCode, formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
 
 interface StartupDetailModalProps {
   startup: Startup | null;
@@ -78,7 +78,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<ExplorerTab>('overview');
   const [selectedTeamMember, setSelectedTeamMember] = useState<StartupMember | null>(null);
-  const { format: formatMoney } = useLocalizedCurrency(currentUser);
+  const { currency, rates, format: formatMoney } = useLocalizedCurrency(currentUser);
 
   useEffect(() => {
     if (!isOpen) {
@@ -94,7 +94,8 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
 
   if (!isOpen || !startup) return null;
 
-  const valuation = startup.valuationUsd ? formatMoney(startup.valuationUsd) : 'Not disclosed';
+  const startupCurrency = (startup.currencyCode as CurrencyCode | undefined) || currency;
+  const valuation = startup.valuationUsd ? formatUsdMoney(startup.valuationUsd, startupCurrency, rates) : 'Not disclosed';
 
   const tabs: Array<{ id: ExplorerTab; label: string; count?: number }> = [
     { id: 'overview', label: 'Overview' },
