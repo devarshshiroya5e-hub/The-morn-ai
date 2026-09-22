@@ -57,6 +57,7 @@ export interface RolePartnership {
   unit?: string;
   milestone?: string;
   details?: string;
+  expectation?: string;
 }
 
 export interface StartupHistoryLog {
