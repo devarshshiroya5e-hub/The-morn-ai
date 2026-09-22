@@ -75,7 +75,9 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const industries = useMemo(() => ['All', ...Array.from(new Set(networkStartups.map((startup) => startup.industry))).slice(0, 8)], [networkStartups]);
 
   const openRoles = useMemo(
-    () => networkStartups.flatMap((startup) => startup.openRoles.filter((role) => role.status === 'open').map((role) => ({ startup, role }))),
+    () => networkStartups.flatMap((startup) => startup.persisted
+      ? startup.openRoles.filter((role) => role.status === 'open').map((role) => ({ startup, role }))
+      : []),
     [networkStartups],
   );
 
