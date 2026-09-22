@@ -121,6 +121,47 @@ const skillsList = [
 const avatar = (name: string) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Member')}&background=5B5CF0&color=fff&bold=true`;
 
+const AUTH_RATE_LIMIT_KEY = 'mornai-auth-attempts-v1';
+const AUTH_RATE_WINDOW_MS = 10 * 60 * 1000;
+const AUTH_RATE_MAX = 6;
+
+const consumeAuthAttempt = () => {
+  if (typeof window === 'undefined') return { allowed: true, retryAfterSeconds: 0 };
+
+  try {
+    const now = Date.now();
+    const stored = JSON.parse(window.localStorage.getItem(AUTH_RATE_LIMIT_KEY) || '[]');
+    const attempts = Array.isArray(stored)
+      ? stored.filter((timestamp) => typeof timestamp === 'number' && now - timestamp < AUTH_RATE_WINDOW_MS)
+      : [];
+
+    if (attempts.length >= AUTH_RATE_MAX) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((AUTH_RATE_WINDOW_MS - (now - attempts[0])) / 1000));
+      window.localStorage.setItem(AUTH_RATE_LIMIT_KEY, JSON.stringify(attempts));
+      return { allowed: false, retryAfterSeconds };
+    }
+
+    attempts.push(now);
+    window.localStorage.setItem(AUTH_RATE_LIMIT_KEY, JSON.stringify(attempts));
+    return { allowed: true, retryAfterSeconds: 0 };
+  } catch {
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+};
+
+const AiExpandButton = ({ label = 'AI expand' }: { label?: string }) => (
+  <button
+    type="button"
+    disabled
+    title="AI writing assistance will be connected in the final AI rollout."
+    aria-label={label}
+    className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/85 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
+  >
+    <Sparkles className="h-3 w-3" />
+    AI
+  </button>
+);
+
 const glass =
   'mornai-glass-button border-slate-200/70';
 
@@ -363,6 +404,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
+    const rate = consumeAuthAttempt();
+    if (!rate.allowed) {
+      setError(`Too many authentication attempts. Try again in ${Math.ceil(rate.retryAfterSeconds / 60)} minute(s).`);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -391,6 +437,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const google = async () => {
+    const rate = consumeAuthAttempt();
+    if (!rate.allowed) {
+      setError(`Too many authentication attempts. Try again in ${Math.ceil(rate.retryAfterSeconds / 60)} minute(s).`);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -418,6 +469,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const validation = validateStep();
     if (validation) return setError(validation);
     if (googleUser) return setStep(2);
+
+    const rate = consumeAuthAttempt();
+    if (!rate.allowed) {
+      setError(`Too many account-creation attempts. Try again in ${Math.ceil(rate.retryAfterSeconds / 60)} minute(s).`);
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -790,7 +847,7 @@ const Pill = ({ children, icon }: any) => (
 
 const Field = ({ icon, type, placeholder, value, set, disabled, minLength }: any) => (
   <motion.div whileFocus={{ scale: 1.006 }} className="relative">
-    <span className="absolute left-4 top-3.5 text-slate-400 [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+    <span className="absolute left-4 top-3.5 z-10 text-slate-400 [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
     <input
       required
       minLength={minLength}
@@ -799,33 +856,40 @@ const Field = ({ icon, type, placeholder, value, set, disabled, minLength }: any
       placeholder={placeholder}
       value={value}
       onChange={(e) => set(e.target.value)}
-      className="mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50 disabled:opacity-60"
+      className={`mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50 disabled:opacity-60 ${type !== 'password' && type !== 'email' ? 'pb-9' : ''}`}
     />
+    {type !== 'password' && type !== 'email' && <AiExpandButton />}
   </motion.div>
 );
 
 const Text = ({ p, v, s, min = 0 }: any) => (
-  <input
-    required
-    minLength={min}
-    value={v}
-    onChange={(e) => s(e.target.value)}
-    placeholder={p}
-    className="mornai-signup-field w-full rounded-2xl px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
-  />
+  <div className="relative">
+    <input
+      required
+      minLength={min}
+      value={v}
+      onChange={(e) => s(e.target.value)}
+      placeholder={p}
+      className="mornai-signup-field w-full rounded-2xl px-4 pb-10 pt-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
+    />
+    <AiExpandButton />
+  </div>
 );
 
 const TextArea = ({ label, value, set, min, rows }: any) => (
   <label className="mt-4 block">
     <span className="mb-2 block text-xs font-bold text-slate-500">{label}</span>
-    <textarea
-      required
-      minLength={min}
-      value={value}
-      onChange={(e) => set(e.target.value)}
-      rows={rows}
-      className="mornai-signup-field w-full rounded-2xl px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
-    />
+    <div className="relative">
+      <textarea
+        required
+        minLength={min}
+        value={value}
+        onChange={(e) => set(e.target.value)}
+        rows={rows}
+        className="mornai-signup-field w-full rounded-2xl px-4 pb-10 pt-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
+      />
+      <AiExpandButton />
+    </div>
   </label>
 );
 
