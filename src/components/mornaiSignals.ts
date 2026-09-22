@@ -125,21 +125,57 @@ export const buildMornaiNotifications = (
       });
   }
 
-  connections
-    .filter((connection) => connection.toUserId === user.id && connection.status === 'pending')
-    .forEach((connection) => {
+  connections.forEach((connection) => {
+    const isIncoming = connection.toUserId === user.id;
+    const isOutgoing = connection.fromUserId === user.id;
+
+    if (!isIncoming && !isOutgoing) return;
+
+    if (connection.status === 'pending') {
+      if (isIncoming) {
+        items.push({
+          id: `connection-${connection.id}-pending-incoming`,
+          type: 'connection',
+          title: `${connection.fromName} wants to connect`,
+          description: connection.startupName
+            ? `${connection.fromName} reached out around ${connection.startupName}.`
+            : 'A MornAI member wants to add you to their network.',
+          timestamp: connection.createdAtClient || now,
+          action: 'Review connection',
+          startupId: connection.startupId,
+        });
+      }
+
+      if (isOutgoing) {
+        items.push({
+          id: `connection-${connection.id}-pending-outgoing`,
+          type: 'connection',
+          title: `Connection request sent to ${connection.toName}`,
+          description: connection.startupName
+            ? `Your request around ${connection.startupName} is waiting for a response.`
+            : 'Your connection request is waiting for a response.',
+          timestamp: connection.createdAtClient || now,
+          action: 'View connections',
+          startupId: connection.startupId,
+        });
+      }
+    }
+
+    if (connection.status === 'accepted') {
+      const otherName = isIncoming ? connection.fromName : connection.toName;
       items.push({
-        id: `connection-${connection.id}`,
+        id: `connection-${connection.id}-accepted`,
         type: 'connection',
-        title: `${connection.fromName} wants to connect`,
+        title: `You are now connected with ${otherName}`,
         description: connection.startupName
-          ? `${connection.fromName} reached out around ${connection.startupName}.`
-          : 'A MornAI member wants to add you to their network.',
-        timestamp: connection.createdAtClient || now,
-        action: 'Review connection',
+          ? `You are connected around ${connection.startupName}. You can continue the conversation from your network.`
+          : 'You can now continue building the relationship from your MornAI network.',
+        timestamp: connection.updatedAtClient || connection.createdAtClient || now,
+        action: 'View connections',
         startupId: connection.startupId,
       });
-    });
+    }
+  });
 
   startups
     .filter((startup) => followedStartupIds.includes(startup.id))
