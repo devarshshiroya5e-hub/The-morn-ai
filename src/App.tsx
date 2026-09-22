@@ -396,7 +396,7 @@ export default function App() {
     }
 
     const unsubscribe = onSnapshot(
-      collection(db, 'publicProfiles'),
+      query(collection(db, 'publicProfiles'), limit(100)),
       (snapshot) => {
         const remote = snapshot.docs
           .map((profileDoc) => normalizeUser({ ...(profileDoc.data() as User), id: profileDoc.id }))
@@ -503,7 +503,7 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn]);
 
-  // Appointments are persisted centrally and scoped by the participants list.  // Appointments are persisted centrally and scoped by the participants list.
+  // Appointments are persisted centrally and scoped by the participants list.
   // Using the participants index keeps this listener compatible with existing deployed
   // Firebase rules while the repository rules also support explicit founder/talent IDs.
   useEffect(() => {
@@ -586,6 +586,14 @@ export default function App() {
         if (!cancelled) {
           setActiveStartupContext(startup);
           window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, startup.id);
+
+          if (currentUser.role === 'founder') {
+            void setDoc(
+              doc(db, 'startupListings', startup.id),
+              buildStartupListing(startup),
+              { merge: true },
+            ).catch((error) => console.error('Failed to sync startup listing:', error));
+          }
         }
       } catch (error) {
         console.error('Failed to load private startup context:', error);
@@ -597,7 +605,7 @@ export default function App() {
     return () => { cancelled = true; };
   }, [isLoggedIn, currentUser.id, currentUser.role, startups.length]);
 
-  // Toast feedback banner  // Toast feedback banner
+  // Toast feedback banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
