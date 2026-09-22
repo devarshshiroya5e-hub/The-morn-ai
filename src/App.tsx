@@ -20,6 +20,7 @@ import { HomeDashboard } from './components/HomeDashboard';
 import { MarketplacePage } from './components/MarketplacePage';
 import { NotificationCenter } from './components/NotificationCenter';
 import { PricingModal } from './components/PricingModal';
+import { PullToRefresh } from './components/PullToRefresh';
 import { buildMornaiNotifications, MornaiPreferences, nextDailyState, normalizePreferences } from './components/mornaiSignals';
 
 import { 
@@ -901,6 +902,7 @@ export default function App() {
           }}
           onOpenPrivacy={() => setActiveView('privacy')}
         />
+        <PullToRefresh />
         {authModals}
       </motion.div>
     );
@@ -923,6 +925,7 @@ export default function App() {
       className="min-h-screen"
     >
       <div className="mornai-app-shell min-h-screen text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
+      <PullToRefresh />
       {authModals}
       
       {/* Toast Banner */}
