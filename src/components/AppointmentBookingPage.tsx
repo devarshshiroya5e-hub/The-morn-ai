@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Startup, User, RolePost, Appointment, MatchingAnalysis } from '../types';
+import { useLocalizedCurrency } from '../lib/currency';
 import {
   ArrowLeft, ArrowRight, Calendar, CheckCircle2, Clock3, BrainCircuit,
   ShieldCheck, Send, Sparkles, Video, MapPin, BriefcaseBusiness, Users,
@@ -17,6 +18,31 @@ interface AppointmentBookingPageProps {
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
+const getBookingPartnershipSummary = (role: RolePost, formatMoney: (usd: number) => string) => {
+  const p = role.partnership;
+  if (!p) return role.type || 'Founder-defined partnership';
+  switch (p.mode) {
+    case 'equity': return p.equityPercent ? p.equityPercent + '% equity' : 'Equity';
+    case 'helper': return 'Helper / volunteer';
+    case 'pay_on_delivery': return p.amountUsd ? formatMoney(p.amountUsd) + ' on delivery' : 'Pay on delivery';
+    case 'pay_per_hour': return p.amountUsd ? formatMoney(p.amountUsd) + ' / hour' : 'Pay per hour';
+    case 'pay_per_task': return p.amountUsd ? formatMoney(p.amountUsd) + ' / task' : 'Pay per task';
+    case 'fixed_project': return p.amountUsd ? formatMoney(p.amountUsd) + ' fixed project' : 'Fixed project fee';
+    case 'revenue_share': return p.equityPercent ? p.equityPercent + '% revenue share' : 'Revenue share';
+    case 'work_exchange': return p.amountUsd && p.details ? formatMoney(p.amountUsd) + ' cash or work exchange' : p.details || 'Pay or work';
+    case 'equity_plus_cash': return p.equityPercent && p.amountUsd ? p.equityPercent + '% equity + ' + formatMoney(p.amountUsd) : 'Equity + cash';
+    default: return p.label || role.type || 'Founder-defined partnership';
+  }
+};
+
+const getBookingPartnershipDetail = (role: RolePost) => {
+  const p = role.partnership;
+  if (!p) return role.commitment || 'Founder-defined terms';
+  return [p.milestone, p.details, p.expectation].filter(Boolean).join(' • ') || role.commitment || 'Founder-defined terms';
+};
+
+
+
 export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   startup,
   selectedRole,
@@ -33,6 +59,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   const [isLoadingMatch, setIsLoadingMatch] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const { format: formatMoney } = useLocalizedCurrency(currentUser);
 
   useEffect(() => {
     if (!startup) return;
@@ -68,6 +95,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
     () => (startup?.openRoles || []).filter((role) => role.status === 'open'),
     [startup],
   );
+  const activeRole = openRoles.find((role) => role.title === roleTitle) || selectedRole;
 
   if (!startup) {
     return (
@@ -254,6 +282,14 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
                 <option value="General Technical Co-Founder / Contributor">General Contributor / Fellow</option>
               </select>
             </div>
+
+            {activeRole && (
+              <div className="rounded-[22px] border border-emerald-100 bg-emerald-50/70 p-4">
+                <p className="text-[9px] font-black uppercase tracking-[.15em] text-emerald-600">Founder-selected partnership</p>
+                <p className="mt-1 text-sm font-black text-slate-950">{getBookingPartnershipSummary(activeRole, formatMoney)}</p>
+                <p className="mt-2 text-[10px] leading-5 text-slate-600">{getBookingPartnershipDetail(activeRole)}</p>
+              </div>
+            )}
 
             <div className="mornai-book-sync-section-label mt-2"><span>02</span><div><p>Schedule</p><h2>Pick a time that works for you.</h2></div></div>
 
