@@ -93,21 +93,45 @@ app.get("/api/fx-rates", async (_req, res) => {
 // 1. AI Co-Founder & Business Strategist Chat
 app.post("/api/ai/co-founder-chat", async (req, res) => {
   try {
-    const { startup, message, chatHistory } = req.body;
+    const { startup, message: rawMessage, userPrompt, chatHistory, userRole, userProfile } = req.body;
+    const message = String(rawMessage || userPrompt || "").trim();
     const ai = getAiClient();
+    const isContributor = userRole === "employee";
 
-    if (!ai) {
-      // Intelligent fallback if no API key
-      const fallbackReplies = [
-        `As your Co-Founder & Business Strategist for ${startup?.name || "your startup"}, I reviewed our historical milestones. Regarding "${message}": Our top priority is closing the current technical bottleneck while preserving runway. Let's align our newly onboarded contributors to ship the MVP milestone within the next 2-week sprint cycle.`,
-        `Analyzing our traction data for ${startup?.name || "the startup"}: We should leverage our recent milestone to launch an automated talent recruitment drive for our critical stack gaps. Let me synthesize this into an actionable sprint backlog.`,
-        `Strategically, focusing on "${message}" will improve our investor readiness score. We need to define clear deliverables for our contributors and track milestone completion velocity.`,
-      ];
-      const randomReply = fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-      return res.json({ reply: randomReply });
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
     }
 
-    const systemPrompt = `You are an elite AI Co-Founder and Chief Business Strategist for an ambitious startup named "${startup?.name || "Startup"}".
+    if (!ai) {
+      if (isContributor) {
+        const skills = Array.isArray(userProfile?.skills) ? userProfile.skills.join(", ") : "your current skills";
+        const desiredRole = userProfile?.onboarding?.desiredRole || userProfile?.title || "a startup role";
+        return res.json({
+          reply: `Based on your profile, your strongest current positioning is around ${desiredRole}. Your visible skills include ${skills}. For "${message}", start with a clear outcome, 2-3 proof points, your availability, and the partnership model you can accept.`,
+        });
+      }
+
+      return res.json({
+        reply: `As the AI Co-Founder for ${startup?.name || "your startup"}, I reviewed the current startup context. For "${message}", focus on the highest-impact bottleneck, define a measurable outcome, and assign the smallest useful next step to the right contributor.`,
+      });
+    }
+
+    const systemPrompt = isContributor
+      ? `You are MornAI's AI Career and Startup Coach for a skilled startup contributor named "${userProfile?.name || "Contributor"}".
+Contributor profile:
+- Title: ${userProfile?.title || "Startup contributor"}
+- Skills: ${JSON.stringify(userProfile?.skills || [])}
+- Bio: ${userProfile?.bio || ""}
+- Desired role: ${userProfile?.onboarding?.desiredRole || ""}
+- Focus areas: ${userProfile?.onboarding?.focusAreas || ""}
+- Achievements: ${userProfile?.onboarding?.achievements || ""}
+- Availability: ${userProfile?.onboarding?.availability || ""}
+- Work style: ${userProfile?.onboarding?.workStyle || ""}
+- Goal: ${userProfile?.onboarding?.goal || ""}
+
+The contributor may ask how to get a job, how to pitch themselves, how to price work, which startup role fits, how to write a proposal, how to prepare for a founder call, or how to improve their MornAI profile.
+Give practical, specific coaching. Never pretend to guarantee a job. Help them turn skills into a strong pitch and concrete next actions. Keep answers concise and useful.`
+      : `You are an elite AI Co-Founder and Chief Business Strategist for an ambitious startup named "${startup?.name || "Startup"}".
 Startup Details:
 - Industry: ${startup?.industry || "Tech"}
 - Stage: ${startup?.stage || "Pre-Seed"}
@@ -117,11 +141,17 @@ Startup Details:
 - Active Team Size: ${(startup?.members || []).length} contributors
 - Current Strategic Goals: ${startup?.currentGoals || "Scale MVP and onboard key talent"}
 
-Tone: Sharp, strategic, tactical, encouraging yet disciplined like a Y Combinator partner and technical co-founder combined. 
-Provide concise, actionable advice (2-4 paragraphs with clear bulleted next steps when appropriate). Directly reference the startup's history and current stage.`;
+Tone: sharp, tactical, encouraging and disciplined. Give concise, actionable advice and reference relevant startup context.`;
 
     const contents = [
-      { role: "user", parts: [{ text: `System Context: ${systemPrompt}\n\nRecent History:\n${JSON.stringify(chatHistory || [])}\n\nFounder / User Query: ${message}` }] }
+      {
+        role: "user",
+        parts: [{
+          text: "System Context: " + systemPrompt +
+            "\n\nRecent Chat:\n" + JSON.stringify(chatHistory || []) +
+            "\n\nUser Query: " + message,
+        }],
+      },
     ];
 
     const response = await ai.models.generateContent({
@@ -129,12 +159,16 @@ Provide concise, actionable advice (2-4 paragraphs with clear bulleted next step
       contents: contents as any,
     });
 
-    res.json({ reply: response.text || "I have analyzed the startup context and recommend proceeding with the current sprint targets." });
+    res.json({
+      reply: response.text || (isContributor
+        ? "Let’s turn your profile into a stronger job pitch and a concrete next step."
+        : "I have analyzed the startup context and recommend proceeding with the current highest-priority sprint target."),
+    });
   } catch (err: any) {
-    console.error("Co-founder chat error:", err);
+    console.error("AI coach chat error:", err);
     res.status(500).json({
-      error: "Failed to generate AI Co-Founder response",
-      fallback: `As your AI Co-Founder, I recommend prioritizing our immediate sprint milestones to validate user traction before expanding scope.`,
+      error: "Failed to generate AI response",
+      fallback: "I could not reach the AI service right now. Re-check your goal, strongest proof of work, availability and desired outcome, then try again.",
     });
   }
 });
