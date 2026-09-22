@@ -286,10 +286,10 @@ export default function App() {
 
   // Never leave an invisible AI drawer state behind while the startup context is unavailable.
   useEffect(() => {
-    if (!activeStartupContext && isAiDrawerOpen) {
+    if (currentUser.role === 'founder' && !activeStartupContext && isAiDrawerOpen) {
       setIsAiDrawerOpen(false);
     }
-  }, [activeStartupContext, isAiDrawerOpen]);
+  }, [activeStartupContext, currentUser.role, isAiDrawerOpen]);
 
   // Personal retention preferences live in the existing user preference path.
   // This keeps saved people/startups, notification state, and the last visit consistent across devices.
