@@ -328,6 +328,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
           ))}
           {rankedStartups.length === 0 && <EmptyState title="No startups found" body="Try a broader search or reset the industry filter." />}
         </section>
+        </>
       )}
 
       {activeTab === 'opportunities' && (
