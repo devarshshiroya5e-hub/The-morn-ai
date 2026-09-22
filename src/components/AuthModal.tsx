@@ -123,7 +123,7 @@ const avatar = (name: string) =>
 
 const AUTH_RATE_LIMIT_KEY = 'mornai-auth-attempts-v1';
 const AUTH_RATE_WINDOW_MS = 4 * 60 * 1000;
-const AUTH_RATE_MAX = 6;
+const AUTH_RATE_MAX = 8;
 
 const consumeAuthAttempt = () => {
   if (typeof window === 'undefined') return { allowed: true, retryAfterSeconds: 0 };
