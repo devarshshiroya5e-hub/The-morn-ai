@@ -10,7 +10,39 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.set("trust proxy", 1);
+app.use(express.json({ limit: "64kb" }));
+
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+const createRateLimiter = (limit: number, windowMs: number) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const key = `${req.ip}:${req.path}`;
+  const now = Date.now();
+  const existing = rateBuckets.get(key);
+
+  if (!existing || now >= existing.resetAt) {
+    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    next();
+    return;
+  }
+
+  if (existing.count >= limit) {
+    res.setHeader("Retry-After", Math.ceil((existing.resetAt - now) / 1000).toString());
+    res.status(429).json({ error: "Too many requests. Please slow down and try again." });
+    return;
+  }
+
+  existing.count += 1;
+  next();
+
+  // Keep the in-memory limiter bounded on long-running processes.
+  if (rateBuckets.size > 5000) {
+    for (const [bucketKey, bucket] of rateBuckets) {
+      if (now >= bucket.resetAt) rateBuckets.delete(bucketKey);
+    }
+  }
+};
+
+app.use("/api/ai", createRateLimiter(20, 60_000));
 
 // Initialize Google GenAI client if key is available
 let aiClient: GoogleGenAI | null = null;
@@ -32,7 +64,6 @@ function getAiClient(): GoogleGenAI | null {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    hasApiKey: !!process.env.GEMINI_API_KEY,
     timestamp: new Date().toISOString(),
   });
 });
