@@ -620,6 +620,122 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
               </div>
             )}
 
+            {selectedRoles.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-700">Partnership for each role</p>
+                  <p className="mt-1 text-[10px] leading-5 text-violet-700/80">You choose the exact way the contributor will work with your startup. This is shown publicly before they open the startup.</p>
+                </div>
+
+                {selectedRoles.map((role) => {
+                  const partnership = rolePartnerships[role] || { mode: 'pay_per_task' as const, label: 'Pay per work / task', amountUsd: 150, unit: 'task', details: '' };
+                  const mode = PARTNERSHIP_MODES.find((item) => item.value === partnership.mode) || PARTNERSHIP_MODES[4];
+
+                  return (
+                    <div key={role} className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-slate-950">{role}</p>
+                          <p className="mt-0.5 text-[10px] text-slate-500">{mode.description}</p>
+                        </div>
+                        <button type="button" onClick={() => removeRole(role)} className="text-[10px] font-black text-slate-400 hover:text-rose-600">Remove</button>
+                      </div>
+
+                      <select
+                        value={partnership.mode}
+                        onChange={(event) => {
+                          const nextMode = event.target.value as PartnershipMode;
+                          const nextMeta = PARTNERSHIP_MODES.find((item) => item.value === nextMode)!;
+                          updatePartnership(role, {
+                            mode: nextMode,
+                            label: nextMeta.label,
+                            ...(nextMode === 'equity' ? { amountUsd: undefined, unit: undefined } : {}),
+                          });
+                        }}
+                        className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50"
+                      >
+                        {PARTNERSHIP_MODES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                      </select>
+
+                      {partnership.mode === 'equity' && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Equity offered</label>
+                            <div className="mt-1 flex overflow-hidden rounded-xl border border-slate-200">
+                              <input value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 2.0" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
+                              <span className="grid place-items-center bg-slate-50 px-3 text-xs font-black text-slate-500">%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">What the contributor owns</label>
+                            <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. CTO-level technical direction" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                          </div>
+                        </div>
+                      )}
+
+                      {partnership.mode === 'revenue_share' && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Revenue share</label>
+                            <div className="mt-1 flex overflow-hidden rounded-xl border border-slate-200">
+                              <input value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 5" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
+                              <span className="grid place-items-center bg-slate-50 px-3 text-xs font-black text-slate-500">%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Revenue condition</label>
+                            <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. Paid customers sourced by contributor" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                          </div>
+                        </div>
+                      )}
+
+                      {['pay_on_delivery', 'pay_per_hour', 'pay_per_task', 'fixed_project', 'equity_plus_cash'].includes(partnership.mode) && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Cash amount</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={partnership.amountUsd ?? ''}
+                              onChange={(event) => updatePartnership(role, { amountUsd: Number(event.target.value) })}
+                              placeholder="USD base amount"
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                            />
+                            <p className="mt-1 text-[9px] text-slate-400">Shown to this user as {currency} {partnership.amountUsd ? formatMoney(partnership.amountUsd) : '0'}.</p>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">
+                              {partnership.mode === 'pay_per_hour' ? 'Hourly scope' : partnership.mode === 'pay_per_task' ? 'Unit of work' : partnership.mode === 'pay_on_delivery' ? 'Delivery milestone' : partnership.mode === 'equity_plus_cash' ? 'Equity offered' : 'Project scope'}
+                            </label>
+                            {partnership.mode === 'equity_plus_cash' ? (
+                              <div className="flex overflow-hidden rounded-xl border border-slate-200">
+                                <input value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 1.5" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
+                                <span className="grid place-items-center bg-slate-50 px-3 text-xs font-black text-slate-500">%</span>
+                              </div>
+                            ) : (
+                              <input value={partnership.milestone || ''} onChange={(event) => updatePartnership(role, { milestone: event.target.value })} placeholder={partnership.mode === 'pay_per_hour' ? 'e.g. 10 hours/week' : partnership.mode === 'pay_per_task' ? 'e.g. each 30-sec reel' : partnership.mode === 'pay_on_delivery' ? 'e.g. working MVP delivered' : 'e.g. website redesign'} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {partnership.mode === 'helper' && (
+                        <div className="mt-3">
+                          <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Helper arrangement</label>
+                          <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. Volunteer experience + certificate + founder mentorship" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                        </div>
+                      )}
+
+                      <div className="mt-3">
+                        <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Private founder note / expectations</label>
+                        <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="What does success look like for this role?" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             <div className="mt-3 rounded-xl border border-violet-100 bg-white/80 p-3">
               <p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-violet-500">Key skills / keywords</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
