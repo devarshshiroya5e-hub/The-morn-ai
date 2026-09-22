@@ -65,6 +65,7 @@ const getPartnershipDetail = (role: RolePost, formatMoney: (usd: number) => stri
     getPartnershipText(role, formatMoney),
     p.milestone || '',
     p.details || '',
+    p.expectation || '',
   ].filter(Boolean).join(' • ');
 };
 
