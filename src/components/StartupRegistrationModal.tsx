@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Startup, User } from '../types';
-import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check } from 'lucide-react';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
 
 
 const ROLE_SUGGESTIONS: Record<string, string[]> = {
@@ -60,6 +62,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [roleError, setRoleError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
   const roleSuggestions = React.useMemo(() => {
     const list = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
@@ -109,8 +113,29 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     const techStack = techStackInput.split(',').map(s => s.trim()).filter(Boolean);
     const startupId = 'startup-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     const createdDate = new Date();
+
+    let startupLogo = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80';
+    let startupCover = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+
+    try {
+      if (logoFile) {
+        const logoRef = ref(storage, `startups/${startupId}/logo-${Date.now()}-${logoFile.name.replace(/[^a-zA-Z0-9._-]/g, '')}`);
+        await uploadBytes(logoRef, logoFile, { contentType: logoFile.type });
+        startupLogo = await getDownloadURL(logoRef);
+      }
+      if (coverFile) {
+        const coverRef = ref(storage, `startups/${startupId}/cover-${Date.now()}-${coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '')}`);
+        await uploadBytes(coverRef, coverFile, { contentType: coverFile.type });
+        startupCover = await getDownloadURL(coverRef);
+      }
+    } catch (uploadError) {
+      console.error('Startup image upload failed:', uploadError);
+      setSaveError('The startup image upload failed. Please try smaller image files and try again.');
+      setIsSynthesizing(false);
+      return;
+    }
     const createdDay = createdDate.toISOString().split('T')[0];
-    const startupLogo = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80';
+
 
     // Build base object
     const newStartup: Startup = {
@@ -130,7 +155,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       growthVelocityScore: 88,
       verified: true,
       logo: startupLogo,
-      coverImage: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+      coverImage: startupCover,
       pitch: pitch.trim() || tagline.trim(),
       techStack,
       historyLogs: [
@@ -210,9 +235,41 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           status: 'todo',
           estimatedHours: 6,
           deadline: '3 days',
-          description: 'Review incoming talent appointments and allocate first Phase 1 sprint package.',
-          actionItems: ['Review THE MORN AI applications', 'Confirm video sync slots'],
-          aiMentoringTip: 'Keep initial onboarding tasks modular (< 10 hours) for high contributor momentum.',
+          description: 'Review incoming talent appointments and allocate the first Phase 1 sprint package.',
+          actionItems: ['Review talent applications', 'Confirm sync slots', 'Define first contributor deliverable'],
+          aiMentoringTip: 'Keep initial onboarding tasks modular and below 10 hours for fast contributor momentum.',
+          createdAt: createdDay,
+        },
+        {
+          id: startupId + '-task-2',
+          startupId,
+          assigneeId: currentUser.id,
+          assigneeName: currentUser.name,
+          assigneeAvatar: currentUser.avatar,
+          title: 'Validate the MVP scope',
+          priority: 'High',
+          status: 'todo',
+          estimatedHours: 4,
+          deadline: '5 days',
+          description: 'Turn the startup problem, target customer and first milestone into a clear MVP scope.',
+          actionItems: ['Write the core user flow', 'Define the non-negotiable MVP features', 'Remove low-priority scope'],
+          aiMentoringTip: 'A smaller validated loop beats a large roadmap that nobody ships.',
+          createdAt: createdDay,
+        },
+        {
+          id: startupId + '-task-3',
+          startupId,
+          assigneeId: currentUser.id,
+          assigneeName: currentUser.name,
+          assigneeAvatar: currentUser.avatar,
+          title: 'Publish the first contributor opportunity',
+          priority: 'Medium',
+          status: 'todo',
+          estimatedHours: 3,
+          deadline: '7 days',
+          description: 'Review the published roles and make the first opportunity specific enough for a skilled contributor to act on.',
+          actionItems: ['Choose the highest-priority role', 'Clarify expected output', 'Publish and review incoming interest'],
+          aiMentoringTip: 'Good role definitions describe the outcome, not just the job title.',
           createdAt: createdDay,
         },
       ],
@@ -291,6 +348,21 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 pb-7 space-y-4 sm:p-6 sm:pb-8"
         >
           
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 p-4 text-left cursor-pointer hover:border-violet-400 hover:bg-violet-50 transition">
+              <span className="flex items-center gap-2 text-xs font-black text-violet-700"><ImagePlus className="h-4 w-4" /> Startup logo</span>
+              <span className="mt-1 block text-[10px] text-slate-500">PNG/JPG/WebP • up to 10 MB</span>
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} />
+              <span className="mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-600"><UploadCloud className="h-3.5 w-3.5 text-violet-500" /> {logoFile?.name || 'Choose logo'}</span>
+            </label>
+            <label className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 p-4 text-left cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition">
+              <span className="flex items-center gap-2 text-xs font-black text-sky-700"><ImagePlus className="h-4 w-4" /> Background image</span>
+              <span className="mt-1 block text-[10px] text-slate-500">PNG/JPG/WebP • up to 10 MB</span>
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => setCoverFile(event.target.files?.[0] || null)} />
+              <span className="mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-600"><UploadCloud className="h-3.5 w-3.5 text-sky-500" /> {coverFile?.name || 'Choose image'}</span>
+            </label>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
