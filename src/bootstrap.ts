@@ -1,26 +1,21 @@
 const loadFirebaseHostingConfig = async () => {
   if (typeof window === 'undefined') return;
 
-  const hasBuildConfig = Boolean(import.meta.env.VITE_FIREBASE_API_KEY);
-  const isFirebaseHosting =
-    window.location.hostname.endsWith('.web.app') ||
-    window.location.hostname.endsWith('.firebaseapp.com');
-
-  if (hasBuildConfig || !isFirebaseHosting) return;
-
   try {
     const response = await fetch('/__/firebase/init.json', {
       cache: 'no-store',
       credentials: 'same-origin',
+      signal: AbortSignal.timeout(1500),
     });
 
     if (!response.ok) return;
 
     const config = await response.json();
+    if (typeof config?.apiKey !== 'string' || typeof config?.projectId !== 'string') return;
+
     (window as Window & { __MORNAI_FIREBASE_CONFIG__?: unknown }).__MORNAI_FIREBASE_CONFIG__ = config;
   } catch {
-    // Fall back to the local/build configuration path when Firebase Hosting
-    // reserved configuration is unavailable.
+    // Non-Firebase hosts and local development fall back to build-time config.
   }
 };
 
