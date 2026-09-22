@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Startup, User, TaskItem, StartupHistoryLog, RolePost, Appointment, PredictiveInsights } from '../types';
+import { Startup, User, TaskItem, StartupHistoryLog, RolePost, Appointment, PredictiveInsights, PartnershipMode } from '../types';
 import { 
   BrainCircuit, 
   Sparkles, 
@@ -76,6 +76,17 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   // AI Role Maker state
   const [targetRoleInput, setTargetRoleInput] = useState('');
   const [generatedRoleDraft, setGeneratedRoleDraft] = useState<RolePost | null>(null);
+  const partnershipOptions: Array<{ value: PartnershipMode; label: string }> = [
+    { value: 'equity', label: 'Equity' },
+    { value: 'helper', label: 'Helper' },
+    { value: 'pay_on_delivery', label: 'Pay when made' },
+    { value: 'pay_per_hour', label: 'Pay per hour' },
+    { value: 'pay_per_task', label: 'Pay per work / task' },
+    { value: 'work_exchange', label: 'Pay or work' },
+    { value: 'fixed_project', label: 'Fixed project fee' },
+    { value: 'revenue_share', label: 'Revenue share' },
+    { value: 'equity_plus_cash', label: 'Equity + cash' },
+  ];
 
   // Task delegation state
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>(startup.members[1]?.userId || '');
@@ -187,6 +198,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
           postedDate: new Date().toISOString().split('T')[0],
           applicantCount: 0,
           status: 'open',
+          partnership: { mode: 'pay_per_task', label: 'Pay per work / task', amountUsd: 150, unit: 'task', details: '', expectation: '' },
         };
         setGeneratedRoleDraft(draft);
       }
@@ -844,7 +856,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
               <h4 className="text-lg font-bold text-slate-900">{generatedRoleDraft.title}</h4>
               <p className="text-xs text-slate-700 leading-relaxed">{generatedRoleDraft.description}</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 gap-4 text-xs">
                 <div>
                   <span className="font-bold text-slate-900 block mb-1">Key Deliverables:</span>
                   <ul className="list-disc pl-4 space-y-1 text-slate-600">
@@ -853,10 +865,50 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                     ))}
                   </ul>
                 </div>
+                <div className="rounded-2xl border border-indigo-100 bg-white/80 p-4">
+                  <span className="font-bold text-slate-900 block mb-2">Founder-selected partnership</span>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <select
+                      value={generatedRoleDraft.partnership?.mode || 'pay_per_task'}
+                      onChange={(e) => {
+                        const mode = e.target.value as PartnershipMode;
+                        const label = partnershipOptions.find((item) => item.value === mode)?.label || mode;
+                        setGeneratedRoleDraft((current) => current ? ({
+                          ...current,
+                          type: label,
+                          partnership: { ...(current.partnership || { mode: 'pay_per_task', label: 'Pay per work / task' }), mode, label },
+                        }) : current);
+                      }}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                    >
+                      {partnershipOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      value={generatedRoleDraft.partnership?.amountUsd ?? ''}
+                      onChange={(e) => setGeneratedRoleDraft((current) => current ? ({
+                        ...current,
+                        partnership: { ...(current.partnership || { mode: 'pay_per_task', label: 'Pay per work / task' }), amountUsd: Number(e.target.value) }
+                      }) : current)}
+                      placeholder="Cash amount (USD base)"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                    />
+                    <input
+                      value={generatedRoleDraft.partnership?.details || ''}
+                      onChange={(e) => setGeneratedRoleDraft((current) => current ? ({
+                        ...current,
+                        partnership: { ...(current.partnership || { mode: 'pay_per_task', label: 'Pay per work / task' }), details: e.target.value }
+                      }) : current)}
+                      placeholder="Terms / work exchange / success condition"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                  <p className="mt-2 text-[10px] text-slate-500">This exact partnership is published with the role and shown before a contributor applies.</p>
+                </div>
                 <div>
-                  <span className="font-bold text-slate-900 block mb-1">Compensation & Commitment:</span>
-                  <p className="text-slate-600">Equity: {generatedRoleDraft.equityRange} • Stipend: {generatedRoleDraft.stipendRange}</p>
-                  <p className="text-slate-600 mt-1">Commitment: {generatedRoleDraft.commitment}</p>
+                  <span className="font-bold text-slate-900 block mb-1">AI draft compensation:</span>
+                  <p className="text-slate-600">Equity: {generatedRoleDraft.equityRange} • Stipend: {generatedRoleDraft.stipendRange} • Commitment: {generatedRoleDraft.commitment}</p>
                 </div>
               </div>
 
