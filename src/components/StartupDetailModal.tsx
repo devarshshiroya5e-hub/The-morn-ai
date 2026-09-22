@@ -79,18 +79,17 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm p-3 sm:p-6">
-      <div className="relative mx-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-3rem)]">
-        
-        <div className="shrink-0">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full backdrop-blur transition-colors z-20"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/55 backdrop-blur-sm p-3 sm:p-5">
+      <button
+        onClick={onClose}
+        className="fixed right-5 top-5 z-[70] grid h-10 w-10 place-items-center rounded-full border border-white/30 bg-black/35 text-white shadow-xl backdrop-blur-md transition hover:bg-black/55 sm:right-7 sm:top-7"
+        aria-label="Close startup explorer"
+      >
+        <X className="h-5 w-5" />
+      </button>
 
+      <div className="relative mx-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2.5rem)]">
+        
         {/* Header Cover Banner */}
         <div className="h-36 sm:h-44 bg-slate-800 relative overflow-hidden flex-shrink-0">
           {startup.coverImage ? (
@@ -243,10 +242,8 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
           </div>
         </div>
 
-        </div>
-
-        {/* Tab Content Body (Scrollable) */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50/50 p-6 space-y-6">
+        {/* Tab Content Body */}
+        <div className="bg-slate-50/50 p-6 space-y-6">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
