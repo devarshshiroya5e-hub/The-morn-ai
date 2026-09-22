@@ -788,8 +788,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                       )}
 
                       <div className="mt-3">
-                        <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Private founder note / expectations</label>
-                        <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="What does success look like for this role?" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                        <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Success expectation</label>
+                        <input value={partnership.expectation || ''} onChange={(event) => updatePartnership(role, { expectation: event.target.value })} placeholder="What does success look like for this role?" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
                       </div>
                     </div>
                   );
