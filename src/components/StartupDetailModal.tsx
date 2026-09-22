@@ -249,6 +249,18 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
           {activeTab === 'overview' && (
             <div className="space-y-6">
               
+              {/* What this startup does */}
+              <div className="rounded-[24px] border border-violet-100 bg-gradient-to-br from-violet-50/90 via-white to-sky-50/80 p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[.16em] text-violet-600">What this startup does</p>
+                <h3 className="mt-2 text-lg font-black tracking-tight text-slate-950">{startup.tagline}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{startup.pitch || 'This startup has not added a detailed description yet.'}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-slate-600">{startup.industry}</span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-slate-600">{startup.stage}</span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-slate-600">{startup.location}</span>
+                </div>
+              </div>
+
               {/* Pitch Statement */}
               <div className="bg-white p-5 rounded-xl border border-slate-200">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
