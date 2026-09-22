@@ -30,7 +30,7 @@
 
 /* MornAI animated ambient gradient + morphing glass UI */
 .mornai-ambient{overflow:hidden;background:radial-gradient(circle at 10% 8%,rgba(124,58,237,.16),transparent 31%),radial-gradient(circle at 90% 18%,rgba(59,130,246,.14),transparent 33%),radial-gradient(circle at 45% 92%,rgba(14,165,233,.08),transparent 28%),linear-gradient(135deg,#fff 0%,#fbfdff 46%,#fff 100%);}
-.mornai-orb{position:absolute;width:30rem;height:30rem;border-radius:9999px;filter:blur(72px);opacity:.36;will-change:transform;animation:mornaiOrbFloat 12s ease-in-out infinite;transform:translateZ(0);}
+.mornai-orb{position:absolute;width:30rem;height:30rem;border-radius:9999px;filter:blur(72px);opacity:.52;will-change:transform;animation:mornaiOrbFloat 12s ease-in-out infinite;transform:translateZ(0);}
 .mornai-orb-one{left:-9rem;top:4rem;background:rgba(124,58,237,.22);}
 .mornai-orb-two{right:-10rem;top:24rem;background:rgba(37,99,235,.17);animation-duration:14s;animation-delay:-4s;}
 .mornai-orb-three{left:36%;bottom:-18rem;background:rgba(14,165,233,.10);animation-duration:16s;animation-delay:-7s;}
@@ -74,12 +74,17 @@
 
 /* MornAI logged-in product shell */
 .mornai-app-shell{position:relative;isolation:isolate;min-height:100vh;background:
-  radial-gradient(circle at 8% 5%,rgba(124,58,237,.08),transparent 26%),
-  radial-gradient(circle at 92% 12%,rgba(59,130,246,.07),transparent 28%),
+  radial-gradient(circle at 7% 4%,rgba(124,58,237,.13),transparent 29%),
+  radial-gradient(circle at 93% 12%,rgba(59,130,246,.11),transparent 31%),
+  radial-gradient(circle at 52% 86%,rgba(14,165,233,.07),transparent 26%),
   linear-gradient(180deg,#f8fbff 0%,#f7f9fc 48%,#ffffff 100%);}
 .mornai-app-shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
-  radial-gradient(circle at 18% 30%,rgba(99,102,241,.045),transparent 22%),
-  radial-gradient(circle at 78% 70%,rgba(14,165,233,.035),transparent 24%);}
+  radial-gradient(circle at 16% 24%,rgba(139,92,246,.09),transparent 24%),
+  radial-gradient(circle at 82% 64%,rgba(56,189,248,.07),transparent 27%),
+  radial-gradient(circle at 50% 10%,rgba(255,255,255,.85),transparent 34%);}
+.mornai-app-shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
+  linear-gradient(115deg,transparent 0%,rgba(255,255,255,.22) 42%,transparent 68%);
+  mix-blend-mode:screen;}
 .mornai-app-nav-wrap{pointer-events:none;}
 .mornai-app-nav-wrap>*{pointer-events:auto;}
 .mornai-app-nav{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.96);box-shadow:0 18px 55px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(99,102,241,.05);backdrop-filter:blur(28px) saturate(175%) contrast(108%);-webkit-backdrop-filter:blur(28px) saturate(175%) contrast(108%);}
@@ -172,8 +177,8 @@
 .mornai-app-shell .from-indigo-600{--tw-gradient-from:#7c3aed var(--tw-gradient-from-position);--tw-gradient-to:rgb(255 255 255 / 0) var(--tw-gradient-to-position)!important;}
 .mornai-app-shell .via-indigo-700{--tw-gradient-stops:var(--tw-gradient-from),#6d28d9 var(--tw-gradient-via-position),var(--tw-gradient-to)!important;}
 .mornai-app-shell .to-indigo-700{--tw-gradient-to:#6d28d9 var(--tw-gradient-to-position)!important;}
-.mornai-app-shell button{border-color:rgba(124,58,237,.20);box-shadow:0 0 0 1px rgba(124,58,237,.045),0 0 16px rgba(124,58,237,.055);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease,color .18s ease;}
-.mornai-app-shell button:hover{border-color:rgba(124,58,237,.40);box-shadow:0 0 0 1px rgba(124,58,237,.10),0 0 22px rgba(124,58,237,.12);}
+.mornai-app-shell button{transition:transform .18s ease,background .18s ease,color .18s ease,opacity .18s ease;}
+.mornai-app-shell button:hover{transform:translateY(-1px);}
 .mornai-app-nav{border-color:rgba(124,58,237,.24);box-shadow:0 18px 55px rgba(15,23,42,.10),0 0 28px rgba(124,58,237,.08),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(124,58,237,.07);}
 .mornai-app-nav-pills{border-color:rgba(124,58,237,.13);box-shadow:0 0 16px rgba(124,58,237,.05);}
 .mornai-app-nav-item-active{color:#6d28d9;background:rgba(255,255,255,.96);box-shadow:0 0 0 1px rgba(124,58,237,.16),0 0 18px rgba(124,58,237,.12),inset 0 1px 0 rgba(255,255,255,1);}
@@ -626,7 +631,6 @@ select.mornai-memory-log-field{appearance:auto;cursor:pointer;}
 .mornai-main {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
 }
 .mornai-auth-surface {
   transform-origin: 50% 50%;
