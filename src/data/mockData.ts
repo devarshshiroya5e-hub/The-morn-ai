@@ -583,7 +583,7 @@ export const INITIAL_STARTUPS: Startup[] = [
       },
       {
         id: 'role-402',
-        partnership: { mode: 'pay_per_task', label: 'Pay per work / task', amountUsd: 250, unit: 'policy pack', milestone: 'Each audit-ready policy pack' },
+        partnership: { mode: 'work_exchange', label: 'Pay or work', amountUsd: 250, unit: 'policy pack', milestone: 'Each audit-ready policy pack', details: 'Choose the cash route or exchange each policy pack for a defined operations support package.' },
         startupId: 'startup-4',
         startupName: 'LedgerLane',
         startupLogo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=120&q=80',
