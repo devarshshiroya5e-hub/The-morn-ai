@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Startup, User } from '../types';
+import { PartnershipMode, RolePartnership, Startup, User } from '../types';
+import { useLocalizedCurrency } from '../lib/currency';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
@@ -127,6 +128,17 @@ const ROLE_KEYWORDS: Record<string, string[]> = {
 
 const normalizeRole = (value: string) => value.trim().toLowerCase();
 
+const PARTNERSHIP_MODES: Array<{ value: PartnershipMode; label: string; description: string }> = [
+  { value: 'equity', label: 'Equity', description: 'Long-term ownership instead of cash.' },
+  { value: 'helper', label: 'Helper', description: 'Volunteer or learning contribution with no required cash.' },
+  { value: 'pay_on_delivery', label: 'Pay when made', description: 'Pay after the agreed milestone or result is delivered.' },
+  { value: 'pay_per_hour', label: 'Pay per hour', description: 'Hourly cash compensation.' },
+  { value: 'pay_per_task', label: 'Pay per work / task', description: 'Cash for each defined piece of work.' },
+  { value: 'fixed_project', label: 'Fixed project fee', description: 'One agreed amount for the complete project.' },
+  { value: 'revenue_share', label: 'Revenue share', description: 'Share a percentage of revenue generated.' },
+  { value: 'equity_plus_cash', label: 'Equity + cash', description: 'Combine ownership with cash compensation.' },
+];
+
 interface StartupRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -151,6 +163,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [location, setLocation] = useState('San Francisco, CA (Remote)');
   const [roleInput, setRoleInput] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [rolePartnerships, setRolePartnerships] = useState<Record<string, RolePartnership>>({});
   const [roleError, setRoleError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
@@ -176,6 +189,10 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     if (!clean) return;
     if (!selectedRoles.some((item) => normalizeRole(item) === normalizeRole(clean))) {
       setSelectedRoles((prev) => [...prev, clean]);
+      setRolePartnerships((prev) => ({
+        ...prev,
+        [clean]: prev[clean] || { mode: 'pay_per_task', label: 'Pay per work / task', amountUsd: 150, unit: 'task' },
+      }));
     }
     setRoleInput('');
     setRoleError('');
@@ -183,6 +200,21 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
 
   const removeRole = (role: string) => {
     setSelectedRoles((prev) => prev.filter((item) => item !== role));
+    setRolePartnerships((prev) => {
+      const next = { ...prev };
+      delete next[role];
+      return next;
+    });
+  };
+
+  const updatePartnership = (role: string, patch: Partial<RolePartnership>) => {
+    setRolePartnerships((prev) => ({
+      ...prev,
+      [role]: {
+        ...(prev[role] || { mode: 'pay_per_task', label: 'Pay per work / task' }),
+        ...patch,
+      },
+    }));
   };
 
   if (!isOpen) return null;
@@ -409,6 +441,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       setValuationUsd('2500000');
       setRoleInput('');
       setSelectedRoles([]);
+      setRolePartnerships({});
       setIsSynthesizing(false);
       onClose();
     } catch (err) {
