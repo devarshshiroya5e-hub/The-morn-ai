@@ -403,7 +403,13 @@ export default function App() {
           .filter((profile) => profile.id !== currentUser.id)
           .filter((profile) => currentUser.role === 'founder' ? profile.role === 'employee' : profile.role === 'founder');
 
-        setTalentUsers(remote);
+        const demoProfiles = mockTalentUsers
+          .filter((profile) => profile.id !== currentUser.id)
+          .filter((profile) => currentUser.role === 'founder' ? profile.role === 'employee' : profile.role === 'founder');
+
+        const profilesById = new Map<string, User>();
+        [...demoProfiles, ...remote].forEach((profile) => profilesById.set(profile.id, profile));
+        setTalentUsers(Array.from(profilesById.values()));
       },
       (error) => {
         console.error('Failed to load public network profiles:', error);
