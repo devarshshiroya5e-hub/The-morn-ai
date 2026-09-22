@@ -27,6 +27,20 @@ export const INITIAL_USERS: User[] = [
     equityPreference: 'Hybrid (Stipend + 1-2% Equity)',
     reputationScore: 96,
     completedMilestones: 22,
+    onboarding: {
+      story: 'I build fast, reliable startup products where strong frontend systems meet practical AI workflows.',
+      goal: 'Ship two production-grade AI product surfaces with a small, high-ownership team.',
+      availability: '20 hrs/week',
+      workStyle: 'Remote-first, async with focused collaboration',
+      experienceLevel: '6–10 years',
+      profileTitle: 'Senior AI & Full-Stack Engineer',
+      contribution: 'I can own frontend architecture, API integration, AI product workflows and the production hardening needed to ship a real MVP.',
+      motivation: 'I enjoy joining early teams where engineering decisions directly shape the product and customer experience.',
+      desiredRole: 'Lead Full-Stack / AI Engineer',
+      focusAreas: 'AI products, developer tools and workflow automation',
+      achievements: 'Shipped multiple startup MVPs and production React + LLM workflows.',
+      idealStartup: 'Early-stage technical startup with strong product ownership and a small expert team.'
+    },
   },
   {
     id: 'user-talent-2',
@@ -41,6 +55,20 @@ export const INITIAL_USERS: User[] = [
     equityPreference: 'Equity-leaning',
     reputationScore: 94,
     completedMilestones: 18,
+    onboarding: {
+      story: 'I build growth systems that turn useful products into repeatable acquisition engines.',
+      goal: 'Help one early-stage B2B product build a predictable pipeline from launch to repeatable revenue.',
+      availability: '10–15 hrs/week',
+      workStyle: 'Remote, metrics-driven collaboration',
+      experienceLevel: '6–10 years',
+      profileTitle: 'Product Growth Strategist & Marketer',
+      contribution: 'I can build positioning, GTM experiments, SEO systems, outbound sequences and analytics loops that connect product usage to revenue.',
+      motivation: 'I like working with founders who want measurable growth experiments rather than generic marketing activity.',
+      desiredRole: 'Growth / GTM Lead',
+      focusAreas: 'B2B SaaS, developer tools and startup GTM',
+      achievements: 'Scaled three B2B products to meaningful recurring revenue and built repeatable launch systems.',
+      idealStartup: 'Technical B2B startup with a strong product and an early customer signal.'
+    },
   },
   {
     id: 'user-talent-3',
@@ -55,6 +83,48 @@ export const INITIAL_USERS: User[] = [
     equityPreference: 'Flexible',
     reputationScore: 97,
     completedMilestones: 31,
+    onboarding: {
+      story: 'I turn complex product ideas into clear interfaces and scalable design systems that engineers can ship.',
+      goal: 'Help an ambitious startup establish a premium product language and design system.',
+      availability: '15 hrs/week',
+      workStyle: 'Design-led collaboration with async documentation',
+      experienceLevel: '6–10 years',
+      profileTitle: 'Principal UI/UX Designer & Design Engineer',
+      contribution: 'I can own UX research, visual systems, prototypes and design-to-code handoff while keeping product decisions grounded in user behavior.',
+      motivation: 'I want to work on products where design quality is part of the competitive advantage.',
+      desiredRole: 'Product Designer / Design Engineer',
+      focusAreas: 'SaaS, AI interfaces and developer products',
+      achievements: 'Built design systems and interactive product prototypes used across fast-moving product teams.',
+      idealStartup: 'Product-focused startup with strong engineering collaboration and high design ambition.'
+    }
+  },
+  {
+    id: 'user-talent-4',
+    name: 'Rohan Mehta',
+    email: 'rohan.creator@studio.io',
+    role: 'employee',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=250&q=80',
+    title: 'Creator Partnerships & Content Strategist',
+    bio: 'Builds creator programs, short-form content systems and community partnerships for consumer and education startups.',
+    skills: ['Content Strategy', 'Creator Partnerships', 'Instagram Management', 'Short-form Video Editing', 'Community Building'],
+    hourlyRate: '$45/hr',
+    equityPreference: 'Flexible',
+    reputationScore: 91,
+    completedMilestones: 15,
+    onboarding: {
+      story: 'I help startups turn their mission into content people actually want to share.',
+      goal: 'Build a repeatable creator-led acquisition channel for an early-stage startup.',
+      availability: '10 hrs/week',
+      workStyle: 'Fast creative cycles with weekly planning',
+      experienceLevel: '3–5 years',
+      profileTitle: 'Creator Partnerships & Content Strategist',
+      contribution: 'I can build creator outreach, content calendars, short-form video systems and community programs that create consistent top-of-funnel attention.',
+      motivation: 'I like working where creative output can be connected directly to product growth.',
+      desiredRole: 'Creator Partnerships / Content Lead',
+      focusAreas: 'Consumer apps, education and creator economy products',
+      achievements: 'Built creator campaigns and content systems for early-stage consumer brands.',
+      idealStartup: 'Founder-led consumer or education startup ready to build a visible brand.'
+    }
   }
 ];
 
@@ -326,6 +396,24 @@ export const INITIAL_STARTUPS: Startup[] = [
         postedDate: '2026-02-20',
         applicantCount: 4,
         status: 'open'
+      },
+      {
+        id: 'role-202',
+        startupId: 'startup-2',
+        startupName: 'GreenGrid Network',
+        startupLogo: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=120&q=80',
+        title: 'Energy Systems & IoT Product Engineer',
+        type: 'Equity + Stipend',
+        equityRange: '0.8% - 1.6%',
+        stipendRange: '$1,800 / milestone',
+        commitment: '12-15 hrs/week',
+        skills: ['IoT', 'Python', 'Data Analysis', 'Energy Systems'],
+        description: 'Build the operational dashboard and device-data workflows that turn neighborhood energy telemetry into useful dispatch decisions.',
+        responsibilities: ['Design telemetry data views', 'Improve device event processing', 'Work with the hardware founder on product priorities'],
+        idealCandidate: 'Engineer interested in climate hardware, data and real-world infrastructure.',
+        postedDate: '2026-08-11',
+        applicantCount: 2,
+        status: 'open'
       }
     ],
     tasks: []
@@ -394,6 +482,195 @@ export const INITIAL_STARTUPS: Startup[] = [
         idealCandidate: 'Frontend craftsperson obsessed with developer experience and sub-50ms UI response.',
         postedDate: '2026-02-25',
         applicantCount: 8,
+        status: 'open'
+      },
+      {
+        id: 'role-302',
+        startupId: 'startup-3',
+        startupName: 'Omnilink DevTools',
+        startupLogo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=120&q=80',
+        title: 'Developer Community & Launch Lead',
+        type: 'Equity + Stipend',
+        equityRange: '0.6% - 1.4%',
+        stipendRange: '$1,200 / milestone',
+        commitment: '8-10 hrs/week',
+        skills: ['Community Building', 'Developer Marketing', 'Content Marketing', 'GitHub'],
+        description: 'Turn the open-source project into a high-signal developer community with launch campaigns, tutorials and contributor programs.',
+        responsibilities: ['Build developer launch calendar', 'Grow GitHub contributor community', 'Create technical content loops'],
+        idealCandidate: 'Technical marketer who enjoys open source and developer communities.',
+        postedDate: '2026-08-14',
+        applicantCount: 7,
+        status: 'open'
+      }
+    ],
+    tasks: []
+  }
+,
+  {
+    id: 'startup-4',
+    name: 'LedgerLane',
+    tagline: 'Modern cash operations and payment intelligence for growing businesses',
+    logo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=160&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1400&q=85',
+    industry: 'FinTech & Business Finance',
+    stage: 'Seed',
+    pitch: 'LedgerLane gives growing businesses a single view of cash flow, invoices, payment timing and financial risk so founders can make operating decisions before cash surprises become emergencies.',
+    techStack: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Stripe', 'Python'],
+    website: 'https://ledgerlane.example.com',
+    foundedYear: '2025',
+    founderId: 'user-founder-4',
+    founderName: 'Priya Shah',
+    founderAvatar: 'https://images.unsplash.com/photo-1598550874175-4d0ef436c9aa?auto=format&fit=crop&w=250&q=80',
+    fundingRaised: '$1.1M Seed Round',
+    location: 'Bengaluru, India / Remote',
+    investorReadinessScore: 87,
+    growthVelocityScore: 82,
+    verified: true,
+    historyLogs: [],
+    members: [
+      {
+        userId: 'user-founder-4',
+        name: 'Priya Shah',
+        role: 'Founder & CEO',
+        avatar: 'https://images.unsplash.com/photo-1598550874175-4d0ef436c9aa?auto=format&fit=crop&w=250&q=80',
+        joinedDate: '2025-10-01',
+        equityOrStipend: '68% Equity',
+        status: 'active',
+        skills: ['FinTech', 'Operations', 'Product Strategy']
+      }
+    ],
+    roadmap: [
+      {
+        id: 'rm-401',
+        phase: 'Phase 1: Payments Infrastructure',
+        title: 'Automated Reconciliation Engine',
+        description: 'Connect payment providers and automate transaction matching and exception handling.',
+        duration: 'Weeks 1-5',
+        kpiTarget: '98% automated reconciliation coverage',
+        status: 'in_progress',
+        talentNeeded: ['Backend Payments Engineer', 'Risk Operations Lead']
+      }
+    ],
+    openRoles: [
+      {
+        id: 'role-401',
+        startupId: 'startup-4',
+        startupName: 'LedgerLane',
+        startupLogo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=120&q=80',
+        title: 'Backend Payments Engineer',
+        type: 'Equity + Stipend',
+        equityRange: '1.0% - 2.0%',
+        stipendRange: '₹55,000 - ₹85,000 / month',
+        commitment: '20 hrs/week',
+        skills: ['Node.js', 'PostgreSQL', 'Stripe', 'TypeScript'],
+        description: 'Build reconciliation pipelines, payment webhooks and resilient transaction services for the core cash-operations product.',
+        responsibilities: ['Own payment-provider integrations', 'Design idempotent reconciliation jobs', 'Improve transaction observability'],
+        idealCandidate: 'Backend engineer who enjoys payments, reliability and data-heavy workflows.',
+        postedDate: '2026-08-12',
+        applicantCount: 6,
+        status: 'open'
+      },
+      {
+        id: 'role-402',
+        startupId: 'startup-4',
+        startupName: 'LedgerLane',
+        startupLogo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=120&q=80',
+        title: 'Risk & Compliance Operations Lead',
+        type: 'Milestone Stipend',
+        equityRange: '0.5% - 1.2%',
+        stipendRange: '₹30,000 / milestone',
+        commitment: '8-10 hrs/week',
+        skills: ['Risk Management', 'Compliance', 'FinTech Operations', 'Process Improvement'],
+        description: 'Help build practical risk controls, operating policies and review workflows for a growing fintech product.',
+        responsibilities: ['Map operational risk controls', 'Document payment exception workflows', 'Prepare audit-ready process documentation'],
+        idealCandidate: 'Operator who understands fintech risk without slowing down product delivery.',
+        postedDate: '2026-08-20',
+        applicantCount: 3,
+        status: 'open'
+      }
+    ],
+    tasks: []
+  },
+  {
+    id: 'startup-5',
+    name: 'SkillForge',
+    tagline: 'Project-based learning that helps ambitious people prove real skills',
+    logo: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=160&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1400&q=85',
+    industry: 'EdTech & Career Development',
+    stage: 'Pre-Seed',
+    pitch: 'SkillForge replaces passive course completion with real project sprints, mentor feedback and evidence of work that can be shared with startups and employers.',
+    techStack: ['Next.js', 'TypeScript', 'Firebase', 'OpenAI API', 'PostgreSQL'],
+    website: 'https://skillforge.example.com',
+    foundedYear: '2026',
+    founderId: 'user-founder-5',
+    founderName: 'Omar Hassan',
+    founderAvatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=250&q=80',
+    fundingRaised: 'Bootstrapped',
+    location: 'Dubai / Remote',
+    investorReadinessScore: 76,
+    growthVelocityScore: 79,
+    verified: true,
+    historyLogs: [],
+    members: [
+      {
+        userId: 'user-founder-5',
+        name: 'Omar Hassan',
+        role: 'Founder & Product Lead',
+        avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=250&q=80',
+        joinedDate: '2026-05-10',
+        equityOrStipend: 'Founder',
+        status: 'active',
+        skills: ['Education', 'Product', 'Community']
+      }
+    ],
+    roadmap: [
+      {
+        id: 'rm-501',
+        phase: 'Phase 1: Skill-to-Project Matching',
+        title: 'Personalized Project Tracks',
+        description: 'Recommend real-world project sprints based on the learner’s target role and current capabilities.',
+        duration: 'Weeks 1-4',
+        kpiTarget: '65% weekly project completion',
+        status: 'in_progress',
+        talentNeeded: ['Curriculum Product Designer', 'Creator Partnerships Lead']
+      }
+    ],
+    openRoles: [
+      {
+        id: 'role-501',
+        startupId: 'startup-5',
+        startupName: 'SkillForge',
+        startupLogo: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=120&q=80',
+        title: 'Curriculum Product Designer',
+        type: 'Equity + Stipend',
+        equityRange: '0.8% - 1.8%',
+        stipendRange: '₹40,000 / milestone',
+        commitment: '12 hrs/week',
+        skills: ['Instructional Design', 'Product Design', 'User Research', 'Figma'],
+        description: 'Design project-based learning journeys that feel like real startup work and produce useful proof-of-work outcomes.',
+        responsibilities: ['Map role-specific project tracks', 'Prototype learner journeys', 'Test project briefs with learners'],
+        idealCandidate: 'Product-minded educator or designer who understands modern startup teams.',
+        postedDate: '2026-08-16',
+        applicantCount: 5,
+        status: 'open'
+      },
+      {
+        id: 'role-502',
+        startupId: 'startup-5',
+        startupName: 'SkillForge',
+        startupLogo: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=120&q=80',
+        title: 'Creator Partnerships Lead',
+        type: 'Equity Only',
+        equityRange: '0.5% - 1.4%',
+        stipendRange: 'Milestone equity grants',
+        commitment: '8 hrs/week',
+        skills: ['Creator Partnerships', 'Social Media Marketing', 'Community Building', 'Content Creation'],
+        description: 'Build a network of creators and practitioners who can turn real startup skills into practical project content.',
+        responsibilities: ['Recruit domain creators', 'Create partner launch playbooks', 'Grow the practitioner community'],
+        idealCandidate: 'Community and content operator who knows how to build creator relationships from zero.',
+        postedDate: '2026-08-23',
+        applicantCount: 4,
         status: 'open'
       }
     ],
