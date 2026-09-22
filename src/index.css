@@ -789,3 +789,30 @@ body {
   scrollbar-width: thin;
   touch-action: pan-y;
 }
+
+
+/* Auth navigation: keep the top bar and text links clean, with no button-like rectangles. */
+.mornai-auth-nav{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.mornai-auth-nav::before,
+.mornai-auth-nav::after{
+  display:none !important;
+}
+.mornai-auth-nav .mornai-glass-nav-link{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:.55rem .72rem;
+}
+.mornai-auth-nav .mornai-glass-nav-link:hover,
+.mornai-auth-nav .mornai-glass-nav-link:focus-visible{
+  background:transparent !important;
+  box-shadow:none !important;
+  border-color:transparent !important;
+  color:#0f172a;
+}
