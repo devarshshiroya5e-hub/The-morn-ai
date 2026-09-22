@@ -47,6 +47,7 @@ export type PartnershipMode =
   | 'pay_per_task'
   | 'fixed_project'
   | 'revenue_share'
+  | 'work_exchange'
   | 'equity_plus_cash';
 
 export interface RolePartnership {
