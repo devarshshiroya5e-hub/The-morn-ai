@@ -107,8 +107,6 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
     { id: 'memory', label: 'Memory', count: startup.historyLogs.length },
   ];
 
-  const startupLogo = startup.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(startup.name)}&background=5B5CF0&color=fff&bold=true`;
-
   return createPortal(
     <div className="fixed inset-0 z-[80] h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y bg-slate-950/60 p-2 scrollbar-gutter-stable backdrop-blur-sm sm:p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
       <button
