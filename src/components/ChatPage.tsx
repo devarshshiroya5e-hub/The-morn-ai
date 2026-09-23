@@ -452,8 +452,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initi
 
     try {
       const participants = privateParticipantsForRoom(activeRoom);
-
-      const participants = privateParticipantsForRoom(activeRoom);
       await addDoc(collection(db, 'messages'), {
         roomId: activeRoom.id,
         roomType: activeRoom.kind,
