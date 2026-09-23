@@ -2,6 +2,9 @@ import { Component, ErrorInfo, ReactNode, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { installMornaiNavigationPolish } from './mornaiNavigationPolish';
+
+installMornaiNavigationPolish();
 
 class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   private readonly children: ReactNode;
