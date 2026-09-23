@@ -263,7 +263,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                 </div>
                 <div className="text-right">
                   <p className="text-[9px] font-black uppercase tracking-[.13em] text-slate-400">Availability</p>
-                  <p className="mt-0.5 text-[11px] font-extrabold text-slate-700">{talent.equityPreference || 'Flexible'}</p>
+                  <p className="mt-0.5 text-[11px] font-extrabold text-slate-700">{talent.onboarding?.availability || 'Flexible'}</p>
                 </div>
               </div>
 
