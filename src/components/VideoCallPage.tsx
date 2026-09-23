@@ -15,6 +15,7 @@ import {
   Video,
   VideoOff,
   Volume2,
+  PhoneCall,
   LoaderCircle,
 } from 'lucide-react';
 import { db } from '../lib/firebase';
@@ -24,6 +25,7 @@ interface VideoCallPageProps {
   currentUser: User;
   contact: User;
   connectionId?: string;
+  mode?: 'video' | 'audio';
   onClose: () => void;
 }
 
@@ -35,12 +37,13 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
   currentUser,
   contact,
   connectionId,
+  mode = 'video',
   onClose,
 }) => {
   const [callState, setCallState] = useState<'starting' | 'ringing' | 'connected' | 'ended' | 'error'>('starting');
   const [error, setError] = useState('');
   const [micEnabled, setMicEnabled] = useState(true);
-  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [cameraEnabled, setCameraEnabled] = useState(mode === 'video');
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -70,7 +73,7 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
     const connect = async () => {
       try {
         setCallState(isCaller ? 'ringing' : 'starting');
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: mode === 'video', audio: true });
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop());
           return;
@@ -249,10 +252,10 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
   }, [callId, connectionId, contact.id, currentUser.id, isCaller, callerId, participantIds.join('|')]);
 
   useEffect(() => {
-    if (localVideoRef.current && localStreamRef.current) {
+    if (mode === 'video' && localVideoRef.current && localStreamRef.current) {
       localVideoRef.current.srcObject = localStreamRef.current;
     }
-  }, [cameraEnabled]);
+  }, [cameraEnabled, mode]);
 
   const endCall = async () => {
     try {
@@ -291,7 +294,7 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
       <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-6xl flex-col overflow-hidden rounded-[30px] border border-white/10 bg-slate-900 shadow-[0_35px_120px_rgba(0,0,0,.35)]">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-white sm:px-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-violet-300">MornAI in-app call</p>
+            <p className="text-[10px] font-black uppercase tracking-[.16em] text-violet-300">MornAI {mode === 'audio' ? 'voice' : 'video'} call</p>
             <h1 className="mt-1 text-lg font-black">{contact.name}</h1>
             <p className="text-[10px] font-semibold text-slate-400">{contact.title}</p>
           </div>
@@ -314,9 +317,11 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
                 </div>
               </div>
             )}
-            <div className="absolute bottom-4 right-4 h-28 w-40 overflow-hidden rounded-2xl border border-white/15 bg-black shadow-2xl">
-              <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-            </div>
+            {mode === 'video' && (
+              <div className="absolute bottom-4 right-4 h-28 w-40 overflow-hidden rounded-2xl border border-white/15 bg-black shadow-2xl">
+                <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+              </div>
+            )}
           </div>
 
           <aside className="flex flex-col justify-between border-t border-white/10 bg-slate-900 p-4 lg:border-l lg:border-t-0">
