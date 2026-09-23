@@ -23,7 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { ConnectionRequest, RolePost, Startup, User } from '../types';
-import { useLocalizedCurrency } from '../lib/currency';
+import { formatAnyCurrency, useLocalizedCurrency } from '../lib/currency';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
 
 type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections' | 'saved';
@@ -619,18 +619,30 @@ const getProfileDetails = (user: User): Array<{ label: string; value: string }> 
     .map(([label, value]) => ({ label, value: value.trim() }));
 };
 
+const getPartnershipAmount = (partnership: RolePost['partnership'], formatMoney: (usd: number) => string) => {
+  if (!partnership) return '';
+  if (typeof partnership.amount === 'number' && partnership.currencyCode) return formatAnyCurrency(partnership.amount, partnership.currencyCode);
+  if (typeof partnership.amountUsd === 'number') return formatMoney(partnership.amountUsd);
+  return '';
+};
+
 const getPartnershipText = (role: RolePost, formatMoney: (usd: number) => string) => {
   const p = role.partnership;
   if (!p) return role.type || 'Founder-defined partnership';
   switch (p.mode) {
     case 'equity': return p.equityPercent ? p.equityPercent + '% equity' : 'Equity';
-    case 'helper': return 'Helper / volunteer';
-    case 'pay_on_delivery': return p.amountUsd ? formatMoney(p.amountUsd) + ' on delivery' : 'Pay on delivery';
-    case 'pay_per_hour': return p.amountUsd ? formatMoney(p.amountUsd) + ' / hour' : 'Pay per hour';
-    case 'pay_per_task': return p.amountUsd ? formatMoney(p.amountUsd) + ' / task' : 'Pay per task';
-    case 'fixed_project': return p.amountUsd ? formatMoney(p.amountUsd) + ' fixed' : 'Fixed project fee';
+    case 'helper': return 'Volunteer / helper';
+    case 'pay_on_delivery': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' on delivery' : 'Pay on delivery';
+    case 'pay_per_hour': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / hour' : 'Based on hour';
+    case 'pay_per_task': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / task' : 'Per task';
+    case 'fixed_project': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / project' : 'Per project';
+    case 'monthly_salary': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / month' : 'Monthly salary / stipend';
     case 'revenue_share': return p.equityPercent ? p.equityPercent + '% revenue share' : 'Revenue share';
-    case 'equity_plus_cash': return p.equityPercent && p.amountUsd ? p.equityPercent + '% equity + ' + formatMoney(p.amountUsd) : 'Equity + cash';
+    case 'profit_share': return p.equityPercent ? p.equityPercent + '% profit share' : 'Profit share';
+    case 'commission': return p.equityPercent ? p.equityPercent + '% commission' : 'Sales commission';
+    case 'work_exchange': return p.details || 'Work exchange';
+    case 'custom': return p.details || 'Custom arrangement';
+    case 'equity_plus_cash': return p.equityPercent && getPartnershipAmount(p, formatMoney) ? p.equityPercent + '% equity + ' + getPartnershipAmount(p, formatMoney) : 'Equity + cash';
     default: return p.label || role.type || 'Founder-defined partnership';
   }
 };
@@ -640,14 +652,18 @@ const getRolePartnershipSummary = (role: RolePost, formatMoney: (usd: number) =>
   if (!partnership) return role.type || 'Founder-defined partnership';
   switch (partnership.mode) {
     case 'equity': return partnership.equityPercent ? partnership.equityPercent + '% equity' : 'Equity';
-    case 'helper': return 'Helper / volunteer';
-    case 'pay_on_delivery': return partnership.amountUsd ? formatMoney(partnership.amountUsd) + ' on delivery' : 'Pay on delivery';
-    case 'pay_per_hour': return partnership.amountUsd ? formatMoney(partnership.amountUsd) + ' / hour' : 'Pay per hour';
-    case 'pay_per_task': return partnership.amountUsd ? formatMoney(partnership.amountUsd) + ' / task' : 'Pay per task';
-    case 'fixed_project': return partnership.amountUsd ? formatMoney(partnership.amountUsd) + ' fixed project' : 'Fixed project fee';
+    case 'helper': return 'Volunteer / helper';
+    case 'pay_on_delivery': return getPartnershipAmount(partnership, formatMoney) ? getPartnershipAmount(partnership, formatMoney) + ' on delivery' : 'Pay on delivery';
+    case 'pay_per_hour': return getPartnershipAmount(partnership, formatMoney) ? getPartnershipAmount(partnership, formatMoney) + ' / hour' : 'Based on hour';
+    case 'pay_per_task': return getPartnershipAmount(partnership, formatMoney) ? getPartnershipAmount(partnership, formatMoney) + ' / task' : 'Per task';
+    case 'fixed_project': return getPartnershipAmount(partnership, formatMoney) ? getPartnershipAmount(partnership, formatMoney) + ' / project' : 'Per project';
+    case 'monthly_salary': return getPartnershipAmount(partnership, formatMoney) ? getPartnershipAmount(partnership, formatMoney) + ' / month' : 'Monthly salary / stipend';
     case 'revenue_share': return partnership.equityPercent ? partnership.equityPercent + '% revenue share' : 'Revenue share';
-    case 'work_exchange': return partnership.amountUsd && partnership.details ? formatMoney(partnership.amountUsd) + ' cash or work exchange' : partnership.details || 'Pay or work';
-    case 'equity_plus_cash': return partnership.equityPercent && partnership.amountUsd ? partnership.equityPercent + '% equity + ' + formatMoney(partnership.amountUsd) : 'Equity + cash';
+    case 'profit_share': return partnership.equityPercent ? partnership.equityPercent + '% profit share' : 'Profit share';
+    case 'commission': return partnership.equityPercent ? partnership.equityPercent + '% commission' : 'Sales commission';
+    case 'work_exchange': return partnership.details || 'Work exchange';
+    case 'custom': return partnership.details || 'Custom arrangement';
+    case 'equity_plus_cash': return partnership.equityPercent && getPartnershipAmount(partnership, formatMoney) ? partnership.equityPercent + '% equity + ' + getPartnershipAmount(partnership, formatMoney) : 'Equity + cash';
     default: return partnership.label || role.type || 'Founder-defined partnership';
   }
 };

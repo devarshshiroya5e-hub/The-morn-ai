@@ -78,14 +78,18 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const [generatedRoleDraft, setGeneratedRoleDraft] = useState<RolePost | null>(null);
   const partnershipOptions: Array<{ value: PartnershipMode; label: string }> = [
     { value: 'equity', label: 'Equity' },
-    { value: 'helper', label: 'Helper' },
-    { value: 'pay_on_delivery', label: 'Pay when made' },
-    { value: 'pay_per_hour', label: 'Pay per hour' },
-    { value: 'pay_per_task', label: 'Pay per work / task' },
-    { value: 'work_exchange', label: 'Pay or work' },
-    { value: 'fixed_project', label: 'Fixed project fee' },
-    { value: 'revenue_share', label: 'Revenue share' },
+    { value: 'pay_on_delivery', label: 'Pay on delivery / milestone' },
+    { value: 'pay_per_hour', label: 'Based on hour' },
+    { value: 'pay_per_task', label: 'Per task' },
+    { value: 'fixed_project', label: 'Per project' },
+    { value: 'monthly_salary', label: 'Monthly salary / stipend' },
+    { value: 'revenue_share', label: 'Company revenue share' },
+    { value: 'profit_share', label: 'Company profit share' },
+    { value: 'commission', label: 'Sales commission' },
+    { value: 'work_exchange', label: 'Work exchange' },
     { value: 'equity_plus_cash', label: 'Equity + cash' },
+    { value: 'helper', label: 'Volunteer / helper' },
+    { value: 'custom', label: 'Custom arrangement' },
   ];
 
   // Task delegation state

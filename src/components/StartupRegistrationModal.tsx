@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PartnershipMode, RolePartnership, Startup, User } from '../types';
-import { convertLocalToUsd, convertUsd, formatAnyCurrency, getCurrencyOptions, useLocalizedCurrency } from '../lib/currency';
+import { convertLocalToUsd, convertUsd, useLocalizedCurrency } from '../lib/currency';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
@@ -130,19 +130,15 @@ const ROLE_KEYWORDS: Record<string, string[]> = {
 const normalizeRole = (value: string) => value.trim().toLowerCase();
 
 const PARTNERSHIP_MODES: Array<{ value: PartnershipMode; label: string; description: string }> = [
-  { value: 'equity', label: 'Equity', description: 'Offer ownership in the startup.' },
-  { value: 'pay_per_hour', label: 'Based on hour', description: 'Pay a fixed amount for each hour worked.' },
-  { value: 'pay_per_task', label: 'Per task', description: 'Pay for each clearly defined task or deliverable.' },
-  { value: 'fixed_project', label: 'Per project', description: 'Pay one agreed amount for the complete project.' },
-  { value: 'pay_on_delivery', label: 'Pay on delivery / milestone', description: 'Release payment when the agreed result is delivered.' },
-  { value: 'monthly_salary', label: 'Monthly salary / stipend', description: 'Recurring cash compensation per month.' },
-  { value: 'revenue_share', label: 'Share of company revenue', description: 'Pay a percentage of company revenue.' },
-  { value: 'profit_share', label: 'Share of company profit', description: 'Pay a percentage of company profit.' },
-  { value: 'commission', label: 'Sales commission', description: 'Pay a percentage tied to sales or collected revenue.' },
-  { value: 'equity_plus_cash', label: 'Equity + cash', description: 'Combine startup ownership with cash compensation.' },
-  { value: 'helper', label: 'Volunteer / helper', description: 'No required cash payment; define the arrangement.' },
-  { value: 'work_exchange', label: 'Work exchange', description: 'Exchange defined work or non-cash value.' },
-  { value: 'custom', label: 'Custom arrangement', description: 'Describe another compensation structure.' },
+  { value: 'equity', label: 'Equity', description: 'Long-term ownership instead of cash.' },
+  { value: 'helper', label: 'Helper', description: 'Volunteer or learning contribution with no required cash.' },
+  { value: 'pay_on_delivery', label: 'Pay when made', description: 'Pay after the agreed milestone or result is delivered.' },
+  { value: 'pay_per_hour', label: 'Pay per hour', description: 'Hourly cash compensation.' },
+  { value: 'pay_per_task', label: 'Pay per work / task', description: 'Cash for each defined piece of work.' },
+  { value: 'fixed_project', label: 'Fixed project fee', description: 'One agreed amount for the complete project.' },
+  { value: 'revenue_share', label: 'Revenue share', description: 'Share a percentage of revenue generated.' },
+  { value: 'work_exchange', label: 'Pay or work', description: 'The contributor can choose a cash route or a defined work-for-value exchange.' },
+  { value: 'equity_plus_cash', label: 'Equity + cash', description: 'Combine ownership with cash compensation.' },
 ];
 
 interface StartupRegistrationModalProps {
@@ -163,15 +159,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [industry, setIndustry] = useState('Artificial Intelligence');
   const [stage, setStage] = useState<'Pre-Seed' | 'Seed' | 'Series A'>('Pre-Seed');
   const [pitch, setPitch] = useState('');
-  const [problem, setProblem] = useState('');
-  const [solution, setSolution] = useState('');
-  const [targetCustomer, setTargetCustomer] = useState('');
-  const [businessModel, setBusinessModel] = useState('');
-  const [tractionDetails, setTractionDetails] = useState('');
-  const [competitiveAdvantage, setCompetitiveAdvantage] = useState('');
-  const [foundingStory, setFoundingStory] = useState('');
-  const [vision, setVision] = useState('');
-  const [currentChallenges, setCurrentChallenges] = useState('');
   const [techStackInput, setTechStackInput] = useState('React, TypeScript, Python, Gemini API');
   const [fundingRaised, setFundingRaised] = useState('$150,000');
   const [valuationUsd, setValuationUsd] = useState('2500000');
@@ -185,7 +172,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const { currency, rates, format: formatMoney } = useLocalizedCurrency(currentUser);
-  const currencyOptions = React.useMemo(() => getCurrencyOptions(), []);
 
   const roleSuggestions = React.useMemo(() => {
     const industryRoles = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
@@ -211,14 +197,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       setSelectedRoles((prev) => [...prev, clean]);
       setRolePartnerships((prev) => ({
         ...prev,
-        [clean]: prev[clean] || {
-          mode: 'pay_per_task',
-          label: 'Per task',
-          amount: 150,
-          amountUsd: convertLocalToUsd(150, currency, rates),
-          currencyCode: currency,
-          unit: 'task',
-        },
+        [clean]: prev[clean] || { mode: 'pay_per_task', label: 'Pay per work / task', amountUsd: 150, unit: 'task' },
       }));
     }
     setRoleInput('');
@@ -255,23 +234,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
 
     if (finalRoles.length === 0) {
       setRoleError('Add at least one role your startup needs.');
-      return;
-    }
-
-    const startupQuestions: Array<[string, string, number]> = [
-      ['Problem', problem, 40],
-      ['Solution', solution, 40],
-      ['Target customer', targetCustomer, 25],
-      ['Business model', businessModel, 20],
-      ['Traction / validation', tractionDetails, 20],
-      ['Competitive advantage', competitiveAdvantage, 30],
-      ['Founding story', foundingStory, 30],
-      ['Long-term vision', vision, 30],
-      ['Current challenges', currentChallenges, 20],
-    ];
-    const missingQuestion = startupQuestions.find(([, value, min]) => value.trim().length < min);
-    if (missingQuestion) {
-      setSaveError(missingQuestion[0] + ' must be at least ' + missingQuestion[2] + ' characters so your startup profile is clear.');
       return;
     }
 
@@ -313,15 +275,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       tagline: tagline.trim(),
       industry,
       stage,
-      problem: problem.trim(),
-      solution: solution.trim(),
-      targetCustomer: targetCustomer.trim(),
-      businessModel: businessModel.trim(),
-      tractionDetails: tractionDetails.trim(),
-      competitiveAdvantage: competitiveAdvantage.trim(),
-      foundingStory: foundingStory.trim(),
-      vision: vision.trim(),
-      currentChallenges: currentChallenges.trim(),
       website: `https://${name.trim().toLowerCase().replace(/\s+/g, '')}.io`,
       foundedYear: String(new Date().getFullYear()),
       location,
@@ -378,18 +331,14 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
         startupName: name.trim(),
         startupLogo: startupLogo,
         title: role,
-        type: rolePartnerships[role]?.label || 'Per task',
-        equityRange: rolePartnerships[role]?.equityPercent ? String(rolePartnerships[role]?.equityPercent) + '%' : 'Not applicable',
-        stipendRange: rolePartnerships[role]?.amount !== undefined
-          ? formatAnyCurrency(rolePartnerships[role]!.amount!, rolePartnerships[role]!.currencyCode || currency)
-          : (rolePartnerships[role]?.amountUsd ? formatAnyCurrency(rolePartnerships[role]!.amountUsd!, 'USD') : 'Founder-defined'),
+        type: rolePartnerships[role]?.label || 'Pay per work / task',
+        equityRange: rolePartnerships[role]?.equityPercent ? `${rolePartnerships[role]?.equityPercent}%` : 'Not applicable',
+        stipendRange: rolePartnerships[role]?.amountUsd ? `${rolePartnerships[role]!.amountUsd}` : 'Founder-defined',
         commitment: rolePartnerships[role]?.milestone || 'Founder-defined',
         partnership: rolePartnerships[role] || {
           mode: 'pay_per_task',
-          label: 'Per task',
-          amount: 150,
-          amountUsd: convertLocalToUsd(150, currency, rates),
-          currencyCode: currency,
+          label: 'Pay per work / task',
+          amountUsd: 150,
           unit: 'task',
         },
         skills: ROLE_KEYWORDS[role] || techStack.slice(0, 4),
@@ -495,15 +444,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       setName('');
       setTagline('');
       setPitch('');
-      setProblem('');
-      setSolution('');
-      setTargetCustomer('');
-      setBusinessModel('');
-      setTractionDetails('');
-      setCompetitiveAdvantage('');
-      setFoundingStory('');
-      setVision('');
-      setCurrentChallenges('');
       setValuationUsd('2500000');
       setRoleInput('');
       setSelectedRoles([]);
@@ -681,27 +621,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
             />
           </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-            <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-violet-600 shadow-sm"><BrainCircuit className="h-4 w-4" /></span>
-              <div>
-                <p className="text-xs font-black text-slate-950">Build a clear startup profile</p>
-                <p className="mt-1 text-[10px] leading-5 text-slate-500">Answer these questions so contributors can understand the startup before they connect. The AI buttons are design-only for now.</p>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <StartupQuestion label="What problem are you solving?" value={problem} onChange={setProblem} min={40} rows={4} placeholder="Explain the customer pain, who experiences it, and why it matters." />
-              <StartupQuestion label="How does your solution work?" value={solution} onChange={setSolution} min={40} rows={4} placeholder="Describe the product, service, workflow or technology." />
-              <StartupQuestion label="Who is the target customer?" value={targetCustomer} onChange={setTargetCustomer} min={25} rows={3} placeholder="Define the buyer, user, market segment or customer profile." />
-              <StartupQuestion label="How does the startup make money?" value={businessModel} onChange={setBusinessModel} min={20} rows={3} placeholder="Describe pricing, subscriptions, transactions or services." />
-              <StartupQuestion label="What traction or validation do you have?" value={tractionDetails} onChange={setTractionDetails} min={20} rows={3} placeholder="Users, revenue, pilots, waitlist, experiments or partnerships." />
-              <StartupQuestion label="What is your competitive advantage?" value={competitiveAdvantage} onChange={setCompetitiveAdvantage} min={30} rows={3} placeholder="Explain why this startup can win and what is hard to copy." />
-              <StartupQuestion label="Why did you start this company?" value={foundingStory} onChange={setFoundingStory} min={30} rows={3} placeholder="Share the founder insight, story or experience behind the startup." />
-              <StartupQuestion label="What is the long-term vision?" value={vision} onChange={setVision} min={30} rows={3} placeholder="Describe what you want this company to become." />
-              <StartupQuestion label="What are the biggest challenges right now?" value={currentChallenges} onChange={setCurrentChallenges} min={20} rows={3} placeholder="List the bottlenecks where the right contributor can create leverage." />
-            </div>
-          </section>
-
           <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
             <div className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4 text-violet-600" />
@@ -806,76 +725,85 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                           <div>
                             <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Equity offered</label>
                             <div className="mt-1 flex overflow-hidden rounded-xl border border-slate-200">
-                              <input type="number" min="0" max="100" step="0.01" value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 2.0" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
+                              <input value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 2.0" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
                               <span className="grid place-items-center bg-slate-50 px-3 text-xs font-black text-slate-500">%</span>
                             </div>
                           </div>
                           <div>
-                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Ownership scope</label>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">What the contributor owns</label>
                             <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. CTO-level technical direction" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
                           </div>
                         </div>
                       )}
 
-                      {['pay_per_hour', 'pay_per_task', 'fixed_project', 'pay_on_delivery', 'monthly_salary', 'work_exchange', 'equity_plus_cash'].includes(partnership.mode) && (
-                        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_180px]">
-                          <div>
-                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Money amount</label>
-                            <input type="number" min="0" step="0.01" value={partnership.amount ?? ''} onChange={(event) => {
-                              const amount = Number(event.target.value);
-                              updatePartnership(role, {
-                                amount: Number.isFinite(amount) ? amount : undefined,
-                                amountUsd: Number.isFinite(amount) ? convertLocalToUsd(amount, partnership.currencyCode || currency, rates) : undefined,
-                              });
-                            }} placeholder="Enter amount" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none" />
-                            <p className="mt-1 text-[9px] text-slate-400">Enter the exact amount in the selected currency.</p>
-                          </div>
-                          <div>
-                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Currency</label>
-                            <select value={partnership.currencyCode || currency} onChange={(event) => {
-                              const nextCurrency = event.target.value;
-                              const localAmount = partnership.amount || 0;
-                              updatePartnership(role, {
-                                currencyCode: nextCurrency,
-                                amountUsd: localAmount ? convertLocalToUsd(localAmount, nextCurrency, rates) : undefined,
-                              });
-                            }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-800 outline-none">
-                              {currencyOptions.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      {['revenue_share', 'profit_share', 'commission'].includes(partnership.mode) && (
+                      {partnership.mode === 'revenue_share' && (
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <div>
-                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">{partnership.mode === 'profit_share' ? 'Profit share' : partnership.mode === 'commission' ? 'Commission' : 'Revenue share'}</label>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Revenue share</label>
                             <div className="mt-1 flex overflow-hidden rounded-xl border border-slate-200">
-                              <input type="number" min="0" max="100" step="0.01" value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 5" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
+                              <input value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 5" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
                               <span className="grid place-items-center bg-slate-50 px-3 text-xs font-black text-slate-500">%</span>
                             </div>
                           </div>
                           <div>
-                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">How it is calculated</label>
-                            <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. net profit, collected sales or subscription revenue" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Revenue condition</label>
+                            <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. Paid customers sourced by contributor" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
                           </div>
                         </div>
                       )}
 
-                      {(partnership.mode === 'helper' || partnership.mode === 'custom') && (
+                      {['pay_on_delivery', 'pay_per_hour', 'pay_per_task', 'fixed_project', 'work_exchange', 'equity_plus_cash'].includes(partnership.mode) && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Cash amount</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={partnership.amountUsd !== undefined ? convertUsd(partnership.amountUsd, currency, rates) : ''}
+                              onChange={(event) => updatePartnership(role, { amountUsd: convertLocalToUsd(Number(event.target.value) || 0, currency, rates) })}
+                              placeholder={`${currency} amount`}
+                              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                            />
+                            <p className="mt-1 text-[9px] text-slate-400">Founder view: {partnership.amountUsd ? formatMoney(partnership.amountUsd) : formatMoney(0)}. Stored in USD base for consistent conversion.</p>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">
+                              {partnership.mode === 'pay_per_hour' ? 'Hourly scope' : partnership.mode === 'pay_per_task' ? 'Unit of work' : partnership.mode === 'pay_on_delivery' ? 'Delivery milestone' : partnership.mode === 'equity_plus_cash' ? 'Equity offered' : 'Project scope'}
+                            </label>
+                            {partnership.mode === 'equity_plus_cash' ? (
+                              <div className="flex overflow-hidden rounded-xl border border-slate-200">
+                                <input value={partnership.equityPercent || ''} onChange={(event) => updatePartnership(role, { equityPercent: event.target.value })} placeholder="e.g. 1.5" className="min-w-0 flex-1 bg-white px-3 py-2 text-xs outline-none" />
+                                <span className="grid place-items-center bg-slate-50 px-3 text-xs font-black text-slate-500">%</span>
+                              </div>
+                            ) : (
+                              <input value={partnership.milestone || ''} onChange={(event) => updatePartnership(role, { milestone: event.target.value })} placeholder={partnership.mode === 'pay_per_hour' ? 'e.g. 10 hours/week' : partnership.mode === 'pay_per_task' ? 'e.g. each 30-sec reel' : partnership.mode === 'pay_on_delivery' ? 'e.g. working MVP delivered' : 'e.g. website redesign'} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {partnership.mode === 'helper' && (
                         <div className="mt-3">
-                          <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">{partnership.mode === 'custom' ? 'Custom compensation terms' : 'Helper arrangement'}</label>
-                          <textarea rows={3} value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="Describe exactly how the contributor will be compensated or what the helper receives." className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs leading-5 outline-none" />
+                          <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Helper arrangement</label>
+                          <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. Volunteer experience + certificate + founder mentorship" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                        </div>
+                      )}
+
+                      {partnership.mode === 'work_exchange' && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Cash option (optional)</label>
+                            <input type="number" min="0" value={partnership.amountUsd !== undefined ? convertUsd(partnership.amountUsd, currency, rates) : ''} onChange={(event) => updatePartnership(role, { amountUsd: convertLocalToUsd(Number(event.target.value) || 0, currency, rates) })} placeholder={`${currency} amount`} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                            <p className="mt-1 text-[9px] text-slate-400">The founder sets the amount in {currency}; contributors see the converted amount in their own currency.</p>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Work exchange terms</label>
+                            <input value={partnership.details || ''} onChange={(event) => updatePartnership(role, { details: event.target.value })} placeholder="e.g. 5 hours of design for product access + mentorship" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                          </div>
                         </div>
                       )}
 
                       <div className="mt-3">
-                        <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Scope / milestone</label>
-                        <input value={partnership.milestone || ''} onChange={(event) => updatePartnership(role, { milestone: event.target.value })} placeholder="What work, period or outcome is covered?" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
-                      </div>
-
-                      <div className="mt-3">
-                        <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Success expectation                      <div className="mt-3">
                         <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Success expectation</label>
                         <input value={partnership.expectation || ''} onChange={(event) => updatePartnership(role, { expectation: event.target.value })} placeholder="What does success look like for this role?" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
                       </div>
@@ -903,10 +831,13 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
               Problem & Solution Pitch
             </label>
-            <div className="relative">
-              <textarea rows={3} placeholder="Describe the market opportunity, customer pain points, and current traction..." value={pitch} onChange={(e) => setPitch(e.target.value)} className="w-full px-3 py-2 pr-16 pb-10 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium" />
-              <AiAssistButton />
-            </div>
+            <textarea
+              rows={3}
+              placeholder="Describe the market opportunity, customer pain points, and current traction..."
+              value={pitch}
+              onChange={(e) => setPitch(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+            />
           </div>
 
           <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 flex items-start gap-2.5 text-xs text-indigo-900">
@@ -946,34 +877,3 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     </div>
   );
 };
-
-
-const AiAssistButton = () => (
-  <button
-    type="button"
-    disabled
-    title="AI startup writing assistance will be connected in the final AI rollout."
-    className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
-  >
-    <Sparkles className="h-3 w-3" /> AI
-  </button>
-);
-
-const StartupQuestion = ({ label, value, onChange, min, rows, placeholder }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  min: number;
-  rows: number;
-  placeholder: string;
-}) => (
-  <label className="block">
-    <span className="mb-2 block text-[10px] font-black uppercase tracking-[.11em] text-slate-500">
-      {label} • minimum {min} characters
-    </span>
-    <div className="relative">
-      <textarea required minLength={min} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 pb-10 text-xs leading-6 text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-50" />
-      <AiAssistButton />
-    </div>
-  </label>
-);

@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { RolePost, Startup, StartupMember, User } from '../types';
-import { formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
+import { formatAnyCurrency, formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
 
 interface StartupDetailModalProps {
   startup: Startup | null;
@@ -29,35 +29,31 @@ interface StartupDetailModalProps {
 
 type ExplorerTab = 'overview' | 'roles' | 'team' | 'roadmap' | 'memory';
 
+const getPartnershipAmount = (partnership: RolePost['partnership'], formatMoney: (usd: number) => string) => {
+  if (!partnership) return '';
+  if (typeof partnership.amount === 'number' && partnership.currencyCode) return formatAnyCurrency(partnership.amount, partnership.currencyCode);
+  if (typeof partnership.amountUsd === 'number') return formatMoney(partnership.amountUsd);
+  return '';
+};
+
 const getPartnershipText = (role: RolePost, formatMoney: (usd: number) => string) => {
   const p = role.partnership;
   if (!p) return role.type || 'Founder-defined partnership';
-
   switch (p.mode) {
-    case 'equity':
-      return p.equityPercent ? p.equityPercent + '% equity' : 'Equity';
-    case 'helper':
-      return 'Helper / volunteer';
-    case 'pay_on_delivery':
-      return p.amountUsd ? formatMoney(p.amountUsd) + ' on delivery' : 'Pay on delivery';
-    case 'pay_per_hour':
-      return p.amountUsd ? formatMoney(p.amountUsd) + ' / hour' : 'Pay per hour';
-    case 'pay_per_task':
-      return p.amountUsd ? formatMoney(p.amountUsd) + ' / task' : 'Pay per task';
-    case 'fixed_project':
-      return p.amountUsd ? formatMoney(p.amountUsd) + ' fixed project' : 'Fixed project fee';
-    case 'revenue_share':
-      return p.equityPercent ? p.equityPercent + '% revenue share' : 'Revenue share';
-    case 'work_exchange':
-      return p.amountUsd && p.details
-        ? formatMoney(p.amountUsd) + ' cash or work exchange'
-        : p.details || 'Pay or work';
-    case 'equity_plus_cash':
-      return p.equityPercent && p.amountUsd
-        ? p.equityPercent + '% equity + ' + formatMoney(p.amountUsd)
-        : 'Equity + cash';
-    default:
-      return p.label || role.type || 'Founder-defined partnership';
+    case 'equity': return p.equityPercent ? p.equityPercent + '% equity' : 'Equity';
+    case 'helper': return 'Volunteer / helper';
+    case 'pay_on_delivery': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' on delivery' : 'Pay on delivery';
+    case 'pay_per_hour': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / hour' : 'Based on hour';
+    case 'pay_per_task': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / task' : 'Per task';
+    case 'fixed_project': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / project' : 'Per project';
+    case 'monthly_salary': return getPartnershipAmount(p, formatMoney) ? getPartnershipAmount(p, formatMoney) + ' / month' : 'Monthly salary / stipend';
+    case 'revenue_share': return p.equityPercent ? p.equityPercent + '% company revenue share' : 'Revenue share';
+    case 'profit_share': return p.equityPercent ? p.equityPercent + '% company profit share' : 'Profit share';
+    case 'commission': return p.equityPercent ? p.equityPercent + '% commission' : 'Sales commission';
+    case 'work_exchange': return p.details || 'Work exchange';
+    case 'custom': return p.details || p.label || 'Custom arrangement';
+    case 'equity_plus_cash': return p.equityPercent && getPartnershipAmount(p, formatMoney) ? p.equityPercent + '% equity + ' + getPartnershipAmount(p, formatMoney) : 'Equity + cash';
+    default: return p.label || role.type || 'Founder-defined partnership';
   }
 };
 
@@ -212,6 +208,24 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
                       ))}
                     </div>
                   </Panel>
+
+                  <section className="grid gap-4 md:grid-cols-2">
+                    {[
+                      ['The problem', startup.problem],
+                      ['The solution', startup.solution],
+                      ['Target customer', startup.targetCustomer],
+                      ['Business model', startup.businessModel],
+                      ['Traction / validation', startup.tractionDetails],
+                      ['Competitive advantage', startup.competitiveAdvantage],
+                      ['Founding story', startup.foundingStory],
+                      ['Long-term vision', startup.vision],
+                      ['Current challenges', startup.currentChallenges],
+                    ].filter(([, value]) => typeof value === 'string' && value.trim()).map(([label, value]) => (
+                      <InfoCard key={label as string} icon={<Sparkles className="h-4 w-4" />} title={label as string}>
+                        <p className="text-[11px] leading-6 text-slate-600">{value as string}</p>
+                      </InfoCard>
+                    ))}
+                  </section>
 
                   <section className="rounded-[24px] border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] sm:p-6">
                     <div className="flex items-start justify-between gap-3">

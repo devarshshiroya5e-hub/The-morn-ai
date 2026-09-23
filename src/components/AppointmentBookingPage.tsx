@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Startup, User, RolePost, Appointment, MatchingAnalysis } from '../types';
-import { useLocalizedCurrency } from '../lib/currency';
+import { formatAnyCurrency, useLocalizedCurrency } from '../lib/currency';
 import {
   ArrowLeft, ArrowRight, Calendar, CheckCircle2, Clock3, BrainCircuit,
   ShieldCheck, Send, Sparkles, Video, MapPin, BriefcaseBusiness, Users,
@@ -19,19 +19,30 @@ interface AppointmentBookingPageProps {
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
+const getBookingPartnershipAmount = (partnership: RolePost['partnership'], formatMoney: (usd: number) => string) => {
+  if (!partnership) return '';
+  if (typeof partnership.amount === 'number' && partnership.currencyCode) return formatAnyCurrency(partnership.amount, partnership.currencyCode);
+  if (typeof partnership.amountUsd === 'number') return formatMoney(partnership.amountUsd);
+  return '';
+};
+
 const getBookingPartnershipSummary = (role: RolePost, formatMoney: (usd: number) => string) => {
   const p = role.partnership;
   if (!p) return role.type || 'Founder-defined partnership';
   switch (p.mode) {
     case 'equity': return p.equityPercent ? p.equityPercent + '% equity' : 'Equity';
-    case 'helper': return 'Helper / volunteer';
-    case 'pay_on_delivery': return p.amountUsd ? formatMoney(p.amountUsd) + ' on delivery' : 'Pay on delivery';
-    case 'pay_per_hour': return p.amountUsd ? formatMoney(p.amountUsd) + ' / hour' : 'Pay per hour';
-    case 'pay_per_task': return p.amountUsd ? formatMoney(p.amountUsd) + ' / task' : 'Pay per task';
-    case 'fixed_project': return p.amountUsd ? formatMoney(p.amountUsd) + ' fixed project' : 'Fixed project fee';
+    case 'helper': return 'Volunteer / helper';
+    case 'pay_on_delivery': return getBookingPartnershipAmount(p, formatMoney) ? getBookingPartnershipAmount(p, formatMoney) + ' on delivery' : 'Pay on delivery';
+    case 'pay_per_hour': return getBookingPartnershipAmount(p, formatMoney) ? getBookingPartnershipAmount(p, formatMoney) + ' / hour' : 'Based on hour';
+    case 'pay_per_task': return getBookingPartnershipAmount(p, formatMoney) ? getBookingPartnershipAmount(p, formatMoney) + ' / task' : 'Per task';
+    case 'fixed_project': return getBookingPartnershipAmount(p, formatMoney) ? getBookingPartnershipAmount(p, formatMoney) + ' / project' : 'Per project';
+    case 'monthly_salary': return getBookingPartnershipAmount(p, formatMoney) ? getBookingPartnershipAmount(p, formatMoney) + ' / month' : 'Monthly salary / stipend';
     case 'revenue_share': return p.equityPercent ? p.equityPercent + '% revenue share' : 'Revenue share';
-    case 'work_exchange': return p.amountUsd && p.details ? formatMoney(p.amountUsd) + ' cash or work exchange' : p.details || 'Pay or work';
-    case 'equity_plus_cash': return p.equityPercent && p.amountUsd ? p.equityPercent + '% equity + ' + formatMoney(p.amountUsd) : 'Equity + cash';
+    case 'profit_share': return p.equityPercent ? p.equityPercent + '% profit share' : 'Profit share';
+    case 'commission': return p.equityPercent ? p.equityPercent + '% commission' : 'Sales commission';
+    case 'work_exchange': return p.details || 'Work exchange';
+    case 'custom': return p.details || 'Custom arrangement';
+    case 'equity_plus_cash': return p.equityPercent && getBookingPartnershipAmount(p, formatMoney) ? p.equityPercent + '% equity + ' + getBookingPartnershipAmount(p, formatMoney) : 'Equity + cash';
     default: return p.label || role.type || 'Founder-defined partnership';
   }
 };
