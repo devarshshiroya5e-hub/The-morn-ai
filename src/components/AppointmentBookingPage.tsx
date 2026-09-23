@@ -10,6 +10,7 @@ import {
 interface AppointmentBookingPageProps {
   startup: Startup | null;
   selectedRole?: RolePost;
+  requestKind?: 'sync' | 'interest';
   currentUser: User;
   onConfirmAppointment: (appointment: Appointment) => Promise<void>;
   onCancel: () => void;
@@ -46,6 +47,7 @@ const getBookingPartnershipDetail = (role: RolePost) => {
 export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   startup,
   selectedRole,
+  requestKind = 'sync',
   currentUser,
   onConfirmAppointment,
   onCancel,
@@ -60,6 +62,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { format: formatMoney } = useLocalizedCurrency(currentUser);
+  const isInterestRequest = requestKind === 'interest';
 
   useEffect(() => {
     if (!startup) return;
@@ -178,8 +181,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
                 <CheckCircle2 className="h-7 w-7 text-emerald-300" />
               </div>
               <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-violet-200">Request sent</p>
-                <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Your founder sync is on its way.</h1>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-violet-200">{isInterestRequest ? 'Interest sent' : 'Request sent'}</p>
+                <h1 className="mt-1 text-3xl font-extrabold tracking-tight">{isInterestRequest ? 'Your startup interest is on its way.' : 'Your founder sync is on its way.'}</h1>
               </div>
             </div>
           </div>
@@ -197,11 +200,11 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
             </div>
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/75 p-5">
               <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-800">
-                <Check className="h-4 w-4 text-emerald-600" /> Sync details ready
+                <Check className="h-4 w-4 text-emerald-600" /> {isInterestRequest ? 'Interest saved' : 'Sync details ready'}
               </div>
-              <p className="mt-2 text-xs leading-6 text-emerald-700">The appointment is now visible in your Syncs workspace with the selected role, pitch and AI preparation brief.</p>
-              <button onClick={onDone} className="mornai-primary-action mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white">
-                Open Syncs <ArrowRight className="h-3.5 w-3.5" />
+              <p className="mt-2 text-xs leading-6 text-emerald-700">{isInterestRequest ? 'Your interest in this preview startup has been saved with the selected role and pitch.' : 'The appointment is now visible in your Syncs workspace with the selected role, pitch and AI preparation brief.'}</p>
+              <button onClick={isInterestRequest ? onCancel : onDone} className="mornai-primary-action mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white">
+                {isInterestRequest ? 'Back to discovery' : 'Open Syncs'} <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
