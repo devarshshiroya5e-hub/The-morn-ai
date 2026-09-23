@@ -23,6 +23,7 @@ interface ChatPageProps {
   currentUser: User;
   startups: Startup[];
   initialContact?: User | null;
+  initialConnectionId?: string;
 }
 
 interface Room {
@@ -96,7 +97,7 @@ const formatDay = (iso: string) => {
   });
 };
 
-export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initialContact }) => {
+export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initialContact, initialConnectionId }) => {
   const [activeRoomId, setActiveRoomId] = useState('world');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomPreviews, setRoomPreviews] = useState<Record<string, RoomPreview>>({});
@@ -129,7 +130,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initi
           avatar: initialContact.avatar,
           role: initialContact.role,
         },
-        connectionId: undefined,
+        connectionId: initialConnectionId,
       });
     }
 
@@ -207,7 +208,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initi
     if (!rooms.some((room) => room.id === activeRoomId)) {
       setActiveRoomId(rooms[0]?.id || 'world');
     }
-  }, [rooms, activeRoomId, initialContact, currentUser.id]);
+  }, [rooms, activeRoomId, initialContact, initialConnectionId, currentUser.id]);
 
   const visibleRooms = rooms.filter((room) =>
     `${room.title} ${room.subtitle}`.toLowerCase().includes(search.toLowerCase()),
@@ -472,6 +473,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initi
               }
             : {
                 recipientId: activeRoom.contact!.id,
+                connectionId: activeRoom.connectionId,
                 participants,
               }
           : {}),
