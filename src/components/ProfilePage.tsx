@@ -249,7 +249,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <EditorSelect label="Experience level" value={onboardingState.experienceLevel || ''} onChange={(v) => setField('experienceLevel', v)} options={['Student / Early career','1–2 years','3–5 years','6–10 years','10+ years']} />
-              <EditorSelect label="Availability" value={onboardingState.availability || ''} onChange={(v) => setField('availability', v)} options={['5–10 hours / week','10–20 hours / week','20+ hours / week','Full-time']} />
+              <EditorSelect label="Availability" value={onboardingState.availability || ''} onChange={(v) => setField('availability', v)} options={['Part-time (5–20 hours / week)','Full-time (20+ hours / week)','Flexible / project-based']} />
               <EditorSelect label="Work style" value={onboardingState.workStyle || ''} onChange={(v) => setField('workStyle', v)} options={['Remote','Hybrid','In-person','Flexible']} />
             </div>
 
