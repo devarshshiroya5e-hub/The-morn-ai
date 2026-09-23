@@ -151,7 +151,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   };
 
   return (
-    <div className="mornai-ai-drawer fixed inset-y-0 right-0 z-50 flex h-dvh max-h-dvh min-h-0 w-full max-w-lg flex-col overflow-hidden bg-white shadow-2xl border-l border-slate-200 animate-in slide-in-from-right duration-200">
+    <div className="mornai-ai-drawer absolute left-3 top-20 z-40 flex h-[min(760px,calc(100dvh-6rem))] max-h-[calc(100dvh-6rem)] min-h-0 w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-left duration-200 sm:left-5">
       
       {/* Header */}
       <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
