@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
@@ -262,31 +262,6 @@ export default function App() {
   const [privateChatConnectionId, setPrivateChatConnectionId] = useState<string | null>(null);
   const [videoCallContact, setVideoCallContact] = useState<User | null>(null);
   const [videoCallConnectionId, setVideoCallConnectionId] = useState<string | null>(null);
-
-  // Keep browser scroll restoration from reusing the previous document position.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('scrollRestoration' in window.history)) return;
-    const previous = window.history.scrollRestoration;
-    window.history.scrollRestoration = 'manual';
-    return () => {
-      window.history.scrollRestoration = previous;
-    };
-  }, []);
-
-  // New visitors and the one-second returning-user landing screen always start at the top.
-  useLayoutEffect(() => {
-    if (isLoggedIn) return;
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, [isLoggedIn]);
-
-  // When the one-second landing screen gives way to the authenticated app,
-  // reset before the new page paints so a scroll performed during the delay
-  // cannot leak into the main website.
-  useLayoutEffect(() => {
-    if (isLoggedIn && sessionRestoreComplete) {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }
-  }, [isLoggedIn, sessionRestoreComplete]);
 
   // Internal navigation preserves the user's current document position.
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
