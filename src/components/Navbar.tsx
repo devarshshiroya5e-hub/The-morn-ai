@@ -131,7 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="grid h-5 w-5 place-items-center rounded-md bg-white/12">
               <BrainCircuit className="h-3.5 w-3.5" />
             </span>
-            <span className="hidden sm:inline">AI Co-Founder</span>
+            <span className="hidden sm:inline">{currentUser.role === 'founder' ? 'AI Co-Founder' : 'AI Career Coach'}</span>
             <span className="sm:hidden">AI</span>
           </button>
 
