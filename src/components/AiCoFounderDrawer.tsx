@@ -67,10 +67,8 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  // Keep the document scrollable. The drawer is fixed to the viewport and the
-  // message area owns its own scroll, so opening AI can never strand the page.
-  // Scroll only the message viewport. scrollIntoView() would also move the
-  // document, which is exactly the weird page jump we do not want.
+  // The drawer itself follows the document. Only the conversation viewport
+  // has its own internal scroll so opening AI never locks the main page.
   useEffect(() => {
     if (!isOpen) return;
     const container = chatScrollRef.current;
@@ -151,7 +149,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   };
 
   return (
-    <div className="mornai-ai-drawer absolute left-3 top-20 z-40 flex h-[min(760px,calc(100dvh-6rem))] max-h-[calc(100dvh-6rem)] min-h-0 w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-left duration-200 sm:left-5">
+    <div className="mornai-ai-drawer absolute left-3 top-5 z-40 flex h-[min(720px,calc(100dvh-7rem))] max-h-[720px] min-h-0 w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-left duration-200 sm:left-5">
       
       {/* Header */}
       <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
