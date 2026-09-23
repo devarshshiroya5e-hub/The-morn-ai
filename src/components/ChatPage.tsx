@@ -321,10 +321,25 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     );
   }, [currentUser.id]);
 
-  const privateParticipantsForRoom = (room: Room) =>
-    room.kind === 'private'
-      ? Array.from(new Set([currentUser.id, room.contact!.id]))
-      : [];
+  const participantsForRoom = (room: Room) => {
+    if (room.kind === 'private') {
+      return Array.from(new Set([currentUser.id, room.contact!.id]));
+    }
+
+    if (room.kind === 'startup' && room.startup) {
+      const startupMemberIds = [
+        room.startup.founderId,
+        ...(room.startup.memberIds || []),
+        ...(room.startup.members || [])
+          .filter((member) => member.status === 'active')
+          .map((member) => member.userId),
+      ];
+
+      return Array.from(new Set(startupMemberIds.filter(Boolean)));
+    }
+
+    return [];
+  };
 
   const messagesQueryForRoom = (room: Room) => {
     const filters = [
@@ -512,7 +527,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       id: `local-${clientId}`,
       roomId: activeRoom.id,
       roomType: activeRoom.kind,
-      participants: privateParticipantsForRoom(activeRoom),
+      participants: participantsForRoom(activeRoom),
       senderId: currentUser.id,
       senderName: currentUser.name,
       senderAvatar: currentUser.avatar,
@@ -523,10 +538,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       status: 'sending',
       ...(activeRoom.kind === 'private'
         ? {
-            startupId: activeRoom.startup!.id,
+            ...(activeRoom.startup ? { startupId: activeRoom.startup.id } : {}),
             recipientId: activeRoom.contact!.id,
           }
-        : {}),
+        : activeRoom.kind === 'startup'
+          ? {
+              startupId: activeRoom.startup!.id,
+            }
+          : {}),
     };
 
     if (!existingMessage) {
@@ -547,7 +566,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     );
 
     try {
-      const participants = privateParticipantsForRoom(activeRoom);
+      const participants = participantsForRoom(activeRoom);
       await addDoc(collection(db, 'messages'), {
         roomId: activeRoom.id,
         roomType: activeRoom.kind,
@@ -573,6 +592,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
           : activeRoom.kind === 'startup'
             ? {
                 startupId: activeRoom.startup!.id,
+                participants,
               }
             : {}),
       });
