@@ -1031,8 +1031,23 @@ export default function App() {
           initial={{ opacity: 0, y: 4, scale: 0.998 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-          className="mornai-page-transition min-h-full will-change-transform"
+          className="mornai-page-transition relative min-h-full will-change-transform"
         >
+
+        {/* AI Co-Founder & Strategist Slide-out Drawer */}
+        {isAiDrawerOpen && (
+          <AiCoFounderDrawer
+            isOpen={isAiDrawerOpen}
+            onClose={() => setIsAiDrawerOpen(false)}
+            activeStartup={activeStartupContext || startups[0]}
+            currentUser={currentUser}
+            allStartups={startups}
+            onSelectStartup={(s) => {
+              setActiveStartupContext(s);
+              window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, s.id);
+            }}
+          />
+        )}
 
         {/* VIEW 1: DAILY HOME / RETENTION HUB */}
         {activeView === 'home' && (
@@ -1222,21 +1237,6 @@ export default function App() {
           setIsAiDrawerOpen(true);
         }}
       />
-
-      {/* AI Co-Founder & Strategist Slide-out Drawer */}
-      {isAiDrawerOpen && (
-        <AiCoFounderDrawer
-          isOpen={isAiDrawerOpen}
-          onClose={() => setIsAiDrawerOpen(false)}
-          activeStartup={activeStartupContext || startups[0]}
-          currentUser={currentUser}
-          allStartups={startups}
-          onSelectStartup={(s) => {
-            setActiveStartupContext(s);
-            window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, s.id);
-          }}
-        />
-      )}
 
       {/* Register Ongoing Startup Modal */}
       <StartupRegistrationModal
