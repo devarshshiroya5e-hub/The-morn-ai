@@ -116,9 +116,20 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
     'Context is an advantage when your team can actually use it.',
   ];
 
-  const [dailyQuote] = React.useState(
-    () => dailyQuotes[Math.floor(Math.random() * dailyQuotes.length)]
-  );
+  const [dailyQuote] = React.useState(() => {
+    const storageKey = `mornai-home-quote-index:${currentUser.id}`;
+    const previousIndex = Number(window.localStorage.getItem(storageKey));
+    let nextIndex = Math.floor(Math.random() * dailyQuotes.length);
+
+    if (Number.isInteger(previousIndex) && previousIndex >= 0 && previousIndex < dailyQuotes.length) {
+      while (dailyQuotes.length > 1 && nextIndex === previousIndex) {
+        nextIndex = (nextIndex + 1) % dailyQuotes.length;
+      }
+    }
+
+    window.localStorage.setItem(storageKey, String(nextIndex));
+    return dailyQuotes[nextIndex];
+  });
 
   const topInsight = isFounder
     ? relatedStartup && openRoles
@@ -208,7 +219,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[.18em] text-violet-200">While you were away</p>
                 <p className="mt-1 text-sm font-black text-white">
-                  {unreadNotificationCount ? `${unreadNotificationCount} things need a look` : "You're caught up"}
+                  {unreadNotificationCount ? `${unreadNotificationCount} things need a look` : (isFounder ? 'Your workspace is clear' : 'No new network activity yet')}
                 </p>
               </div>
               <Flame className="h-4 w-4 text-amber-300" />
@@ -231,11 +242,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               ))}
               {notifications.length === 0 && (
                 <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.04] p-4 text-xs text-violet-100/80">
-                  <p className="font-bold text-white">Nothing new needs your attention right now.</p>
+                  <p className="font-bold text-white">
+                    {isFounder ? 'Your next useful move' : 'Keep the network moving'}
+                  </p>
                   <p className="mt-1 leading-5">
                     {isFounder
-                      ? 'Review your open roles, invite a contributor, or refresh the startup context so better matches can find you.'
-                      : 'Review a startup match, refresh your profile, or start a useful conversation with someone in your network.'}
+                      ? 'Review an open role, invite a contributor, or refresh your startup context so the right people can find you.'
+                      : 'Review startup matches, refresh your profile, or open a private conversation with someone you are connected to.'}
                   </p>
                 </div>
               )}
