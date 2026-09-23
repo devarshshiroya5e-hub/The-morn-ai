@@ -772,7 +772,15 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                 </div>
 
                 {selectedRoles.map((role) => {
-                  const partnership = rolePartnerships[role] || { mode: 'pay_per_task' as const, label: 'Pay per work / task', amountUsd: 150, unit: 'task', details: '' };
+                  const partnership = rolePartnerships[role] || {
+                    mode: 'pay_per_task' as const,
+                    label: 'Per task',
+                    amount: 150,
+                    amountUsd: convertLocalToUsd(150, currency, rates),
+                    currencyCode: currency,
+                    unit: 'task',
+                    details: '',
+                  };
                   const mode = PARTNERSHIP_MODES.find((item) => item.value === partnership.mode) || PARTNERSHIP_MODES[4];
 
                   return (
@@ -875,7 +883,6 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                       </div>
 
                       <div className="mt-3">
-                        <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Success expectation                      <div className="mt-3">
                         <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Success expectation</label>
                         <input value={partnership.expectation || ''} onChange={(event) => updatePartnership(role, { expectation: event.target.value })} placeholder="What does success look like for this role?" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
                       </div>
