@@ -825,7 +825,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                                   ))}
                                 </select>
                               </label>
-                              <Select p="Availability" value={availability} set={setAvailability} options={['5–10 hours / week','10–20 hours / week','20+ hours / week','Full-time']} />
+                              <Select p="Availability" value={availability} set={setAvailability} options={['Part-time (5–20 hours / week)','Full-time (20+ hours / week)','Flexible / project-based']} />
                               <Select p="Preferred work style" value={workStyle} set={setWorkStyle} options={['Remote','Hybrid','In-person','Flexible']} />
                             </div>
                             <p className="mt-2 text-[10px] leading-5 text-slate-400">Your region controls how MornAI displays money such as startup valuation, role compensation and Pro pricing. You can change it later in your profile.</p>
