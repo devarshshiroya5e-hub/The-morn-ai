@@ -740,12 +740,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               })}
             </div>
 
-            {currentUser.role === 'employee' && !rooms.some((room) => room.kind === 'private') && (
+            {!rooms.some((room) => room.kind === 'private' || room.kind === 'startup') && (
               <div className="mt-5 rounded-2xl border border-dashed border-violet-200 bg-violet-50/60 p-4">
-                <LockKeyhole className="h-4 w-4 text-violet-600" />
-                <p className="mt-2 text-xs font-extrabold text-slate-900">Private chat locked</p>
+                <MessageCircle className="h-4 w-4 text-violet-600" />
+                <p className="mt-2 text-xs font-extrabold text-slate-900">Start a private chat</p>
                 <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                  Private rooms appear after a founder selects you for an active startup team.
+                  Open People and choose Message next to anyone you want to contact.
                 </p>
               </div>
             )}
@@ -864,17 +864,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                           <div className={`flex max-w-[88%] items-end gap-2 sm:max-w-[76%] ${mine ? 'flex-row-reverse' : ''}`}>
                             <div className="w-8 shrink-0">
                               {!grouped && !mine && (
-                                message.senderAvatar ? (
-                                  <img
-                                    src={message.senderAvatar}
-                                    alt=""
-                                    className="h-8 w-8 rounded-xl object-cover"
-                                  />
-                                ) : (
-                                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-900 text-[10px] font-black text-white">
-                                    {message.senderName.charAt(0).toUpperCase()}
-                                  </span>
-                                )
+                                <InitialAvatar
+                                  name={message.senderName}
+                                  src={message.senderAvatar}
+                                  className="h-8 w-8 rounded-xl"
+                                  textClassName="text-[10px] font-black"
+                                />
                               )}
                             </div>
 
