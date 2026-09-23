@@ -676,7 +676,12 @@ export default function App() {
           createdAt: serverTimestamp(),
         },
         { merge: true },
-      );
+      ).catch((error) => {
+        // Opening the chat should never produce an uncaught promise rejection.
+        // The Messages page can still open even if room metadata has not yet
+        // been permitted by the deployed Firestore rules.
+        console.error('Direct chat room metadata error:', error);
+      });
     }
     setPrivateChatContact(contact);
     setPrivateChatConnectionId(connectionId || null);
