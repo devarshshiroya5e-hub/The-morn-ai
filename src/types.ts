@@ -222,7 +222,7 @@ export interface MatchingAnalysis {
 export interface ChatMessage {
   id: string;
   roomId?: string;
-  roomType?: 'world' | 'private';
+  roomType?: 'world' | 'private' | 'startup';
   participants?: string[];
   senderId: string;
   senderName: string;
