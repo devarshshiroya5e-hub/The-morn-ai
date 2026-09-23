@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { RolePost, Startup, StartupMember, User } from '../types';
-import { CurrencyCode, formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
+import { formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
 
 interface StartupDetailModalProps {
   startup: Startup | null;
@@ -99,8 +99,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
 
   if (!isOpen || !startup) return null;
 
-  const startupCurrency = (startup.currencyCode as CurrencyCode | undefined) || currency;
-  const valuation = startup.valuationUsd ? formatUsdMoney(startup.valuationUsd, startupCurrency, rates) : 'Not disclosed';
+  const valuation = startup.valuationUsd ? formatUsdMoney(startup.valuationUsd, currency, rates) : 'Not disclosed';
 
   const tabs: Array<{ id: ExplorerTab; label: string; count?: number }> = [
     { id: 'overview', label: 'Overview' },
