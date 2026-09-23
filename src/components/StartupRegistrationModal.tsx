@@ -70,7 +70,7 @@ const ALL_ROLE_OPTIONS = [
   'Appointment Setter','Recruitment Sales Specialist',
 
   // Startup leadership & operations
-  'Co-Founder','Chief Executive Officer (CEO)','Chief Technology Officer (CTO)','Chief Operating Officer (COO)',
+  'Co-Founder','Chief Executive Officer (CEO)','Chief Technology Officer (CTO)','Chief Operating Officer (COO)','Marketing Expert',
   'Chief Marketing Officer (CMO)','Chief Product Officer (CPO)','Chief Financial Officer (CFO)','Chief Growth Officer (CGO)',
   'Chief Revenue Officer (CRO)','Chief People Officer (CPO)','Chief of Staff','Startup Operator','Startup Generalist',
   'Operations Manager','Business Operations Manager','Operations Specialist','Strategy Manager','Business Strategy Consultant',
@@ -119,6 +119,7 @@ const ROLE_KEYWORDS: Record<string, string[]> = {
   'UI/UX Designer': ['Figma', 'UX Research', 'Prototyping', 'UI Design'],
   'Product Manager': ['Roadmaps', 'User Research', 'Analytics', 'Product'],
   'Growth Marketer': ['SEO', 'Analytics', 'Content', 'Acquisition'],
+  'Marketing Expert': ['Marketing Strategy', 'Brand', 'Content', 'Acquisition'],
   'Sales Specialist': ['B2B Sales', 'Outreach', 'CRM', 'Negotiation'],
   'Content Creator': ['Content Strategy', 'Copywriting', 'Social Media', 'Video'],
   'Video Editor': ['Premiere Pro', 'After Effects', 'Short-form Video', 'Motion'],
