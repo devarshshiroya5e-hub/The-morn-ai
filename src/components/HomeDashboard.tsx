@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { InitialAvatar } from './InitialAvatar';
 import {
   ArrowRight,
   BellRing,
@@ -178,7 +179,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </button>
       </div>
 
-      <div className="mornai-home-hero relative overflow-hidden rounded-[30px] px-5 py-6 text-white sm:px-8 sm:py-8">
+      <div className="mornai-home-hero relative min-h-[430px] overflow-hidden rounded-[30px] px-5 pb-24 pt-6 text-white sm:min-h-[450px] sm:px-8 sm:pb-24 sm:pt-8">
         <div className="absolute bottom-5 left-5 right-5 z-10 sm:left-8 sm:right-8">
           <div className="inline-flex max-w-2xl items-center gap-2 rounded-full border border-white/10 bg-black/15 px-3 py-2 text-[10px] font-semibold text-violet-100/85 backdrop-blur-xl">
             <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" />
@@ -352,7 +353,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       onClick={() => onOpenNetwork('people')}
                       className="mornai-home-match-card text-left"
                     >
-                      <img src={talent.avatar} alt="" className="h-11 w-11 rounded-2xl object-cover" />
+                      <InitialAvatar name={talent.name} src={talent.avatar} className="h-11 w-11 rounded-2xl" textClassName="text-sm font-black" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="truncate text-sm font-black text-slate-950">{talent.name}</h3>
@@ -380,7 +381,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     onClick={() => firstRole ? onBookAppointment(startup, firstRole) : onSelectStartup(startup)}
                     className="mornai-home-match-card text-left"
                   >
-                    <img src={startup.logo} alt="" className="h-11 w-11 rounded-2xl object-cover" />
+                    <InitialAvatar name={startup.name} src={startup.logo} className="h-11 w-11 rounded-2xl" textClassName="text-sm font-black" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-sm font-black text-slate-950">{startup.name}</h3>
