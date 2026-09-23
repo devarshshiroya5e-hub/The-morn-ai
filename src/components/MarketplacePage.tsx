@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -68,7 +68,11 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   onStartVideoCall,
   initialTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<MarketplaceTab>(initialTab || (currentUser.role === 'founder' ? 'people' : 'opportunities'));
+  const [activeTab, setActiveTab] = useState<MarketplaceTab>(initialTab || 'startups');
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [query, setQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [industry, setIndustry] = useState('All');
