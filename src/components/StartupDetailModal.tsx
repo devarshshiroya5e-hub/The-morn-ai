@@ -221,9 +221,13 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
                       ['Long-term vision', startup.vision],
                       ['Current challenges', startup.currentChallenges],
                     ].filter(([, value]) => typeof value === 'string' && value.trim()).map(([label, value]) => (
-                      <InfoCard key={label as string} icon={<Sparkles className="h-4 w-4" />} title={label as string}>
-                        <p className="text-[11px] leading-6 text-slate-600">{value as string}</p>
-                      </InfoCard>
+                      <section key={label as string} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                        <div className="flex items-center gap-2 text-sm font-black text-slate-950">
+                          <Sparkles className="h-4 w-4 text-violet-600" />
+                          {label as string}
+                        </div>
+                        <p className="mt-4 text-[11px] leading-6 text-slate-600">{value as string}</p>
+                      </section>
                     ))}
                   </section>
 
