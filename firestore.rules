@@ -105,6 +105,13 @@ service cloud.firestore {
           resource.data.roomType == 'world'
           ||
           (
+            resource.data.roomType == 'startup'
+            && resource.data.startupId is string
+            && startupExists(resource.data.startupId)
+            && isMember(resource.data.startupId)
+          )
+          ||
+          (
             resource.data.roomType == 'private'
             && resource.data.participants is list
             && request.auth.uid in resource.data.participants
@@ -119,6 +126,11 @@ service cloud.firestore {
                 && exists(/databases/$(database)/documents/connections/$(resource.data.connectionId))
                 && get(/databases/$(database)/documents/connections/$(resource.data.connectionId)).data.status == 'accepted'
                 && get(/databases/$(database)/documents/connections/$(resource.data.connectionId)).data.participants == resource.data.participants
+              )
+              ||
+              (
+                !(resource.data.startupId is string)
+                && !(resource.data.connectionId is string)
               )
             )
           )
@@ -143,6 +155,14 @@ service cloud.firestore {
           (
             request.resource.data.roomType == 'world'
             && request.resource.data.roomId == 'world'
+          )
+          ||
+          (
+            request.resource.data.roomType == 'startup'
+            && request.resource.data.startupId is string
+            && startupExists(request.resource.data.startupId)
+            && request.resource.data.roomId == 'startup-chat-' + request.resource.data.startupId
+            && isMember(request.resource.data.startupId)
           )
           ||
           (
@@ -178,11 +198,15 @@ service cloud.firestore {
                 && get(/databases/$(database)/documents/connections/$(request.resource.data.connectionId)).data.status == 'accepted'
                 && get(/databases/$(database)/documents/connections/$(request.resource.data.connectionId)).data.participants == request.resource.data.participants
               )
+              ||
+              (
+                !(request.resource.data.startupId is string)
+                && !(request.resource.data.connectionId is string)
+              )
             )
           )
         );
 
-      // Messages are immutable. Delivery state is UI state, not a database mutation.
       allow update, delete: if false;
     }
 
@@ -248,6 +272,23 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+    }
+
+    // ---------------------------------------------------------
+    // STARTUP TEAM CHAT ROOMS
+    // One persistent group room per startup. Membership follows the startup.
+    // ---------------------------------------------------------
+
+    match /startupChats/{startupId} {
+      allow read: if isMember(startupId);
+
+      allow create, update: if
+        isFounder(startupId)
+        && request.resource.data.startupId == startupId
+        && request.resource.data.founderId == request.auth.uid
+        && request.resource.data.memberIds is list;
+
+      allow delete: if isFounder(startupId);
     }
 
     // ---------------------------------------------------------
