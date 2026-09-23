@@ -371,7 +371,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   {startup.verified && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700"><ShieldCheck className="mr-0.5 inline h-3 w-3" /> verified</span>}
                 </div>
                 <p className="mt-0.5 text-[10px] font-extrabold text-slate-500">{startup.name} • {startup.stage} • {role.commitment}</p>
-                <p className="mt-1 text-[10px] font-black text-emerald-700">{getRolePartnershipSummary(role)}</p>
+                <p className="mt-1 text-[10px] font-black text-emerald-700">{getRolePartnershipSummary(role, formatMoney)}</p>
                 <p className="mt-2 line-clamp-2 text-[11px] leading-5 text-slate-500">{role.description}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {role.skills.slice(0, 5).map((skill) => <span key={skill} className={`mornai-market-skill ${matched.includes(skill) ? 'is-match' : ''}`}>{skill}{matched.includes(skill) ? ' ✓' : ''}</span>)}
