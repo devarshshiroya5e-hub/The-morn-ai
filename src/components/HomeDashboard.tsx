@@ -230,8 +230,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 </div>
               ))}
               {notifications.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.04] p-4 text-xs text-violet-100/70">
-                  Your network is quiet. This is a good moment to create an opportunity or refresh your profile.
+                <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.04] p-4 text-xs text-violet-100/80">
+                  <p className="font-bold text-white">Nothing new needs your attention right now.</p>
+                  <p className="mt-1 leading-5">
+                    {isFounder
+                      ? 'Review your open roles, invite a contributor, or refresh the startup context so better matches can find you.'
+                      : 'Review a startup match, refresh your profile, or start a useful conversation with someone in your network.'}
+                  </p>
                 </div>
               )}
             </div>
