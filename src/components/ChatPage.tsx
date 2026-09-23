@@ -22,6 +22,7 @@ import { ChatMessage, Startup, User } from '../types';
 interface ChatPageProps {
   currentUser: User;
   startups: Startup[];
+  initialContact?: User | null;
 }
 
 interface Room {
@@ -31,6 +32,7 @@ interface Room {
   kind: 'world' | 'private';
   startup?: Startup;
   contact?: { id: string; name: string; avatar?: string; role?: string };
+  connectionId?: string;
 }
 
 interface RoomPreview {
@@ -94,7 +96,7 @@ const formatDay = (iso: string) => {
   });
 };
 
-export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => {
+export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initialContact }) => {
   const [activeRoomId, setActiveRoomId] = useState('world');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomPreviews, setRoomPreviews] = useState<Record<string, RoomPreview>>({});
@@ -113,6 +115,23 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
 
   const rooms = useMemo<Room[]>(() => {
     const privateRooms: Room[] = [];
+
+    if (initialContact && initialContact.id !== currentUser.id) {
+      const ids = [currentUser.id, initialContact.id].sort();
+      privateRooms.push({
+        id: 'dm-' + ids.join('-'),
+        title: initialContact.name,
+        subtitle: initialContact.title || 'Private conversation',
+        kind: 'private',
+        contact: {
+          id: initialContact.id,
+          name: initialContact.name,
+          avatar: initialContact.avatar,
+          role: initialContact.role,
+        },
+        connectionId: undefined,
+      });
+    }
 
     if (currentUser.role === 'founder') {
       startups
@@ -176,10 +195,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
   }, [currentUser, startups]);
 
   useEffect(() => {
+    if (initialContact && initialContact.id !== currentUser.id) {
+      const ids = [currentUser.id, initialContact.id].sort();
+      const targetRoomId = 'dm-' + ids.join('-');
+      if (rooms.some((room) => room.id === targetRoomId)) {
+        setActiveRoomId(targetRoomId);
+        return;
+      }
+    }
+
     if (!rooms.some((room) => room.id === activeRoomId)) {
       setActiveRoomId(rooms[0]?.id || 'world');
     }
-  }, [rooms, activeRoomId]);
+  }, [rooms, activeRoomId, initialContact, currentUser.id]);
 
   const visibleRooms = rooms.filter((room) =>
     `${room.title} ${room.subtitle}`.toLowerCase().includes(search.toLowerCase()),
@@ -424,6 +452,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
     try {
       const participants = privateParticipantsForRoom(activeRoom);
 
+      const participants = privateParticipantsForRoom(activeRoom);
       await addDoc(collection(db, 'messages'), {
         roomId: activeRoom.id,
         roomType: activeRoom.kind,
@@ -435,11 +464,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups }) => 
         createdAt: serverTimestamp(),
         createdAtClient: Date.now(),
         ...(activeRoom.kind === 'private'
-          ? {
-              startupId: activeRoom.startup!.id,
-              recipientId: activeRoom.contact!.id,
-              participants,
-            }
+          ? activeRoom.startup
+            ? {
+                startupId: activeRoom.startup.id,
+                recipientId: activeRoom.contact!.id,
+                participants,
+              }
+            : {
+                recipientId: activeRoom.contact!.id,
+                participants,
+              }
           : {}),
       });
 
