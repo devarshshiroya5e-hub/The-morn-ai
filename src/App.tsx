@@ -14,6 +14,7 @@ import { LegalModal } from './components/LegalModal';
 import { StartupRegistrationModal } from './components/StartupRegistrationModal';
 import { ProfilePage } from './components/ProfilePage';
 import { ChatPage } from './components/ChatPage';
+import { VideoCallPage } from './components/VideoCallPage';
 import { LandingPage } from './components/LandingPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { HomeDashboard } from './components/HomeDashboard';
@@ -256,7 +257,10 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Navigation: 'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'
-  const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'video-call' | 'profile' | 'privacy'>('home');
+  const [privateChatContact, setPrivateChatContact] = useState<User | null>(null);
+  const [videoCallContact, setVideoCallContact] = useState<User | null>(null);
+  const [videoCallConnectionId, setVideoCallConnectionId] = useState<string | null>(null);
 
   // Keep browser scroll restoration from reusing the previous document position.
   useEffect(() => {
@@ -664,6 +668,28 @@ export default function App() {
   };
 
   // Open detailed startup profile
+  const createConnectionContact = (connection: ConnectionRequest): User => ({
+    id: connection.fromUserId === currentUser.id ? connection.toUserId : connection.fromUserId,
+    name: connection.fromUserId === currentUser.id ? connection.toName : connection.fromName,
+    email: '',
+    role: 'employee',
+    avatar: connection.fromUserId === currentUser.id ? (connection.toAvatar || '') : (connection.fromAvatar || ''),
+    title: connection.startupName ? connection.startupName + ' contributor' : 'MornAI member',
+    bio: '',
+    skills: [],
+  });
+
+  const openPrivateChat = (contact: User) => {
+    setPrivateChatContact(contact);
+    setActiveView('messages');
+  };
+
+  const openVideoCall = (contact: User, connectionId?: string) => {
+    setVideoCallContact(contact);
+    setVideoCallConnectionId(connectionId || null);
+    setActiveView('video-call');
+  };
+
   const handleSelectStartup = (startup: Startup) => {
     setSelectedStartupForDetail(startup);
     setIsDetailModalOpen(true);
@@ -981,7 +1007,10 @@ export default function App() {
           else if (tab === 'messages') setActiveView('messages');
           else if (tab === 'appointments') setActiveView('appointments');
           else if (tab === 'workspace') setActiveView('workspace');
-          else if (tab === 'network') setActiveView('network');
+          else if (tab === 'network') {
+            window.sessionStorage.setItem('mornai-network-tab', 'startups');
+            setActiveView('network');
+          }
           else setActiveView('home');
         }}
         onOpenAiDrawer={handleOpenAiDrawer}
@@ -1048,6 +1077,8 @@ export default function App() {
             onUpdateConnectionStatus={handleUpdateConnectionStatus}
             onSelectStartup={handleSelectStartup}
             onBookAppointment={handleOpenBookingModal}
+            onOpenPrivateChat={openPrivateChat}
+            onStartVideoCall={openVideoCall}
             initialTab={
               (window.sessionStorage.getItem('mornai-network-tab') as 'people' | 'startups' | 'opportunities' | 'connections' | null) ||
               undefined
@@ -1129,10 +1160,25 @@ export default function App() {
           <ChatPage
             currentUser={currentUser}
             startups={startups}
+            initialContact={privateChatContact}
           />
         )}
 
-        {/* VIEW 6: PROFILE PAGE */}
+        {/* VIEW 6: IN-APP VIDEO CALL */}
+        {activeView === 'video-call' && videoCallContact && (
+          <VideoCallPage
+            currentUser={currentUser}
+            contact={videoCallContact}
+            connectionId={videoCallConnectionId || undefined}
+            onClose={() => {
+              setVideoCallContact(null);
+              setVideoCallConnectionId(null);
+              setActiveView('network');
+            }}
+          />
+        )}
+
+        {/* VIEW 7: PROFILE PAGE */}
         {activeView === 'profile' && (
           <ProfilePage
             currentUser={currentUser}
@@ -1211,7 +1257,7 @@ export default function App() {
         onOpenNetwork={(tab) => {
           setIsNotificationCenterOpen(false);
           setActiveView('network');
-          if (tab) window.sessionStorage.setItem('mornai-network-tab', tab);
+          window.sessionStorage.setItem('mornai-network-tab', tab || 'startups');
         }}
         onOpenWorkspace={() => {
           setIsNotificationCenterOpen(false);
