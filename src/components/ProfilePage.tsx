@@ -314,7 +314,7 @@ const EditorArea = ({ label, value, onChange, min = 0, rows = 4 }: any) => (
   </label>
 );
 
-const EditorSelect =const EditorSelect = ({ label, value, onChange, options }: any) => (
+const EditorSelect = ({ label, value, onChange, options }: any) => (
   <label className="block">
     <span className="mb-2 block text-xs font-bold text-slate-500">{label}</span>
     <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]">
