@@ -262,6 +262,7 @@ export default function App() {
   const [privateChatConnectionId, setPrivateChatConnectionId] = useState<string | null>(null);
   const [videoCallContact, setVideoCallContact] = useState<User | null>(null);
   const [videoCallConnectionId, setVideoCallConnectionId] = useState<string | null>(null);
+  const [videoCallMode, setVideoCallMode] = useState<'video' | 'audio'>('video');
 
   // Internal navigation preserves the user's current document position.
   // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
@@ -661,9 +662,10 @@ export default function App() {
     setActiveView('messages');
   };
 
-  const openVideoCall = (contact: User, connectionId?: string) => {
+  const openVideoCall = (contact: User, connectionId?: string, mode: 'video' | 'audio' = 'video') => {
     setVideoCallContact(contact);
     setVideoCallConnectionId(connectionId || null);
+    setVideoCallMode(mode);
     setActiveView('video-call');
   };
 
@@ -801,6 +803,17 @@ export default function App() {
       buildStartupListing({ ...updatedStartup, memberIds }),
       { merge: true },
     );
+    await setDoc(
+      doc(db, 'startupChats', updatedStartup.id),
+      {
+        startupId: updatedStartup.id,
+        startupName: updatedStartup.name,
+        memberIds,
+        founderId: updatedStartup.founderId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     // Mirror selected team members into protected member documents.
     // A founder selecting/onboarding someone therefore unlocks their private startup chat.
@@ -842,6 +855,17 @@ export default function App() {
     await setDoc(
       doc(db, 'startupListings', newStartup.id),
       buildStartupListing({ ...newStartup, memberIds }),
+    );
+    await setDoc(
+      doc(db, 'startupChats', newStartup.id),
+      {
+        startupId: newStartup.id,
+        startupName: newStartup.name,
+        memberIds,
+        founderId: newStartup.founderId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
     );
 
     const founderMember = newStartup.members.find((member) => member.userId === currentUser.id);
@@ -1164,9 +1188,11 @@ export default function App() {
             currentUser={currentUser}
             contact={videoCallContact}
             connectionId={videoCallConnectionId || undefined}
+            mode={videoCallMode}
             onClose={() => {
               setVideoCallContact(null);
               setVideoCallConnectionId(null);
+              setVideoCallMode('video');
               setActiveView('network');
             }}
           />
