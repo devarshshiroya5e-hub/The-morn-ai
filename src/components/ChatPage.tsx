@@ -144,19 +144,22 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     if (initialContact && initialContact.id !== currentUser.id) {
       const ids = [currentUser.id, initialContact.id].sort();
-      privateRooms.push({
-        id: 'dm-' + ids.join('-'),
-        title: initialContact.name,
-        subtitle: initialContact.title || 'Private conversation',
-        kind: 'private',
-        contact: {
-          id: initialContact.id,
-          name: initialContact.name,
-          avatar: initialContact.avatar,
-          role: initialContact.role,
-        },
-        connectionId: initialConnectionId,
-      });
+      const directRoomId = 'dm-' + ids.join('-');
+      if (!privateRooms.some((room) => room.id === directRoomId)) {
+        privateRooms.push({
+          id: directRoomId,
+          title: initialContact.name,
+          subtitle: initialContact.title || 'Private conversation',
+          kind: 'private',
+          contact: {
+            id: initialContact.id,
+            name: initialContact.name,
+            avatar: initialContact.avatar,
+            role: initialContact.role,
+          },
+          connectionId: initialConnectionId,
+        });
+      }
     }
 
     if (currentUser.role === 'founder') {
