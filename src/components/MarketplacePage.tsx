@@ -16,6 +16,7 @@ import {
   MessageCircle,
   Search,
   ShieldCheck,
+  Video,
   Sparkles,
   Star,
   Users,
@@ -43,6 +44,8 @@ interface MarketplacePageProps {
   onUpdateConnectionStatus: (connectionId: string, status: ConnectionRequest['status']) => void;
   onSelectStartup: (startup: Startup) => void;
   onBookAppointment: (startup: Startup, role?: RolePost) => void;
+  onOpenPrivateChat: (user: User, connectionId?: string) => void;
+  onStartVideoCall: (user: User, connectionId?: string) => void;
   initialTab?: MarketplaceTab;
 }
 
@@ -61,6 +64,8 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   onUpdateConnectionStatus,
   onSelectStartup,
   onBookAppointment,
+  onOpenPrivateChat,
+  onStartVideoCall,
   initialTab,
 }) => {
   const [activeTab, setActiveTab] = useState<MarketplaceTab>(initialTab || (currentUser.role === 'founder' ? 'people' : 'opportunities'));
@@ -72,7 +77,30 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const { format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const networkStartups = useMemo(() => startups, [startups]);
-  const savedPeople = useMemo(() => allTalents.filter((person) => savedTalentIds.includes(person.id)), [allTalents, savedTalentIds]);
+  const founderPeople = useMemo<User[]>(() => {
+    const unique = new Map<string, User>();
+    networkStartups.forEach((startup) => {
+      if (!startup.founderId || unique.has(startup.founderId)) return;
+      unique.set(startup.founderId, {
+        id: startup.founderId,
+        name: startup.founderName,
+        email: '',
+        role: 'founder',
+        avatar: startup.founderAvatar,
+        title: 'Startup founder',
+        bio: startup.tagline || startup.pitch || '',
+        skills: startup.techStack || [],
+      });
+    });
+    return Array.from(unique.values());
+  }, [networkStartups]);
+
+  const allPeople = useMemo(
+    () => Array.from(new Map([...allTalents, ...founderPeople].map((person) => [person.id, person])).values()),
+    [allTalents, founderPeople],
+  );
+
+  const savedPeople = useMemo(() => allPeople.filter((person) => savedTalentIds.includes(person.id)), [allPeople, savedTalentIds]);
   const savedStartups = useMemo(() => networkStartups.filter((startup) => savedStartupIds.includes(startup.id)), [networkStartups, savedStartupIds]);
   const industries = useMemo(() => ['All', ...Array.from(new Set(networkStartups.map((startup) => startup.industry))).slice(0, 8)], [networkStartups]);
 
@@ -86,13 +114,13 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   );
 
   const rankedTalents = useMemo(() => {
-    return allTalents
+    return allPeople
       .map((talent) => ({ talent, score: scoreTalentForStartup(talent, currentUser.role === 'founder' ? networkStartups.find((startup) => startup.founderId === currentUser.id) : undefined) }))
       .filter(({ talent }) => talent.id !== currentUser.id)
       .filter(({ talent }) => !query || [talent.name, talent.title, talent.bio, ...talent.skills].join(' ').toLowerCase().includes(query.toLowerCase()))
       .filter(({ score }) => !onlyStrongMatches || score >= 84)
       .sort((a, b) => b.score - a.score);
-  }, [allTalents, currentUser.id, currentUser.role, networkStartups, onlyStrongMatches, query]);
+  }, [allPeople, currentUser.id, currentUser.role, networkStartups, onlyStrongMatches, query]);
 
   const rankedStartups = useMemo(() => {
     return networkStartups
@@ -154,7 +182,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-200">MornAI Match Engine</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
-              {currentUser.role === 'founder' ? 'Stop searching. Start with the people most likely to fit.' : 'Stop scrolling. Start with startups that actually fit you.'}
+              {currentUser.role === 'founder' ? 'Stop searching. Start with the people most likely to fit.' : 'Stop scrolling. Start with people and startups that actually fit you.'}
             </h2>
             <p className="mt-2 max-w-2xl text-xs leading-6 text-violet-100/75">Recommendations are explained with skills, startup stage, activity, and available work so you can make a faster decision.</p>
           </div>
@@ -237,22 +265,34 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
 
               <p className="mt-3 line-clamp-3 text-[11px] leading-5 text-slate-500">{talent.bio}</p>
 
-              <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3">
-                <button type="button" onClick={() => setSelectedTalent(talent)} className="mornai-market-secondary flex-1">View profile</button>
+              <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                <button type="button" onClick={() => setSelectedTalent(talent)} className="mornai-market-secondary justify-center">View profile</button>
                 {(() => {
                   const connection = getConnectionFor(talent.id);
                   const incoming = connection?.toUserId === currentUser.id && connection.status === 'pending';
                   const outgoing = connection?.fromUserId === currentUser.id && connection.status === 'pending';
                   const connected = connection?.status === 'accepted';
+                  if (connected && connection) {
+                    return (
+                      <>
+                        <button type="button" onClick={() => onOpenPrivateChat(talent, connection.id)} className="mornai-market-primary justify-center">
+                          <MessageCircle className="h-3.5 w-3.5" /> Message
+                        </button>
+                        <button type="button" onClick={() => onStartVideoCall(talent, connection.id)} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[10px] font-black text-violet-700 transition hover:bg-violet-100">
+                          <Video className="h-3.5 w-3.5" /> Video call
+                        </button>
+                      </>
+                    );
+                  }
                   return (
                     <button
                       type="button"
-                      disabled={outgoing || connected}
+                      disabled={outgoing}
                       onClick={() => incoming ? setActiveTab('connections') : onSendConnection(talent)}
-                      className={`mornai-market-primary flex-1 justify-center ${outgoing || connected ? 'cursor-default opacity-70' : ''}`}
+                      className={`mornai-market-primary justify-center ${outgoing ? 'cursor-default opacity-70' : ''}`}
                     >
                       <MessageCircle className="h-3.5 w-3.5" />
-                      {connected ? 'Connected' : outgoing ? 'Requested' : incoming ? 'Respond' : 'Connect'}
+                      {outgoing ? 'Requested' : incoming ? 'Respond' : 'Connect'}
                     </button>
                   );
                 })()}
@@ -565,9 +605,20 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                       <p className="mt-1 text-xs leading-5 text-slate-600">MornAI uses skills, contribution history, reputation, and stated preferences to make human matches easier to evaluate.</p>
                     </div>
 
-                    <div className="mt-5 flex gap-2">
+                    <div className="mt-5 flex flex-wrap gap-2">
                       <button type="button" onClick={() => onToggleSavedTalent(selectedTalent.id)} className="mornai-market-secondary flex-1"><Bookmark className="h-3.5 w-3.5" /> {savedTalentIds.includes(selectedTalent.id) ? 'Saved' : 'Save person'}</button>
-                      <button type="button" onClick={() => { onSendConnection(selectedTalent); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>
+                      {(() => {
+                        const connection = getConnectionFor(selectedTalent.id);
+                        if (connection?.status === 'accepted') {
+                          return (
+                            <>
+                              <button type="button" onClick={() => { onOpenPrivateChat(selectedTalent, connection.id); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Message</button>
+                              <button type="button" onClick={() => { onStartVideoCall(selectedTalent, connection.id); setSelectedTalent(null); }} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-black text-sky-700"><Video className="h-3.5 w-3.5" /> Video call</button>
+                            </>
+                          );
+                        }
+                        return <button type="button" onClick={() => { onSendConnection(selectedTalent); setSelectedTalent(null); }} className="mornai-market-primary flex-1"><MessageCircle className="h-3.5 w-3.5" /> Connect</button>;
+                      })()}
                     </div>
                   </div>
                 </motion.div>
