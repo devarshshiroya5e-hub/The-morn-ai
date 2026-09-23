@@ -326,8 +326,9 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
                   </div>
                 </div>
               </>
-            )
-            {callState !== 'connected' && (
+            )}
+
+            {mode === 'video' && callState !== 'connected' && (
               <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,.18),transparent_42%),#020617] p-6 text-center">
                 <div>
                   <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-white/10 text-violet-200">
