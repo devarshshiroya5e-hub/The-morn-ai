@@ -46,17 +46,26 @@ export type PartnershipMode =
   | 'pay_per_hour'
   | 'pay_per_task'
   | 'fixed_project'
+  | 'monthly_salary'
   | 'revenue_share'
+  | 'profit_share'
+  | 'commission'
   | 'work_exchange'
-  | 'equity_plus_cash';
+  | 'equity_plus_cash'
+  | 'custom';
 
 export interface RolePartnership {
   mode: PartnershipMode;
   label: string;
   equityPercent?: string;
+  // Legacy USD base value retained for backwards compatibility.
   amountUsd?: number;
+  // Exact amount and currency selected by the founder.
+  amount?: number;
+  currencyCode?: string;
   unit?: string;
   milestone?: string;
+  period?: string;
   details?: string;
   expectation?: string;
 }
@@ -162,6 +171,15 @@ export interface Startup {
   industry: string;
   stage: 'Idea' | 'Pre-Seed' | 'Seed' | 'Series A';
   pitch: string;
+  problem?: string;
+  solution?: string;
+  targetCustomer?: string;
+  businessModel?: string;
+  tractionDetails?: string;
+  competitiveAdvantage?: string;
+  foundingStory?: string;
+  vision?: string;
+  currentChallenges?: string;
   techStack: string[];
   website: string;
   foundedYear: string;

@@ -199,8 +199,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Add another skill..."
-                className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]"
+                className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 pr-16 text-sm text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]"
               />
+              <AiAssistButton label="AI assist for skills" />
               {query && (
                 <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/80 bg-white/95 shadow-2xl backdrop-blur-2xl">
                   {matches.map((skill) => <button key={skill} type="button" onClick={() => addSkill(skill)} className="block w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-indigo-50">{skill}</button>)}
@@ -281,21 +282,39 @@ const MiniStat = ({ icon, label, value }: any) => (
   </div>
 );
 
+const AiAssistButton = ({ label = 'AI assist' }: { label?: string }) => (
+  <button
+    type="button"
+    disabled
+    title="AI writing assistance will be connected in the final AI rollout."
+    aria-label={label}
+    className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
+  >
+    <Sparkles className="h-3 w-3" /> AI
+  </button>
+);
+
 const EditorField = ({ label, value, onChange, min = 0 }: any) => (
   <label className="block">
     <span className="mb-2 block text-xs font-bold text-slate-500">{label}</span>
-    <input minLength={min} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 text-sm text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]" />
+    <div className="relative">
+      <input minLength={min} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 pr-16 text-sm text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]" />
+      <AiAssistButton />
+    </div>
   </label>
 );
 
 const EditorArea = ({ label, value, onChange, min = 0, rows = 4 }: any) => (
   <label className="mt-4 block">
-    <span className="mb-2 block text-xs font-bold text-slate-500">{label}{min ? ` • minimum ${min} characters` : ''}</span>
-    <textarea minLength={min} required value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]" />
+    <span className="mb-2 block text-xs font-bold text-slate-500">{label}{min ? ' • minimum ' + min + ' characters' : ''}</span>
+    <div className="relative">
+      <textarea minLength={min} required value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 pb-10 pr-16 text-sm leading-6 text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]" />
+      <AiAssistButton />
+    </div>
   </label>
 );
 
-const EditorSelect = ({ label, value, onChange, options }: any) => (
+const EditorSelect =const EditorSelect = ({ label, value, onChange, options }: any) => (
   <label className="block">
     <span className="mb-2 block text-xs font-bold text-slate-500">{label}</span>
     <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 text-sm text-slate-700 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]">
