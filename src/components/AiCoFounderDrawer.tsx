@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Startup, User } from '../types';
 import { 
   X, 
@@ -152,6 +153,9 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
     <div className="mornai-ai-drawer fixed right-4 top-20 z-[110] flex h-[min(800px,calc(100dvh-6.5rem))] max-h-[800px] min-h-0 w-[calc(100vw-2rem)] max-w-[440px] flex-col overflow-hidden rounded-[32px] border border-white/80 bg-white/78 shadow-[0_30px_100px_rgba(15,23,42,.20)] backdrop-blur-2xl animate-in slide-in-from-right-8 fade-in duration-300 sm:right-6">
       
       {/* Header */}
+      <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-violet-300/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-sky-300/25 blur-3xl" />
+
       <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600/90 flex items-center justify-center text-white border border-indigo-400/30 shadow-sm">
