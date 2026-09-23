@@ -107,6 +107,19 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       : `since ${formatRelativeDate(previousVisitAt)}`
     : 'since you joined';
 
+  const dailyQuotes = [
+    'Build slowly enough to think clearly, but fast enough to learn.',
+    'A strong startup is built by the right people working on the right bottleneck.',
+    'Clarity compounds: clear roles, clear problems, clear next actions.',
+    'Good execution is mostly choosing what not to do next.',
+    'The fastest path forward is usually the next test, not the next idea.',
+    'Context is an advantage when your team can actually use it.',
+  ];
+
+  const [dailyQuote] = React.useState(
+    () => dailyQuotes[Math.floor(Math.random() * dailyQuotes.length)]
+  );
+
   const topInsight = isFounder
     ? relatedStartup && openRoles
       ? `Your next bottleneck is likely hiring. You have ${openRoles} active role${openRoles === 1 ? '' : 's'} and ${allTalents.length} visible contributors in your current network.`
@@ -155,6 +168,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </div>
 
       <div className="mornai-home-hero relative overflow-hidden rounded-[30px] px-5 py-6 text-white sm:px-8 sm:py-8">
+        <div className="absolute bottom-5 left-5 right-5 z-10 sm:left-8 sm:right-8">
+          <div className="inline-flex max-w-2xl items-center gap-2 rounded-full border border-white/10 bg-black/15 px-3 py-2 text-[10px] font-semibold text-violet-100/85 backdrop-blur-xl">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+            <span>{dailyQuote}</span>
+          </div>
+        </div>
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-violet-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-sky-400/10 blur-3xl" />
         <div className="relative grid gap-7 lg:grid-cols-[1.35fr_.65fr] lg:items-center">
