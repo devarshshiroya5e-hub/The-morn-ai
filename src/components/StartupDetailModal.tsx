@@ -108,7 +108,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
   const startupLogo = startup.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(startup.name)}&background=5B5CF0&color=fff&bold=true`;
 
   return (
-    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-slate-950/60 p-2 scrollbar-gutter-stable backdrop-blur-sm sm:p-4">
+    <div className="fixed inset-0 z-[80] h-[100dvh] overflow-y-scroll overscroll-contain touch-pan-y bg-slate-950/60 p-2 scrollbar-gutter-stable backdrop-blur-sm sm:p-4">
       <button
         type="button"
         onClick={onClose}
@@ -118,11 +118,11 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
         <X className="h-5 w-5" />
       </button>
 
-      <section className="mx-auto w-full max-w-6xl overflow-visible rounded-[30px] border border-white/80 bg-slate-50 shadow-[0_40px_120px_rgba(15,23,42,.32)]">
+      <section className="mx-auto min-h-full w-full max-w-6xl overflow-hidden rounded-[30px] border border-white/80 bg-slate-50 shadow-[0_40px_120px_rgba(15,23,42,.32)]">
         <header>
-          <div className="relative h-48 overflow-hidden sm:h-60">
+          <div className="relative h-48 overflow-hidden rounded-t-[30px] sm:h-60">
             {startup.coverImage ? (
-              <img src={startup.coverImage} alt="" className="h-full w-full object-cover transition-transform duration-700 ease-out" />
+              <img src={startup.coverImage} alt="" className="h-full w-full rounded-t-[30px] object-cover transition-transform duration-700 ease-out" />
             ) : (
               <div className="h-full w-full bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500" />
             )}
