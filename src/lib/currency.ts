@@ -95,6 +95,11 @@ export const loadFxRates = async (): Promise<Record<CurrencyCode, number>> => {
 export const convertUsd = (usdAmount: number, currency: CurrencyCode, rates = cachedRates || FALLBACK_USD_RATES) =>
   Math.round(usdAmount * (rates[currency] || 1));
 
+export const convertLocalToUsd = (localAmount: number, currency: CurrencyCode, rates = cachedRates || FALLBACK_USD_RATES) => {
+  const rate = rates[currency] || 1;
+  return rate > 0 ? Math.round(localAmount / rate) : Math.round(localAmount);
+};
+
 export const formatMoney = (amount: number, currency: CurrencyCode, rates = cachedRates || FALLBACK_USD_RATES) => {
   const value = convertUsd(amount, currency, rates);
   return new Intl.NumberFormat(currencyMeta[currency].locale, {
