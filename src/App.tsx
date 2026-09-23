@@ -259,6 +259,7 @@ export default function App() {
   // Navigation: 'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'profile' | 'privacy'
   const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'video-call' | 'profile' | 'privacy'>('home');
   const [privateChatContact, setPrivateChatContact] = useState<User | null>(null);
+  const [privateChatConnectionId, setPrivateChatConnectionId] = useState<string | null>(null);
   const [videoCallContact, setVideoCallContact] = useState<User | null>(null);
   const [videoCallConnectionId, setVideoCallConnectionId] = useState<string | null>(null);
 
@@ -679,8 +680,9 @@ export default function App() {
     skills: [],
   });
 
-  const openPrivateChat = (contact: User) => {
+  const openPrivateChat = (contact: User, connectionId?: string) => {
     setPrivateChatContact(contact);
+    setPrivateChatConnectionId(connectionId || null);
     setActiveView('messages');
   };
 
@@ -1161,6 +1163,7 @@ export default function App() {
             currentUser={currentUser}
             startups={startups}
             initialContact={privateChatContact}
+            initialConnectionId={privateChatConnectionId || undefined}
           />
         )}
 
