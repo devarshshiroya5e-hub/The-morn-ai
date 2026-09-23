@@ -14,6 +14,7 @@ import {
   Heart,
   MapPin,
   MessageCircle,
+  PhoneCall,
   Search,
   ShieldCheck,
   Video,
@@ -26,6 +27,7 @@ import {
 import { ConnectionRequest, RolePost, Startup, User } from '../types';
 import { formatAnyCurrency, useLocalizedCurrency } from '../lib/currency';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
+import { InitialAvatar } from './InitialAvatar';
 
 type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections' | 'saved';
 
@@ -45,7 +47,7 @@ interface MarketplacePageProps {
   onSelectStartup: (startup: Startup) => void;
   onBookAppointment: (startup: Startup, role?: RolePost) => void;
   onOpenPrivateChat: (user: User, connectionId?: string) => void;
-  onStartVideoCall: (user: User, connectionId?: string) => void;
+  onStartVideoCall: (user: User, connectionId?: string, mode?: 'video' | 'audio') => void;
   initialTab?: MarketplaceTab;
 }
 
@@ -276,28 +278,35 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   const incoming = connection?.toUserId === currentUser.id && connection.status === 'pending';
                   const outgoing = connection?.fromUserId === currentUser.id && connection.status === 'pending';
                   const connected = connection?.status === 'accepted';
-                  if (connected && connection) {
-                    return (
-                      <>
-                        <button type="button" onClick={() => onOpenPrivateChat(talent, connection.id)} className="mornai-market-primary justify-center">
-                          <MessageCircle className="h-3.5 w-3.5" /> Message
-                        </button>
-                        <button type="button" onClick={() => onStartVideoCall(talent, connection.id)} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[10px] font-black text-violet-700 transition hover:bg-violet-100">
+
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onOpenPrivateChat(talent, connected ? connection?.id : undefined)}
+                        className="mornai-market-primary justify-center"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" /> Message
+                      </button>
+                      {connected ? (
+                        <button
+                          type="button"
+                          onClick={() => onStartVideoCall(talent, connection.id, 'video')}
+                          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[10px] font-black text-violet-700 transition hover:bg-violet-100"
+                        >
                           <Video className="h-3.5 w-3.5" /> Video call
                         </button>
-                      </>
-                    );
-                  }
-                  return (
-                    <button
-                      type="button"
-                      disabled={outgoing}
-                      onClick={() => incoming ? setActiveTab('connections') : onSendConnection(talent)}
-                      className={`mornai-market-primary justify-center ${outgoing ? 'cursor-default opacity-70' : ''}`}
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      {outgoing ? 'Requested' : incoming ? 'Respond' : 'Connect'}
-                    </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={outgoing}
+                          onClick={() => incoming ? setActiveTab('connections') : onSendConnection(talent)}
+                          className={`mornai-market-secondary justify-center ${outgoing ? 'cursor-default opacity-70' : ''}`}
+                        >
+                          {outgoing ? 'Requested' : incoming ? 'Respond' : 'Connect'}
+                        </button>
+                      )}
+                    </>
                   );
                 })()}
               </div>
@@ -347,7 +356,9 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
               <div className="relative h-28 overflow-hidden rounded-[20px] bg-gradient-to-br from-violet-100 via-white to-sky-100">
                 {startup.coverImage && <img src={startup.coverImage} alt="" className="h-full w-full object-cover opacity-70" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/25 to-transparent" />
-                <img src={startup.logo} alt="" className="absolute bottom-3 left-4 h-12 w-12 rounded-2xl border-2 border-white object-cover shadow-xl" />
+                <span className="absolute bottom-3 left-4 h-12 w-12 rounded-2xl border-2 border-white bg-white shadow-xl">
+                  <InitialAvatar name={startup.name} src={startup.logo} className="h-full w-full rounded-[13px]" textClassName="text-sm font-black" />
+                </span>
                 <div className="absolute right-3 top-3 flex items-center gap-1.5">
                   {startup.verified && <span className="rounded-full border border-white/70 bg-white/85 px-2 py-1 text-[9px] font-black text-emerald-700"><ShieldCheck className="mr-0.5 inline h-3 w-3" /> Verified</span>}
                 </div>
@@ -442,7 +453,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
             <div className="mornai-person-card">
               <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-950">Saved people</h3><span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-black text-violet-700">{savedPeople.length}</span></div>
               <div className="mt-4 space-y-2">
-                {savedPeople.map((person) => <button key={person.id} type="button" onClick={() => setSelectedTalent(person)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3 text-left hover:border-violet-200"><img src={person.avatar} alt="" className="h-10 w-10 rounded-xl object-cover" /><span className="min-w-0 flex-1"><strong className="block truncate text-xs font-black text-slate-950">{person.name}</strong><span className="block truncate text-[10px] text-slate-500">{person.title}</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-300" /></button>)}
+                {savedPeople.map((person) => <button key={person.id} type="button" onClick={() => setSelectedTalent(person)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3 text-left hover:border-violet-200"><InitialAvatar name={person.name} src={person.avatar} className="h-10 w-10 rounded-xl" textClassName="text-xs font-black" /><span className="min-w-0 flex-1"><strong className="block truncate text-xs font-black text-slate-950">{person.name}</strong><span className="block truncate text-[10px] text-slate-500">{person.title}</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-300" /></button>)}
                 {savedPeople.length === 0 && <EmptyState title="No saved people yet" body="Bookmark a strong contributor from the People view." />}
               </div>
             </div>
