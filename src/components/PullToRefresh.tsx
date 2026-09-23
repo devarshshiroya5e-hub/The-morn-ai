@@ -20,10 +20,12 @@ export const PullToRefresh: React.FC = () => {
   const tracking = useRef(false);
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const pullRef = useRef(0);
+  const refreshingRef = useRef(false);
 
   useEffect(() => {
     const onStart = (event: TouchEvent) => {
-      if (refreshing || window.scrollY > 2) {
+      if (refreshingRef.current || window.scrollY > 2) {
         tracking.current = false;
         return;
       }
@@ -39,7 +41,7 @@ export const PullToRefresh: React.FC = () => {
     };
 
     const onMove = (event: TouchEvent) => {
-      if (!tracking.current || refreshing || window.scrollY > 2) return;
+      if (!tracking.current || refreshingRef.current || window.scrollY > 2) return;
 
       const currentY = event.touches[0]?.clientY || startY.current;
       const distance = currentY - startY.current;
@@ -49,6 +51,7 @@ export const PullToRefresh: React.FC = () => {
       }
 
       const eased = Math.min(104, distance * 0.48);
+      pullRef.current = eased;
       setPull(eased);
 
       if (eased > 6 && event.cancelable) {
@@ -60,8 +63,10 @@ export const PullToRefresh: React.FC = () => {
       if (!tracking.current) return;
       tracking.current = false;
 
-      if (pull >= 62) {
+      if (pullRef.current >= 62) {
+        refreshingRef.current = true;
         setRefreshing(true);
+        pullRef.current = 72;
         setPull(72);
         window.setTimeout(() => window.location.reload(), 320);
         return;
@@ -93,7 +98,7 @@ export const PullToRefresh: React.FC = () => {
       aria-live="polite"
     >
       <div className="mornai-pull-refresh flex items-center gap-2 rounded-full border border-white/80 bg-white/90 px-3.5 py-2 shadow-[0_16px_45px_rgba(15,23,42,.16)] backdrop-blur-xl">
-        <RefreshCw className={'h-4 w-4 text-violet-600 transition-transform duration-200 ' + (refreshing ? 'animate-spin' : ready ? 'rotate-180' : '')} />
+        <RefreshCw className={'h-4 w-4 text-violet-600 transition-transform duration-200 ' + (refreshing ? 'animate-spin' : ready ? 'rotate-180 scale-110' : '')} />
         <span className="text-[10px] font-black text-slate-700">
           {refreshing ? 'Refreshing…' : ready ? 'Release to refresh' : 'Pull to refresh'}
         </span>
