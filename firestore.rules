@@ -108,6 +108,19 @@ service cloud.firestore {
             resource.data.roomType == 'private'
             && resource.data.participants is list
             && request.auth.uid in resource.data.participants
+            && (
+              (
+                resource.data.startupId is string
+                && startupExists(resource.data.startupId)
+              )
+              ||
+              (
+                resource.data.connectionId is string
+                && exists(/databases/$(database)/documents/connections/$(resource.data.connectionId))
+                && get(/databases/$(database)/documents/connections/$(resource.data.connectionId)).data.status == 'accepted'
+                && get(/databases/$(database)/documents/connections/$(resource.data.connectionId)).data.participants == resource.data.participants
+              )
+            )
           )
         );
 
@@ -134,25 +147,36 @@ service cloud.firestore {
           ||
           (
             request.resource.data.roomType == 'private'
-            && request.resource.data.startupId is string
-            && startupExists(request.resource.data.startupId)
             && request.resource.data.recipientId is string
             && request.resource.data.participants is list
             && request.resource.data.participants.size() == 2
             && request.auth.uid in request.resource.data.participants
-            && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId in request.resource.data.participants
             && request.resource.data.recipientId in request.resource.data.participants
             && request.resource.data.recipientId != request.auth.uid
             && (
               (
-                isFounder(request.resource.data.startupId)
-                && request.resource.data.recipientId != get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
-                && isActiveMemberForUser(request.resource.data.startupId, request.resource.data.recipientId)
+                request.resource.data.startupId is string
+                && startupExists(request.resource.data.startupId)
+                && get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId in request.resource.data.participants
+                && (
+                  (
+                    isFounder(request.resource.data.startupId)
+                    && request.resource.data.recipientId != get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
+                    && isActiveMemberForUser(request.resource.data.startupId, request.resource.data.recipientId)
+                  )
+                  ||
+                  (
+                    isActiveMember(request.resource.data.startupId)
+                    && request.resource.data.recipientId == get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
+                  )
+                )
               )
               ||
               (
-                isActiveMember(request.resource.data.startupId)
-                && request.resource.data.recipientId == get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.founderId
+                request.resource.data.connectionId is string
+                && exists(/databases/$(database)/documents/connections/$(request.resource.data.connectionId))
+                && get(/databases/$(database)/documents/connections/$(request.resource.data.connectionId)).data.status == 'accepted'
+                && get(/databases/$(database)/documents/connections/$(request.resource.data.connectionId)).data.participants == request.resource.data.participants
               )
             )
           )
@@ -395,6 +419,72 @@ match /appointments/{appointmentId} {
         && request.resource.data.openRoles is list;
 
       allow delete: if isFounder(startupId);
+    }
+
+    // ---------------------------------------------------------
+    // IN-APP VIDEO CALL SIGNALING
+    // Firebase carries signaling only; audio/video stays peer-to-peer.
+    // ---------------------------------------------------------
+
+    match /videoCalls/{callId} {
+      allow read: if
+        signedIn()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
+
+      allow create: if
+        signedIn()
+        && request.resource.data.connectionId is string
+        && exists(/databases/$(database)/documents/connections/$(request.resource.data.connectionId))
+        && get(/databases/$(database)/documents/connections/$(request.resource.data.connectionId)).data.status == 'accepted'
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.auth.uid in request.resource.data.participants
+        && get(/databases/$(database)/documents/connections/$(request.resource.data.connectionId)).data.participants == request.resource.data.participants;
+
+      allow update: if
+        signedIn()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.connectionId == resource.data.connectionId
+        && request.resource.data.callerId == resource.data.callerId
+        && request.resource.data.calleeId == resource.data.calleeId;
+
+      allow delete: if
+        signedIn()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
+
+      match /callerCandidates/{candidateId} {
+        allow read: if
+          signedIn()
+          && get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants is list
+          && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants;
+
+        allow create: if
+          signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants is list
+          && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants;
+
+        allow update, delete: if false;
+      }
+
+      match /calleeCandidates/{candidateId} {
+        allow read: if
+          signedIn()
+          && get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants is list
+          && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants;
+
+        allow create: if
+          signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants is list
+          && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(callId)).data.participants;
+
+        allow update, delete: if false;
+      }
     }
 
     // ---------------------------------------------------------
