@@ -306,7 +306,41 @@ service cloud.firestore {
 
       // Legacy path kept read-only so old records are not silently destroyed.
       // New appointments are stored in /appointments.
-      match /appointments/{appointmentId} {
+          // ---------------------------------------------------------
+    // STARTUP INTEREST REQUESTS
+    // Preview/demo startups use this lightweight request path.
+    // ---------------------------------------------------------
+    
+    match /startupInterestRequests/{requestId} {
+      allow create: if
+        signedIn()
+        && request.resource.data.talentId == request.auth.uid
+        && request.resource.data.startupId is string
+        && request.resource.data.startupName is string
+        && request.resource.data.founderId is string
+        && request.resource.data.founderName is string
+        && request.resource.data.roleTitle is string
+        && request.resource.data.roleTitle.size() > 0
+        && request.resource.data.pitchMessage is string
+        && request.resource.data.pitchMessage.size() <= 2000
+        && request.resource.data.status == 'pending';
+
+      allow read: if
+        signedIn()
+        && (
+          resource.data.talentId == request.auth.uid
+          || resource.data.founderId == request.auth.uid
+        );
+
+      allow update: if
+        signedIn()
+        && resource.data.founderId == request.auth.uid
+        && request.resource.data.founderId == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+match /appointments/{appointmentId} {
         allow read: if isMember(startupId);
         allow create, update, delete: if false;
       }
