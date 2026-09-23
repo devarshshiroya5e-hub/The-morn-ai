@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { ChatMessage, ConnectionRequest, Startup, User } from '../types';
+import { InitialAvatar } from './InitialAvatar';
 
 interface ChatPageProps {
   currentUser: User;
@@ -31,7 +32,7 @@ interface Room {
   id: string;
   title: string;
   subtitle: string;
-  kind: 'world' | 'private';
+  kind: 'world' | 'private' | 'startup';
   startup?: Startup;
   contact?: { id: string; name: string; avatar?: string; role?: string };
   connectionId?: string;
@@ -56,7 +57,7 @@ const toMessage = (docSnap: any): ChatMessage => {
   return {
     id: docSnap.id,
     roomId: typeof data.roomId === 'string' ? data.roomId : undefined,
-    roomType: data.roomType === 'world' || data.roomType === 'private' ? data.roomType : undefined,
+    roomType: data.roomType === 'world' || data.roomType === 'private' || data.roomType === 'startup' ? data.roomType : undefined,
     participants: Array.isArray(data.participants) ? data.participants.filter((value: unknown): value is string => typeof value === 'string') : undefined,
     senderId: data.senderId || '',
     senderName: data.senderName || 'MornAI member',
@@ -211,6 +212,25 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
           });
         });
     }
+
+    startups
+      .filter((startup) =>
+        startup.persisted &&
+        (
+          startup.founderId === currentUser.id ||
+          startup.memberIds?.includes(currentUser.id) ||
+          startup.members?.some((member) => member.userId === currentUser.id && member.status === 'active')
+        ),
+      )
+      .forEach((startup) => {
+        privateRooms.push({
+          id: 'startup-chat-' + startup.id,
+          title: startup.name,
+          subtitle: 'Startup team chat • everyone on the team',
+          kind: 'startup',
+          startup,
+        });
+      });
 
     return [
       {
@@ -499,10 +519,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               }
             : {
                 recipientId: activeRoom.contact!.id,
-                connectionId: activeRoom.connectionId,
+                ...(activeRoom.connectionId ? { connectionId: activeRoom.connectionId } : {}),
                 participants,
               }
-          : {}),
+          : activeRoom.kind === 'startup'
+            ? {
+                startupId: activeRoom.startup!.id,
+              }
+            : {}),
       });
 
       setMessages((previous) =>
@@ -633,10 +657,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                     }`}>
                       {room.kind === 'world' ? (
                         <Globe2 className="h-4 w-4" />
-                      ) : room.contact?.avatar ? (
-                        <img src={room.contact.avatar} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <LockKeyhole className="h-4 w-4" />
+                        <InitialAvatar
+                          name={room.kind === 'startup' ? room.startup?.name || room.title : room.contact?.name || room.title}
+                          src={room.kind === 'startup' ? room.startup?.logo : room.contact?.avatar}
+                          className="h-full w-full rounded-2xl"
+                          textClassName="text-sm font-black"
+                        />
                       )}
                       {unread && <span className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full border-2 border-white bg-violet-600" />}
                     </span>
@@ -688,9 +715,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                   <ArrowUp className="h-4 w-4 rotate-90" />
                 </button>
                 <span className="hidden h-10 w-10 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-700 lg:grid">
-                  {activeRoom?.kind === 'world' ? <Globe2 className="h-4 w-4" /> : activeRoom?.contact?.avatar ? (
-                    <img src={activeRoom.contact.avatar} alt="" className="h-full w-full object-cover" />
-                  ) : <LockKeyhole className="h-4 w-4" />}
+                  {activeRoom?.kind === 'world' ? <Globe2 className="h-4 w-4" /> : (
+                    <InitialAvatar
+                      name={activeRoom?.kind === 'startup' ? activeRoom.startup?.name || activeRoom.title : activeRoom?.contact?.name || activeRoom?.title || 'MornAI'}
+                      src={activeRoom?.kind === 'startup' ? activeRoom.startup?.logo : activeRoom?.contact?.avatar}
+                      className="h-full w-full rounded-xl"
+                      textClassName="text-xs font-black"
+                    />
+                  )}
                 </span>
                 <div>
                   <h2 className="text-sm font-extrabold text-slate-950">{activeRoom?.title || 'World Chat'}</h2>
@@ -720,10 +752,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                 <div className="flex min-h-[360px] items-center justify-center">
                   <div className="mx-auto max-w-md rounded-[30px] border border-dashed border-slate-200 bg-white/80 p-8 text-center shadow-sm">
                     <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-violet-50 text-violet-600">
-                      {activeRoom?.kind === 'world' ? <Globe2 className="h-5 w-5" /> : <LockKeyhole className="h-5 w-5" />}
+                      {activeRoom?.kind === 'world' ? <Globe2 className="h-5 w-5" /> : activeRoom?.kind === 'startup' ? <UsersRound className="h-5 w-5" /> : <LockKeyhole className="h-5 w-5" />}
                     </span>
                     <h3 className="mt-4 text-sm font-extrabold text-slate-900">
-                      {activeRoom?.kind === 'world' ? 'Start the global conversation' : 'Start a private conversation'}
+                      {activeRoom?.kind === 'world' ? 'Start the global conversation' : activeRoom?.kind === 'startup' ? 'Start the team conversation' : 'Start a private conversation'}
                     </h3>
                     <p className="mt-2 text-xs leading-6 text-slate-500">
                       {activeRoom?.kind === 'world'
