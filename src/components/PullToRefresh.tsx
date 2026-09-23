@@ -88,7 +88,7 @@ export const PullToRefresh: React.FC = () => {
       window.removeEventListener('touchend', onEnd);
       window.removeEventListener('touchcancel', onEnd);
     };
-  }, [pull, refreshing]);
+  }, []);
 
   if (pull <= 0 && !refreshing) return null;
 
