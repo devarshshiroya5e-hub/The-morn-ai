@@ -148,8 +148,8 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
     }
   };
 
-  return (
-    <div className="mornai-ai-drawer absolute left-3 top-5 z-40 flex h-[min(720px,calc(100dvh-7rem))] max-h-[720px] min-h-0 w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-left duration-200 sm:left-5">
+  return createPortal(
+    <div className="mornai-ai-drawer fixed right-4 top-20 z-[110] flex h-[min(800px,calc(100dvh-6.5rem))] max-h-[800px] min-h-0 w-[calc(100vw-2rem)] max-w-[440px] flex-col overflow-hidden rounded-[32px] border border-white/80 bg-white/78 shadow-[0_30px_100px_rgba(15,23,42,.20)] backdrop-blur-2xl animate-in slide-in-from-right-8 fade-in duration-300 sm:right-6">
       
       {/* Header */}
       <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
@@ -307,6 +307,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
         </p>
       </div>
 
-    </div>
+    </div>,
+    document.body,
   );
 };
