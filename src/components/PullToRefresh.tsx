@@ -37,6 +37,7 @@ export const PullToRefresh: React.FC = () => {
       }
 
       startY.current = event.touches[0]?.clientY || 0;
+      pullRef.current = 0;
       tracking.current = true;
     };
 
@@ -46,6 +47,7 @@ export const PullToRefresh: React.FC = () => {
       const currentY = event.touches[0]?.clientY || startY.current;
       const distance = currentY - startY.current;
       if (distance <= 0) {
+        pullRef.current = 0;
         setPull(0);
         return;
       }
