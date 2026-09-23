@@ -38,3 +38,5 @@ jobs:
           git add src/components/MarketplacePage.tsx
           git commit -m 'Fix MornAI runtime formatter error [runtime-repair]'
           git push
+
+# One-time repair workflow; removed after the source fix is committed.
