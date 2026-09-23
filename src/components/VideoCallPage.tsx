@@ -62,7 +62,7 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
 
   useEffect(() => {
     if (!connectionId || !currentUser.id || !contact.id) {
-      setError('This video call requires an accepted connection.');
+      setError('This call requires an accepted connection.');
       setCallState('error');
       return;
     }
@@ -309,7 +309,24 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
 
         <div className="relative grid min-h-0 flex-1 bg-black p-2 sm:p-3 lg:grid-cols-[1fr_280px]">
           <div className="relative min-h-[420px] overflow-hidden rounded-[24px] bg-slate-950">
-            <video ref={remoteVideoRef} autoPlay playsInline className="h-full min-h-[420px] w-full object-cover" />
+            {mode === 'video' ? (
+              <video ref={remoteVideoRef} autoPlay playsInline className="h-full min-h-[420px] w-full object-cover" />
+            ) : (
+              <>
+                <audio ref={remoteAudioRef} autoPlay />
+                <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,.22),transparent_42%),#020617]">
+                  <div className="text-center">
+                    <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-white/10 text-violet-200 ring-1 ring-white/10 shadow-[0_0_70px_rgba(124,58,237,.24)]">
+                      <PhoneCall className="h-9 w-9" />
+                    </div>
+                    <p className="mt-5 text-xl font-black text-white">{contact.name}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-400">
+                      {callState === 'ringing' ? 'Calling…' : callState === 'connected' ? 'Voice connected' : 'Preparing microphone…'}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )
             {callState !== 'connected' && (
               <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,.18),transparent_42%),#020617] p-6 text-center">
                 <div>
@@ -336,10 +353,12 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
                   {micEnabled ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5 text-rose-300" />}
                   {micEnabled ? 'Microphone on' : 'Microphone muted'}
                 </button>
-                <button type="button" onClick={toggleCamera} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-[10px] font-black text-slate-200">
-                  {cameraEnabled ? <Video className="h-3.5 w-3.5" /> : <VideoOff className="h-3.5 w-3.5 text-rose-300" />}
-                  {cameraEnabled ? 'Camera on' : 'Camera off'}
-                </button>
+                {mode === 'video' && (
+                  <button type="button" onClick={toggleCamera} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-[10px] font-black text-slate-200">
+                    {cameraEnabled ? <Video className="h-3.5 w-3.5" /> : <VideoOff className="h-3.5 w-3.5 text-rose-300" />}
+                    {cameraEnabled ? 'Camera on' : 'Camera off'}
+                  </button>
+                )}
                 <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-[10px] font-semibold text-slate-400">
                   <Volume2 className="h-3.5 w-3.5 text-emerald-300" /> Browser audio output
                 </div>
