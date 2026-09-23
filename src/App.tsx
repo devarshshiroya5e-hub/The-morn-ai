@@ -653,11 +653,6 @@ export default function App() {
 
   // Open dedicated booking page
   const handleOpenBookingModal = (startup: Startup, role?: RolePost) => {
-    if (!startup.persisted) {
-      showToast('This startup is only a preview. Sync requests are available after the startup is published.');
-      return;
-    }
-
     setBookingModalStartup(startup);
     setBookingModalRole(role);
     setIsDetailModalOpen(false);
@@ -737,6 +732,18 @@ export default function App() {
     const participants = Array.from(new Set([newAppointment.founderId, newAppointment.talentId]));
     if (participants.length !== 2) {
       throw new Error('The founder and contributor must be two different accounts.');
+    }
+
+    if (bookingModalStartup && !bookingModalStartup.persisted) {
+      await setDoc(doc(db, 'startupInterestRequests', newAppointment.id), {
+        ...newAppointment,
+        participants,
+        requestType: 'preview_interest',
+        createdBy: currentUser.id,
+        createdAt: serverTimestamp(),
+      });
+      showToast(`Interest sent to ${newAppointment.startupName} for ${newAppointment.roleTitle}.`);
+      return;
     }
 
     await setDoc(doc(db, 'appointments', newAppointment.id), {
@@ -894,10 +901,10 @@ export default function App() {
     return (
       <motion.div
         key="mornai-public-entry"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
-        className="min-h-screen"
+        initial={{ opacity: 0, y: 4, scale: 0.998 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+        className="min-h-screen will-change-transform"
       >
         <LandingPage
           onOpenAuth={(mode) => {
@@ -923,10 +930,10 @@ export default function App() {
   return (
     <motion.div
       key="mornai-authenticated-app"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.32, ease: 'easeOut' }}
-      className="min-h-screen"
+      initial={{ opacity: 0, y: 4, scale: 0.998 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="min-h-screen will-change-transform"
     >
       <div className="mornai-app-shell min-h-screen text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
       <PullToRefresh />
@@ -972,10 +979,10 @@ export default function App() {
       <main className="mornai-main flex-1 pb-16">
         <motion.div
           key={activeView}
-          initial={{ opacity: 0, y: 7, scale: 0.998 }}
+          initial={{ opacity: 0, y: 4, scale: 0.998 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="mornai-page-transition min-h-full"
+          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+          className="mornai-page-transition min-h-full will-change-transform"
         >
 
         {/* VIEW 1: DAILY HOME / RETENTION HUB */}
@@ -1035,6 +1042,7 @@ export default function App() {
           <AppointmentBookingPage
             startup={bookingModalStartup}
             selectedRole={bookingModalRole}
+            requestKind={bookingModalStartup?.persisted === false ? 'interest' : 'sync'}
             currentUser={currentUser}
             onConfirmAppointment={handleConfirmAppointment}
             onCancel={() => setActiveView('network')}
