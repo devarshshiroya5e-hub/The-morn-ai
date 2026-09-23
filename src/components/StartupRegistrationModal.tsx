@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PartnershipMode, RolePartnership, Startup, User } from '../types';
-import { useLocalizedCurrency } from '../lib/currency';
+import { convertLocalToUsd, convertUsd, useLocalizedCurrency } from '../lib/currency';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
@@ -170,7 +170,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const { currency, format: formatMoney } = useLocalizedCurrency(currentUser);
+  const { currency, rates, format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const roleSuggestions = React.useMemo(() => {
     const industryRoles = ROLE_SUGGESTIONS[industry] || ROLE_SUGGESTIONS['Artificial Intelligence'];
@@ -582,13 +582,13 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Company Valuation (USD base)
+                Company Valuation ({currency})
               </label>
               <input
                 type="number"
                 min="0"
-                value={valuationUsd}
-                onChange={(e) => setValuationUsd(e.target.value)}
+                value={valuationUsd ? convertUsd(Number(valuationUsd), currency, rates) : ''}
+                onChange={(e) => setValuationUsd(String(convertLocalToUsd(Number(e.target.value) || 0, currency, rates)))}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
               />
               <p className="mt-1 text-[9px] text-slate-400">Displayed to viewers in their regional currency.</p>
@@ -758,12 +758,12 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                             <input
                               type="number"
                               min="0"
-                              value={partnership.amountUsd ?? ''}
-                              onChange={(event) => updatePartnership(role, { amountUsd: Number(event.target.value) })}
-                              placeholder="USD base amount"
+                              value={partnership.amountUsd !== undefined ? convertUsd(partnership.amountUsd, currency, rates) : ''}
+                              onChange={(event) => updatePartnership(role, { amountUsd: convertLocalToUsd(Number(event.target.value) || 0, currency, rates) })}
+                              placeholder={`${currency} amount`}
                               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
                             />
-                            <p className="mt-1 text-[9px] text-slate-400">Shown to this user as {currency} {partnership.amountUsd ? formatMoney(partnership.amountUsd) : '0'}.</p>
+                            <p className="mt-1 text-[9px] text-slate-400">Founder view: {partnership.amountUsd ? formatMoney(partnership.amountUsd) : formatMoney(0)}. Stored in USD base for consistent conversion.</p>
                           </div>
                           <div>
                             <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">
@@ -792,8 +792,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <div>
                             <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Cash option (optional)</label>
-                            <input type="number" min="0" value={partnership.amountUsd ?? ''} onChange={(event) => updatePartnership(role, { amountUsd: Number(event.target.value) })} placeholder="USD base amount" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
-                            <p className="mt-1 text-[9px] text-slate-400">Displayed to contributors in their local currency.</p>
+                            <input type="number" min="0" value={partnership.amountUsd !== undefined ? convertUsd(partnership.amountUsd, currency, rates) : ''} onChange={(event) => updatePartnership(role, { amountUsd: convertLocalToUsd(Number(event.target.value) || 0, currency, rates) })} placeholder={`${currency} amount`} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none" />
+                            <p className="mt-1 text-[9px] text-slate-400">The founder sets the amount in {currency}; contributors see the converted amount in their own currency.</p>
                           </div>
                           <div>
                             <label className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Work exchange terms</label>
