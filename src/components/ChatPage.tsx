@@ -314,7 +314,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               connectionId: typeof data.connectionId === 'string' ? data.connectionId : undefined,
             };
           })
-          .filter((room): room is Room => Boolean(room));
+          .filter((room) => room !== null) as Room[];
         setDirectChatRooms(nextRooms);
       },
       (error) => console.error('Direct chat rooms error:', error),
