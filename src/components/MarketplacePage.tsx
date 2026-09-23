@@ -243,7 +243,9 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
           {rankedTalents.map(({ talent, score }) => (
             <article key={talent.id} className="mornai-person-card">
               <div className="flex items-start gap-3">
-                <button type="button" onClick={() => setSelectedTalent(talent)}><img src={talent.avatar} alt="" className="h-12 w-12 rounded-2xl object-cover ring-2 ring-white shadow-lg" /></button>
+                <button type="button" onClick={() => setSelectedTalent(talent)}>
+  <InitialAvatar name={talent.name} src={talent.avatar} className="h-12 w-12 rounded-2xl ring-2 ring-white shadow-lg" textClassName="text-sm font-black" />
+</button>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => setSelectedTalent(talent)} className="truncate text-left text-sm font-black text-slate-950 hover:text-violet-700">{talent.name}</button>
@@ -460,7 +462,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
             <div className="mornai-person-card">
               <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-950">Saved startups</h3><span className="rounded-full bg-sky-50 px-2 py-1 text-[9px] font-black text-sky-700">{savedStartups.length}</span></div>
               <div className="mt-4 space-y-2">
-                {savedStartups.map((startup) => <button key={startup.id} type="button" onClick={() => onSelectStartup(startup)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3 text-left hover:border-violet-200"><img src={startup.logo} alt="" className="h-10 w-10 rounded-xl object-cover" /><span className="min-w-0 flex-1"><strong className="block truncate text-xs font-black text-slate-950">{startup.name}</strong><span className="block truncate text-[10px] text-slate-500">{startup.industry} • {startup.openRoles.filter((role) => role.status === 'open').length} open roles</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-300" /></button>)}
+                {savedStartups.map((startup) => <button key={startup.id} type="button" onClick={() => onSelectStartup(startup)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3 text-left hover:border-violet-200"><InitialAvatar name={startup.name} src={startup.logo} className="h-10 w-10 rounded-xl" textClassName="text-xs font-black" /><span className="min-w-0 flex-1"><strong className="block truncate text-xs font-black text-slate-950">{startup.name}</strong><span className="block truncate text-[10px] text-slate-500">{startup.industry} • {startup.openRoles.filter((role) => role.status === 'open').length} open roles</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-300" /></button>)}
                 {savedStartups.length === 0 && <EmptyState title="No saved startups yet" body="Bookmark a real persisted startup from the Startups view." />}
               </div>
             </div>
@@ -484,7 +486,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   <div key={connection.id} className="rounded-2xl border border-slate-200 bg-white/75 p-3">
                     <div className="flex items-center gap-3">
                       <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-600">
-                        {connection.fromAvatar ? <img src={connection.fromAvatar} alt="" className="h-full w-full object-cover" /> : <Users className="h-4 w-4" />}
+                        <InitialAvatar name={connection.fromName} src={connection.fromAvatar} className="h-full w-full rounded-xl" textClassName="text-xs font-black" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-black text-slate-950">{connection.fromName}</p>
@@ -559,7 +561,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   return (
                     <div key={connection.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3">
                       <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-emerald-50 text-emerald-600">
-                        {otherAvatar ? <img src={otherAvatar} alt="" className="h-full w-full object-cover" /> : <Users className="h-4 w-4" />}
+                        <InitialAvatar name={otherName} src={otherAvatar} className="h-full w-full rounded-xl" textClassName="text-xs font-black" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-black text-slate-950">{otherName}</p>
@@ -572,7 +574,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                 {outgoingConnections.slice(0, 5).map((connection) => (
                   <div key={connection.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/75 p-3">
                     <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-600">
-                      {connection.toAvatar ? <img src={connection.toAvatar} alt="" className="h-full w-full object-cover" /> : <Users className="h-4 w-4" />}
+                      <InitialAvatar name={connection.toName} src={connection.toAvatar} className="h-full w-full rounded-xl" textClassName="text-xs font-black" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-black text-slate-950">{connection.toName}</p>
@@ -610,7 +612,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                   <div className="shrink-0 p-5 pb-0 sm:p-6 sm:pb-0">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex gap-3">
-                        <img src={selectedTalent.avatar} alt="" className="h-16 w-16 rounded-[22px] object-cover shadow-xl" />
+                        <InitialAvatar name={selectedTalent.name} src={selectedTalent.avatar} className="h-16 w-16 rounded-[22px] shadow-xl" textClassName="text-xl font-black" />
                         <div>
                           <div className="flex items-center gap-2"><h2 className="text-lg font-black text-slate-950">{selectedTalent.name}</h2><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div>
                           <p className="mt-1 text-xs font-bold text-violet-600">{selectedTalent.title}</p>
