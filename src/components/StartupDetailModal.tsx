@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { RolePost, Startup, StartupMember, User } from '../types';
 import { formatAnyCurrency, formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
+import { InitialAvatar } from './InitialAvatar';
 
 interface StartupDetailModalProps {
   startup: Startup | null;
@@ -129,11 +130,11 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
             <div className="absolute bottom-5 left-4 right-16 flex items-end gap-4 sm:bottom-6 sm:left-6 sm:right-20">
-              <img
-                src={startupLogo}
-                alt={startup.name}
-                className="relative z-10 h-24 w-24 shrink-0 rounded-[22px] border-4 border-white bg-white object-cover shadow-[0_18px_40px_rgba(15,23,42,.34)] ring-1 ring-white/70 sm:h-28 sm:w-28"
-                onError={(event) => { event.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(startup.name)}&background=5B5CF0&color=fff&bold=true`; }}
+              <InitialAvatar
+                name={startup.name}
+                src={startup.logo}
+                className="relative z-10 h-24 w-24 shrink-0 rounded-[22px] border-4 border-white bg-white shadow-[0_18px_40px_rgba(15,23,42,.34)] ring-1 ring-white/70 sm:h-28 sm:w-28"
+                textClassName="text-2xl font-black sm:text-3xl"
               />
               <div className="min-w-0 pb-1 text-white">
                 <div className="flex flex-wrap gap-2">
@@ -272,7 +273,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
                 <aside className="space-y-5">
                   <Panel eyebrow="Founder" title={startup.founderName}>
                     <div className="flex items-center gap-3">
-                      <img src={startup.founderAvatar} alt="" className="h-12 w-12 rounded-2xl object-cover shadow-md" />
+                      <InitialAvatar name={startup.founderName} src={startup.founderAvatar} className="h-12 w-12 rounded-2xl shadow-md" textClassName="text-sm font-black" />
                       <div>
                         <p className="text-[10px] font-semibold text-slate-500">Startup owner</p>
                         <p className="mt-1 text-[11px] leading-5 text-slate-600">The founder controls role terms, team decisions and startup direction.</p>
