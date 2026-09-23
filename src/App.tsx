@@ -1177,6 +1177,7 @@ export default function App() {
           <ChatPage
             currentUser={currentUser}
             startups={startups}
+            connections={connections}
             initialContact={privateChatContact}
             initialConnectionId={privateChatConnectionId || undefined}
           />
