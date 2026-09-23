@@ -186,14 +186,8 @@ service cloud.firestore {
     match /connections/{connectionId} {
       allow read: if
         signedIn()
-        && (
-          (
-            resource.data.participants is list
-            && request.auth.uid in resource.data.participants
-          )
-          || resource.data.fromUserId == request.auth.uid
-          || resource.data.toUserId == request.auth.uid
-        );
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
 
       allow create: if
         signedIn()
@@ -411,14 +405,8 @@ match /appointments/{appointmentId} {
     match /appointments/{appointmentId} {
       allow read: if
         signedIn()
-        && (
-          (
-            resource.data.participants is list
-            && request.auth.uid in resource.data.participants
-          )
-          || resource.data.founderId == request.auth.uid
-          || resource.data.talentId == request.auth.uid
-        );
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
 
       allow create: if
         signedIn()
