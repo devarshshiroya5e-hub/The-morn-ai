@@ -112,6 +112,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [mobileRoomListOpen, setMobileRoomListOpen] = useState(false);
   const [chatRetryKey, setChatRetryKey] = useState(0);
+  const [directChatRooms, setDirectChatRooms] = useState<Room[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messageViewportRef = useRef<HTMLDivElement>(null);
   const initialScrollPendingRef = useRef(true);
@@ -232,6 +233,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         });
       });
 
+    const roomMap = new Map<string, Room>();
+    privateRooms.forEach((room) => roomMap.set(room.id, room));
+    directChatRooms.forEach((room) => {
+      const existing = roomMap.get(room.id);
+      if (!existing || (!existing.connectionId && room.connectionId)) {
+        roomMap.set(room.id, room);
+      }
+    });
+
     return [
       {
         id: 'world',
@@ -239,9 +249,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         subtitle: 'Everyone on THE MORN AI',
         kind: 'world',
       },
-      ...privateRooms,
+      ...Array.from(roomMap.values()),
     ];
-  }, [currentUser, startups, connections, initialContact, initialConnectionId]);
+  }, [currentUser, startups, connections, directChatRooms, initialContact, initialConnectionId]);
 
   useEffect(() => {
     if (initialContact && initialContact.id !== currentUser.id) {
@@ -271,6 +281,44 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     } catch {
       setReadAt({});
     }
+  }, [currentUser.id]);
+
+  useEffect(() => {
+    const chatsQuery = query(
+      collection(db, 'directChats'),
+      where('participants', 'array-contains', currentUser.id),
+    );
+
+    return onSnapshot(
+      chatsQuery,
+      (snapshot) => {
+        const nextRooms = snapshot.docs
+          .map((snap) => {
+            const data = snap.data();
+            const isA = data.participantAId === currentUser.id;
+            const contactId = isA ? data.participantBId : data.participantAId;
+            const contactName = isA ? data.participantBName : data.participantAName;
+            const contactAvatar = isA ? data.participantBAvatar : data.participantAAvatar;
+            if (typeof contactId !== 'string' || typeof contactName !== 'string') return null;
+            return {
+              id: typeof data.roomId === 'string' ? data.roomId : snap.id,
+              title: contactName,
+              subtitle: 'Private conversation',
+              kind: 'private' as const,
+              contact: {
+                id: contactId,
+                name: contactName,
+                avatar: typeof contactAvatar === 'string' ? contactAvatar : undefined,
+                role: 'Network connection',
+              },
+              connectionId: typeof data.connectionId === 'string' ? data.connectionId : undefined,
+            };
+          })
+          .filter((room): room is Room => Boolean(room));
+        setDirectChatRooms(nextRooms);
+      },
+      (error) => console.error('Direct chat rooms error:', error),
+    );
   }, [currentUser.id]);
 
   const privateParticipantsForRoom = (room: Room) =>
