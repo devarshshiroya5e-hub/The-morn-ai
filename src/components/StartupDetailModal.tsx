@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowRight,
   BrainCircuit,
@@ -107,8 +108,8 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
 
   const startupLogo = startup.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(startup.name)}&background=5B5CF0&color=fff&bold=true`;
 
-  return (
-    <div className="fixed inset-0 z-[80] h-[100dvh] overflow-y-scroll overscroll-contain touch-pan-y bg-slate-950/60 p-2 scrollbar-gutter-stable backdrop-blur-sm sm:p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[80] h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y bg-slate-950/60 p-2 scrollbar-gutter-stable backdrop-blur-sm sm:p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
       <button
         type="button"
         onClick={onClose}
@@ -122,7 +123,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
         <header>
           <div className="relative h-48 overflow-hidden rounded-t-[30px] sm:h-60">
             {startup.coverImage ? (
-              <img src={startup.coverImage} alt="" className="h-full w-full rounded-t-[30px] object-cover transition-transform duration-700 ease-out" />
+              <img src={startup.coverImage} alt="" className="h-full w-full rounded-[30px] object-cover transition-transform duration-700 ease-out" />
             ) : (
               <div className="h-full w-full bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500" />
             )}
@@ -411,7 +412,8 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
           </div>
         )}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
