@@ -109,8 +109,10 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
     { id: 'memory', label: 'Memory', count: startup.historyLogs.length },
   ];
 
+  const startupLogo = startup.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(startup.name)}&background=5B5CF0&color=fff&bold=true`;
+
   return (
-    <div className="fixed inset-0 z-[80] bg-slate-950/60 p-2 backdrop-blur-sm sm:p-4">
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-slate-950/60 p-2 scrollbar-gutter-stable backdrop-blur-sm sm:p-4">
       <button
         type="button"
         onClick={onClose}
@@ -120,8 +122,8 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
         <X className="h-5 w-5" />
       </button>
 
-      <section className="mx-auto flex h-[calc(100dvh-1rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] border border-white/80 bg-slate-50 shadow-[0_40px_120px_rgba(15,23,42,.32)] sm:h-[calc(100dvh-2rem)]">
-        <header className="shrink-0">
+      <section className="mx-auto w-full max-w-6xl overflow-visible rounded-[30px] border border-white/80 bg-slate-50 shadow-[0_40px_120px_rgba(15,23,42,.32)]">
+        <header>
           <div className="relative h-48 overflow-hidden sm:h-60">
             {startup.coverImage ? (
               <img src={startup.coverImage} alt="" className="h-full w-full object-cover transition-transform duration-700 ease-out" />
@@ -131,9 +133,10 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
             <div className="absolute bottom-5 left-4 right-16 flex items-end gap-4 sm:bottom-6 sm:left-6 sm:right-20">
               <img
-                src={startup.logo}
+                src={startupLogo}
                 alt={startup.name}
-                className="h-20 w-20 shrink-0 rounded-[22px] border-4 border-white bg-white object-cover shadow-2xl sm:h-24 sm:w-24"
+                className="relative z-10 h-24 w-24 shrink-0 rounded-[22px] border-4 border-white bg-white object-cover shadow-[0_18px_40px_rgba(15,23,42,.34)] ring-1 ring-white/70 sm:h-28 sm:w-28"
+                onError={(event) => { event.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(startup.name)}&background=5B5CF0&color=fff&bold=true`; }}
               />
               <div className="min-w-0 pb-1 text-white">
                 <div className="flex flex-wrap gap-2">
@@ -196,7 +199,7 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50/70 px-4 py-5 sm:px-6 sm:py-6">
+        <main className="bg-slate-50/70 px-4 py-5 sm:px-6 sm:py-6">
           {activeTab === 'overview' && (
             <div className="space-y-5">
               <section className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,.85fr)]">
@@ -431,8 +434,8 @@ const Row = ({ label, value, icon }: { label: string; value: string; icon?: Reac
 
 const RoleCompact: React.FC<{ role: RolePost; onClick: () => void; formatMoney: (usd: number) => string }> = ({ role, onClick, formatMoney }) => (
   <button type="button" onClick={onClick} className="group flex w-full items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white">
-    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-violet-200 bg-white text-violet-600">
-      <span className="text-lg font-black">+</span>
+    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-violet-200 bg-white p-0 text-violet-600">
+      <span className="m-0 block text-[18px] font-black leading-[1]">+</span>
     </span>
     <span className="min-w-0 flex-1">
       <span className="block truncate text-xs font-black text-violet-800">{role.title}</span>
