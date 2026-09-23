@@ -657,6 +657,27 @@ export default function App() {
   });
 
   const openPrivateChat = (contact: User, connectionId?: string) => {
+    if (contact.id && contact.id !== currentUser.id) {
+      const participantIds = [currentUser.id, contact.id].sort();
+      const roomId = 'dm-' + participantIds.join('-');
+      void setDoc(
+        doc(db, 'directChats', roomId),
+        {
+          roomId,
+          participants: participantIds,
+          participantAId: participantIds[0],
+          participantAName: participantIds[0] === currentUser.id ? currentUser.name : contact.name,
+          participantAAvatar: participantIds[0] === currentUser.id ? currentUser.avatar || null : contact.avatar || null,
+          participantBId: participantIds[1],
+          participantBName: participantIds[1] === currentUser.id ? currentUser.name : contact.name,
+          participantBAvatar: participantIds[1] === currentUser.id ? currentUser.avatar || null : contact.avatar || null,
+          ...(connectionId ? { connectionId } : {}),
+          updatedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
     setPrivateChatContact(contact);
     setPrivateChatConnectionId(connectionId || null);
     setActiveView('messages');
