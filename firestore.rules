@@ -99,43 +99,20 @@ service cloud.firestore {
     // ---------------------------------------------------------
 
     match /messages/{messageId} {
+      // These conditions are intentionally aligned with the client queries.
+      // Firestore evaluates rules before returning a query, so the fields
+      // used by the query must themselves be sufficient to prove access.
       allow read: if
         signedIn()
         && (
           resource.data.roomType == 'world'
           ||
           (
-            resource.data.roomType == 'startup'
-            && resource.data.startupId is string
-            && startupExists(resource.data.startupId)
-            && isMember(resource.data.startupId)
-          )
-          ||
-          (
-            resource.data.roomType == 'private'
+            resource.data.roomType in ['private', 'startup']
             && resource.data.participants is list
             && request.auth.uid in resource.data.participants
-            && (
-              (
-                resource.data.startupId is string
-                && startupExists(resource.data.startupId)
-              )
-              ||
-              (
-                resource.data.connectionId is string
-                && exists(/databases/$(database)/documents/connections/$(resource.data.connectionId))
-                && get(/databases/$(database)/documents/connections/$(resource.data.connectionId)).data.status == 'accepted'
-                && get(/databases/$(database)/documents/connections/$(resource.data.connectionId)).data.participants == resource.data.participants
-              )
-              ||
-              (
-                !(resource.data.startupId is string)
-                && !(resource.data.connectionId is string)
-              )
-            )
           )
         );
-
       allow create: if
         signedIn()
         && request.resource.data.roomId is string
@@ -162,6 +139,9 @@ service cloud.firestore {
             && request.resource.data.startupId is string
             && startupExists(request.resource.data.startupId)
             && request.resource.data.roomId == 'startup-chat-' + request.resource.data.startupId
+            && request.resource.data.participants is list
+            && request.resource.data.participants == get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.get('memberIds', [])
+            && request.auth.uid in request.resource.data.participants
             && isMember(request.resource.data.startupId)
           )
           ||
