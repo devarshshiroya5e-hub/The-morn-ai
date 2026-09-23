@@ -17,11 +17,12 @@ import {
   X,
 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { ChatMessage, Startup, User } from '../types';
+import { ChatMessage, ConnectionRequest, Startup, User } from '../types';
 
 interface ChatPageProps {
   currentUser: User;
   startups: Startup[];
+  connections: ConnectionRequest[];
   initialContact?: User | null;
   initialConnectionId?: string;
 }
@@ -97,7 +98,7 @@ const formatDay = (iso: string) => {
   });
 };
 
-export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initialContact, initialConnectionId }) => {
+export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, connections, initialContact, initialConnectionId }) => {
   const [activeRoomId, setActiveRoomId] = useState('world');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomPreviews, setRoomPreviews] = useState<Record<string, RoomPreview>>({});
@@ -116,6 +117,30 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initi
 
   const rooms = useMemo<Room[]>(() => {
     const privateRooms: Room[] = [];
+
+    // Keep every accepted one-to-one relationship visible in Messages,
+    // not only the person opened from the People page.
+    connections
+      .filter((connection) => connection.status === 'accepted')
+      .forEach((connection) => {
+        const isSender = connection.fromUserId === currentUser.id;
+        const contactId = isSender ? connection.toUserId : connection.fromUserId;
+        const contactName = isSender ? connection.toName : connection.fromName;
+        const contactAvatar = isSender ? connection.toAvatar : connection.fromAvatar;
+        privateRooms.push({
+          id: 'dm-' + [currentUser.id, contactId].sort().join('-'),
+          title: contactName,
+          subtitle: connection.startupName || 'MornAI connection',
+          kind: 'private',
+          contact: {
+            id: contactId,
+            name: contactName,
+            avatar: contactAvatar,
+            role: 'Network connection',
+          },
+          connectionId: connection.id,
+        });
+      });
 
     if (initialContact && initialContact.id !== currentUser.id) {
       const ids = [currentUser.id, initialContact.id].sort();
@@ -193,7 +218,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, initi
       },
       ...privateRooms,
     ];
-  }, [currentUser, startups]);
+  }, [currentUser, startups, connections, initialContact, initialConnectionId]);
 
   useEffect(() => {
     if (initialContact && initialContact.id !== currentUser.id) {
