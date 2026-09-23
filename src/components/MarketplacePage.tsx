@@ -503,6 +503,50 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
 
             <div className="mornai-person-card">
               <div>
+                <span className="mornai-section-kicker">Accepted connections</span>
+                <h2 className="mt-3 text-lg font-black text-slate-950">Your live people network</h2>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">Every accepted connection is ready for a private message or an in-app voice call.</p>
+              </div>
+              <div className="mt-4 space-y-2">
+                {acceptedConnections.map((connection) => {
+                  const isSender = connection.fromUserId === currentUser.id;
+                  const person: User = {
+                    id: isSender ? connection.toUserId : connection.fromUserId,
+                    name: isSender ? connection.toName : connection.fromName,
+                    email: '',
+                    role: 'employee',
+                    avatar: isSender ? connection.toAvatar || '' : connection.fromAvatar || '',
+                    title: connection.roleTitle || 'MornAI connection',
+                    bio: '',
+                    skills: [],
+                  };
+                  return (
+                    <div key={`accepted-${connection.id}`} className="rounded-2xl border border-emerald-100 bg-white/80 p-3">
+                      <div className="flex items-center gap-3">
+                        <InitialAvatar name={person.name} src={person.avatar} className="h-10 w-10 rounded-xl" textClassName="text-sm font-black" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-black text-slate-950">{person.name}</p>
+                          <p className="mt-0.5 truncate text-[10px] text-slate-500">{connection.startupName || 'Connected on MornAI'}</p>
+                        </div>
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700">Accepted</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => onOpenPrivateChat(person, connection.id)} className="mornai-market-secondary justify-center">
+                          <MessageCircle className="h-3.5 w-3.5" /> Message
+                        </button>
+                        <button type="button" onClick={() => onStartVideoCall(person, connection.id, 'audio')} className="mornai-market-primary justify-center">
+                          <PhoneCall className="h-3.5 w-3.5" /> Voice call
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {acceptedConnections.length === 0 && <EmptyState title="No accepted connections yet" body="Accept a connection request to unlock private messages and voice calls." />}
+              </div>
+            </div>
+
+            <div className="mornai-person-card">
+              <div>
                 <span className="mornai-section-kicker">Your network</span>
                 <h2 className="mt-3 text-lg font-black text-slate-950">Connection history</h2>
                 <p className="mt-1 text-[11px] leading-5 text-slate-500">Keep the relationships that matter visible instead of losing them in a feed.</p>
