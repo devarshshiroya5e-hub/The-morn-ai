@@ -47,6 +47,7 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
@@ -88,10 +89,13 @@ export const VideoCallPage: React.FC<VideoCallPageProps> = ({
 
         pc.ontrack = (event) => {
           const remote = event.streams[0];
-          if (remote && remoteVideoRef.current) {
+          if (!remote) return;
+          if (mode === 'audio' && remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = remote;
+          } else if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remote;
-            setCallState('connected');
           }
+          setCallState('connected');
         };
 
         pc.onconnectionstatechange = () => {
