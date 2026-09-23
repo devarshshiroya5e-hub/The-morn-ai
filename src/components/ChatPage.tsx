@@ -347,7 +347,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       where('roomType', '==', room.kind),
     ];
 
-    if (room.kind === 'private') {
+    if (room.kind === 'private' || room.kind === 'startup') {
       filters.push(where('participants', 'array-contains', currentUser.id));
     }
 
