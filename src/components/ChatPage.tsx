@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { addDoc, collection, onSnapshot, or, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, and, collection, onSnapshot, or, query, serverTimestamp, where } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   AlertCircle,
@@ -363,11 +363,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     return query(
       collection(db, 'messages'),
-      where('roomId', '==', room.id),
-      where('roomType', '==', 'private'),
-      or(
-        where('senderId', '==', currentUser.id),
-        where('recipientId', '==', currentUser.id),
+      and(
+        where('roomId', '==', room.id),
+        where('roomType', '==', 'private'),
+        or(
+          where('senderId', '==', currentUser.id),
+          where('recipientId', '==', currentUser.id),
+        ),
       ),
     );
   };
