@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, or, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { StartupDetailModal } from './components/StartupDetailModal';
@@ -472,7 +472,10 @@ export default function App() {
     const unsubscribe = onSnapshot(
       query(
         collection(db, 'connections'),
-        where('participants', 'array-contains', currentUser.id),
+        or(
+          where('fromUserId', '==', currentUser.id),
+          where('toUserId', '==', currentUser.id),
+        ),
       ),
       (snapshot) => {
         const nextConnections = snapshot.docs
@@ -527,7 +530,10 @@ export default function App() {
     const unsubscribe = onSnapshot(
       query(
         collection(db, 'appointments'),
-        where('participants', 'array-contains', currentUser.id),
+        or(
+          where('founderId', '==', currentUser.id),
+          where('talentId', '==', currentUser.id),
+        ),
       ),
       (snapshot) => {
         const nextAppointments = snapshot.docs
