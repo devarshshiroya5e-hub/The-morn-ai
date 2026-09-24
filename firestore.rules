@@ -99,13 +99,13 @@ service cloud.firestore {
     // ---------------------------------------------------------
 
     match /messages/{messageId} {
-      // These conditions are intentionally aligned with the client queries.
-      // Firestore evaluates rules before returning a query, so the fields
-      // used by the query must themselves be sufficient to prove access.
+      // World Chat is identified by its stable room ID. Private/startup
+      // rooms additionally require the signed-in user to be a participant.
+      // These conditions intentionally mirror the client-side queries.
       allow read: if
         signedIn()
         && (
-          resource.data.roomType == 'world'
+          resource.data.roomId == 'world'
           ||
           (
             resource.data.roomType in ['private', 'startup']
