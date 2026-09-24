@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, onSnapshot, or, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
 import { StartupDetailModal } from './components/StartupDetailModal';
@@ -463,34 +463,62 @@ export default function App() {
   ]);
 
   // Network connection requests are centralized so both sides can see the relationship in real time.
+  // Two simple equality listeners avoid Firestore composite-filter OR syntax and
+  // still include legacy documents that predate the participants array.
   useEffect(() => {
     if (!isLoggedIn) {
       setConnections([]);
       return;
     }
 
-    const unsubscribe = onSnapshot(
-      query(
-        collection(db, 'connections'),
-        or(
-          where('fromUserId', '==', currentUser.id),
-          where('toUserId', '==', currentUser.id),
-        ),
-      ),
-      (snapshot) => {
-        const nextConnections = snapshot.docs
-          .map((connectionDoc) => ({
-            ...(connectionDoc.data() as ConnectionRequest),
-            id: connectionDoc.id,
-          }))
-          .sort((a, b) => b.createdAtClient - a.createdAtClient);
-
-        setConnections(nextConnections);
-      },
-      (error) => console.error('Failed to load network connections:', error),
+    const byFrom = query(
+      collection(db, 'connections'),
+      where('fromUserId', '==', currentUser.id),
+    );
+    const byTo = query(
+      collection(db, 'connections'),
+      where('toUserId', '==', currentUser.id),
     );
 
-    return () => unsubscribe();
+    let fromDocs: ConnectionRequest[] = [];
+    let toDocs: ConnectionRequest[] = [];
+
+    const sync = () => {
+      const merged = new Map<string, ConnectionRequest>();
+      [...fromDocs, ...toDocs].forEach((connection) => merged.set(connection.id, connection));
+      setConnections(
+        Array.from(merged.values()).sort((a, b) => b.createdAtClient - a.createdAtClient),
+      );
+    };
+
+    const unsubscribeFrom = onSnapshot(
+      byFrom,
+      (snapshot) => {
+        fromDocs = snapshot.docs.map((connectionDoc) => ({
+          ...(connectionDoc.data() as ConnectionRequest),
+          id: connectionDoc.id,
+        }));
+        sync();
+      },
+      (error) => console.error('Failed to load outgoing network connections:', error),
+    );
+
+    const unsubscribeTo = onSnapshot(
+      byTo,
+      (snapshot) => {
+        toDocs = snapshot.docs.map((connectionDoc) => ({
+          ...(connectionDoc.data() as ConnectionRequest),
+          id: connectionDoc.id,
+        }));
+        sync();
+      },
+      (error) => console.error('Failed to load incoming network connections:', error),
+    );
+
+    return () => {
+      unsubscribeFrom();
+      unsubscribeTo();
+    };
   }, [isLoggedIn, currentUser.id]);
 
   // Public discovery reads only startup listing documents. Private startup records stay
@@ -518,41 +546,66 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn]);
 
-  // Appointments are persisted centrally and scoped by the participants list.
-  // Using the participants index keeps this listener compatible with existing deployed
-  // Firebase rules while the repository rules also support explicit founder/talent IDs.
+  // Appointments are persisted centrally. Use two simple equality listeners
+  // so legacy records and the rules remain compatible without composite OR filters.
   useEffect(() => {
     if (!isLoggedIn) {
       setAppointments([]);
       return;
     }
 
-    const unsubscribe = onSnapshot(
-      query(
-        collection(db, 'appointments'),
-        or(
-          where('founderId', '==', currentUser.id),
-          where('talentId', '==', currentUser.id),
-        ),
-      ),
-      (snapshot) => {
-        const nextAppointments = snapshot.docs
-          .map((appointmentDoc) => ({
-            ...(appointmentDoc.data() as Appointment),
-            id: appointmentDoc.id,
-          }))
-          .sort((a, b) => {
-            const first = a.date + ' ' + a.time;
-            const second = b.date + ' ' + b.time;
-            return second.localeCompare(first);
-          });
-
-        setAppointments(nextAppointments);
-      },
-      (error) => console.error('Failed to load appointments from Firestore:', error),
+    const byFounder = query(
+      collection(db, 'appointments'),
+      where('founderId', '==', currentUser.id),
+    );
+    const byTalent = query(
+      collection(db, 'appointments'),
+      where('talentId', '==', currentUser.id),
     );
 
-    return () => unsubscribe();
+    let founderDocs: Appointment[] = [];
+    let talentDocs: Appointment[] = [];
+
+    const sync = () => {
+      const merged = new Map<string, Appointment>();
+      [...founderDocs, ...talentDocs].forEach((appointment) => merged.set(appointment.id, appointment));
+      setAppointments(
+        Array.from(merged.values()).sort((a, b) => {
+          const first = a.date + ' ' + a.time;
+          const second = b.date + ' ' + b.time;
+          return second.localeCompare(first);
+        }),
+      );
+    };
+
+    const unsubscribeFounder = onSnapshot(
+      byFounder,
+      (snapshot) => {
+        founderDocs = snapshot.docs.map((appointmentDoc) => ({
+          ...(appointmentDoc.data() as Appointment),
+          id: appointmentDoc.id,
+        }));
+        sync();
+      },
+      (error) => console.error('Failed to load founder appointments:', error),
+    );
+
+    const unsubscribeTalent = onSnapshot(
+      byTalent,
+      (snapshot) => {
+        talentDocs = snapshot.docs.map((appointmentDoc) => ({
+          ...(appointmentDoc.data() as Appointment),
+          id: appointmentDoc.id,
+        }));
+        sync();
+      },
+      (error) => console.error('Failed to load talent appointments:', error),
+    );
+
+    return () => {
+      unsubscribeFounder();
+      unsubscribeTalent();
+    };
   }, [isLoggedIn, currentUser.id]);
 
   // Load one private startup record only when the current user is entitled to it.
