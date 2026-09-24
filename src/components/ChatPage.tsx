@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { addDoc, and, collection, onSnapshot, or, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   AlertCircle,
@@ -284,44 +284,71 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   }, [currentUser.id]);
 
   useEffect(() => {
-    const chatsQuery = query(
+    const byA = query(
       collection(db, 'directChats'),
-      or(
-        where('participantAId', '==', currentUser.id),
-        where('participantBId', '==', currentUser.id),
-      ),
+      where('participantAId', '==', currentUser.id),
+    );
+    const byB = query(
+      collection(db, 'directChats'),
+      where('participantBId', '==', currentUser.id),
     );
 
-    return onSnapshot(
-      chatsQuery,
+    const mapRooms = (snapshot: any): Room[] =>
+      snapshot.docs
+        .map((snap: any) => {
+          const data = snap.data();
+          const isA = data.participantAId === currentUser.id;
+          const contactId = isA ? data.participantBId : data.participantAId;
+          const contactName = isA ? data.participantBName : data.participantAName;
+          const contactAvatar = isA ? data.participantBAvatar : data.participantAAvatar;
+          if (typeof contactId !== 'string' || typeof contactName !== 'string') return null;
+          return {
+            id: typeof data.roomId === 'string' ? data.roomId : snap.id,
+            title: contactName,
+            subtitle: 'Private conversation',
+            kind: 'private' as const,
+            contact: {
+              id: contactId,
+              name: contactName,
+              avatar: typeof contactAvatar === 'string' ? contactAvatar : undefined,
+              role: 'Network connection',
+            },
+            connectionId: typeof data.connectionId === 'string' ? data.connectionId : undefined,
+          };
+        })
+        .filter((room: Room | null): room is Room => room !== null);
+
+    let roomsA: Room[] = [];
+    let roomsB: Room[] = [];
+
+    const syncRooms = () => {
+      const merged = new Map<string, Room>();
+      [...roomsA, ...roomsB].forEach((room) => merged.set(room.id, room));
+      setDirectChatRooms(Array.from(merged.values()));
+    };
+
+    const unsubscribeA = onSnapshot(
+      byA,
       (snapshot) => {
-        const nextRooms = snapshot.docs
-          .map((snap) => {
-            const data = snap.data();
-            const isA = data.participantAId === currentUser.id;
-            const contactId = isA ? data.participantBId : data.participantAId;
-            const contactName = isA ? data.participantBName : data.participantAName;
-            const contactAvatar = isA ? data.participantBAvatar : data.participantAAvatar;
-            if (typeof contactId !== 'string' || typeof contactName !== 'string') return null;
-            return {
-              id: typeof data.roomId === 'string' ? data.roomId : snap.id,
-              title: contactName,
-              subtitle: 'Private conversation',
-              kind: 'private' as const,
-              contact: {
-                id: contactId,
-                name: contactName,
-                avatar: typeof contactAvatar === 'string' ? contactAvatar : undefined,
-                role: 'Network connection',
-              },
-              connectionId: typeof data.connectionId === 'string' ? data.connectionId : undefined,
-            };
-          })
-          .filter((room) => room !== null) as Room[];
-        setDirectChatRooms(nextRooms);
+        roomsA = mapRooms(snapshot);
+        syncRooms();
       },
-      (error) => console.error('Direct chat rooms error:', error),
+      (error) => console.error('Direct chat rooms (A) error:', error),
     );
+
+    const unsubscribeB = onSnapshot(
+      byB,
+      (snapshot) => {
+        roomsB = mapRooms(snapshot);
+        syncRooms();
+      },
+      (error) => console.error('Direct chat rooms (B) error:', error),
+    );
+
+    return () => {
+      unsubscribeA();
+      unsubscribeB();
+    };
   }, [currentUser.id]);
 
   const participantsForRoom = (room: Room) => {
@@ -345,33 +372,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   };
 
   const messagesQueryForRoom = (room: Room) => {
-    if (room.kind === 'world') {
-      return query(
-        collection(db, 'messages'),
-        where('roomId', '==', room.id),
-      );
+    const filters = [
+      where('roomId', '==', room.id),
+      where('roomType', '==', room.kind),
+    ];
+
+    if (room.kind === 'private' || room.kind === 'startup') {
+      filters.push(where('participants', 'array-contains', currentUser.id));
     }
 
-    if (room.kind === 'startup' && room.startup) {
-      return query(
-        collection(db, 'messages'),
-        where('roomId', '==', room.id),
-        where('roomType', '==', 'startup'),
-        where('startupId', '==', room.startup.id),
-      );
-    }
-
-    return query(
-      collection(db, 'messages'),
-      and(
-        where('roomId', '==', room.id),
-        where('roomType', '==', 'private'),
-        or(
-          where('senderId', '==', currentUser.id),
-          where('recipientId', '==', currentUser.id),
-        ),
-      ),
-    );
+    return query(collection(db, 'messages'), ...filters);
   };
 
   useEffect(() => {
