@@ -13,6 +13,42 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "participants",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roomId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "roomType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roomId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "roomType",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "startupId",
           "order": "ASCENDING"
         }
@@ -27,6 +63,10 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "roomType",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "senderId",
           "order": "ASCENDING"
         }
@@ -38,6 +78,10 @@
       "fields": [
         {
           "fieldPath": "roomId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "roomType",
           "order": "ASCENDING"
         },
         {
