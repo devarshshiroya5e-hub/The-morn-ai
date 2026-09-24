@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { addDoc, collection, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, or, query, serverTimestamp, where } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   AlertCircle,
@@ -286,7 +286,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   useEffect(() => {
     const chatsQuery = query(
       collection(db, 'directChats'),
-      where('participants', 'array-contains', currentUser.id),
+      or(
+        where('participantAId', '==', currentUser.id),
+        where('participantBId', '==', currentUser.id),
+      ),
     );
 
     return onSnapshot(
@@ -342,16 +345,29 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   };
 
   const messagesQueryForRoom = (room: Room) => {
-    const filters = [where('roomId', '==', room.id)];
-
-    // World Chat is public to authenticated users. Private and startup rooms
-    // include the caller in participants so the Firestore rule can authorize
-    // the query itself, not only individual returned documents.
-    if (room.kind === 'private' || room.kind === 'startup') {
-      filters.push(where('participants', 'array-contains', currentUser.id));
+    if (room.kind === 'world') {
+      return query(
+        collection(db, 'messages'),
+        where('roomId', '==', room.id),
+      );
     }
 
-    return query(collection(db, 'messages'), ...filters);
+    if (room.kind === 'startup' && room.startup) {
+      return query(
+        collection(db, 'messages'),
+        where('roomId', '==', room.id),
+        where('startupId', '==', room.startup.id),
+      );
+    }
+
+    return query(
+      collection(db, 'messages'),
+      where('roomId', '==', room.id),
+      or(
+        where('senderId', '==', currentUser.id),
+        where('recipientId', '==', currentUser.id),
+      ),
+    );
   };
 
   useEffect(() => {
