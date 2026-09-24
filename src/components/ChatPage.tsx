@@ -342,17 +342,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   };
 
   const messagesQueryForRoom = (room: Room) => {
-    const filters = [
-      where('roomId', '==', room.id),
-      where('roomType', '==', room.kind),
-    ];
+    const filters = [where('roomId', '==', room.id)];
 
+    // World Chat is public to authenticated users. Private and startup rooms
+    // include the caller in participants so the Firestore rule can authorize
+    // the query itself, not only individual returned documents.
     if (room.kind === 'private' || room.kind === 'startup') {
       filters.push(where('participants', 'array-contains', currentUser.id));
     }
 
-    // Keep this query equality-only so Firestore can serve it from automatic
-    // single-field indexes. We sort by message time in the client.
     return query(collection(db, 'messages'), ...filters);
   };
 
