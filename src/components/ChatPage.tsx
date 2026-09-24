@@ -372,14 +372,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   };
 
   const messagesQueryForRoom = (room: Room) => {
+    if (room.kind === 'world') {
+      return query(
+        collection(db, 'messages'),
+        where('roomId', '==', 'world'),
+        where('roomType', '==', 'world'),
+      );
+    }
+
     const filters = [
       where('roomId', '==', room.id),
       where('roomType', '==', room.kind),
+      where('participants', 'array-contains', currentUser.id),
     ];
-
-    if (room.kind === 'private' || room.kind === 'startup') {
-      filters.push(where('participants', 'array-contains', currentUser.id));
-    }
 
     return query(collection(db, 'messages'), ...filters);
   };
