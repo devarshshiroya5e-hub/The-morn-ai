@@ -75,7 +75,6 @@ service cloud.firestore {
             && request.resource.data.roomId == 'startup-chat-' + request.resource.data.startupId
             && isMember(request.resource.data.startupId)
             && request.resource.data.participants is list
-            && request.resource.data.participants == get(/databases/$(database)/documents/startups/$(request.resource.data.startupId)).data.get('memberIds', [])
             && request.auth.uid in request.resource.data.participants
           )
         );
