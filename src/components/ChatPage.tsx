@@ -364,6 +364,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     return query(
       collection(db, 'messages'),
       where('roomId', '==', room.id),
+      where('roomType', '==', 'private'),
       or(
         where('senderId', '==', currentUser.id),
         where('recipientId', '==', currentUser.id),
