@@ -13,7 +13,7 @@ export type MornAIEndpoint =
   | "writing-assist"
   | "website-blueprint";
 
-const DEFAULT_MORNAI_API_URL = "https://the-morn-ai.onrender.com";
+const RENDER_MORNAI_API = "https://the-morn-ai.onrender.com";
 
 const configuredApiBase = String(
   import.meta.env.VITE_MORNAI_API_URL ||
@@ -24,15 +24,36 @@ const configuredApiBase = String(
 const getApiBases = () => {
   const bases = [
     configuredApiBase,
-    typeof window !== "undefined" && /\.onrender\.com$/i.test(window.location.hostname)
+    RENDER_MORNAI_API,
+    typeof window !== "undefined" && window.location.origin !== RENDER_MORNAI_API
       ? window.location.origin
       : "",
-    DEFAULT_MORNAI_API_URL,
   ]
     .map((value) => String(value || "").replace(/\/$/, ""))
     .filter(Boolean);
 
   return Array.from(new Set(bases));
+};
+
+const requestJson = async (url: string, body: unknown) => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 25_000);
+
+  try {
+    return await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+      mode: "cors",
+      credentials: "omit",
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
 };
 
 export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknown): Promise<T> {
@@ -43,15 +64,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
     const url = base + "/api/ai/" + endpoint;
 
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
+      const response = await requestJson(url, body);
       const contentType = response.headers.get("content-type") || "";
       const raw = await response.text();
 
@@ -61,11 +74,11 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
           try {
             const payload = JSON.parse(raw);
             message = payload?.error || message;
-          } catch {
-            // Keep the HTTP status message.
-          }
+          } catch {}
         } else if (raw.startsWith("<!doctype") || raw.startsWith("<html")) {
-          message = "AI endpoint returned the frontend page instead of the MornAI Render API.";
+          message = base === RENDER_MORNAI_API
+            ? "Render returned the frontend page instead of the AI API."
+            : "This frontend host does not expose the MornAI API.";
         }
         lastError = new Error(message);
         continue;
@@ -74,7 +87,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
       if (!contentType.includes("application/json")) {
         lastError = new Error(
           raw.startsWith("<!doctype") || raw.startsWith("<html")
-            ? "AI endpoint returned the frontend page instead of JSON."
+            ? "AI endpoint returned HTML instead of JSON."
             : "MornAI AI server returned a non-JSON response.",
         );
         continue;
@@ -87,12 +100,34 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
       }
     } catch (error) {
       lastError = error instanceof Error
-        ? error
+        ? error.name === "AbortError"
+          ? new Error("MornAI AI request timed out.")
+          : error
         : new Error("MornAI AI server could not be reached.");
     }
   }
 
   throw lastError || new Error(
-    "MornAI AI server could not be reached. Check the Render backend.",
+    "MornAI AI server could not be reached. Render API: " + RENDER_MORNAI_API,
   );
+}
+
+export async function checkMornAIConnection(): Promise<{ ok: boolean; base: string; error?: string }> {
+  for (const base of getApiBases()) {
+    try {
+      const response = await fetch(base + "/api/health", {
+        method: "GET",
+        mode: "cors",
+        credentials: "omit",
+        cache: "no-store",
+      });
+      if (response.ok) return { ok: true, base };
+    } catch {}
+  }
+
+  return {
+    ok: false,
+    base: RENDER_MORNAI_API,
+    error: "Render MornAI API is not reachable from this frontend.",
+  };
 }
