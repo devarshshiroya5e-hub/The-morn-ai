@@ -82,7 +82,24 @@ const createRateLimiter = (limit: number, windowMs: number) => (req: express.Req
 app.use("/api/ai", createRateLimiter(20, 60_000));
 
 // Unified MornAI AI provider: OpenRouter first, Gemini fallback.
-const MODEL_IDS = { ultra: "nvidia/nemotron-3-ultra-550b-a55b", super: "nvidia/nemotron-3-super-120b-a12b", gemma: "google/gemma-4-31b-it" } as const;
+const PAID_MODEL_IDS = {
+  ultra: "nvidia/nemotron-3-ultra-550b-a55b",
+  super: "nvidia/nemotron-3-super-120b-a12b",
+  gemma: "google/gemma-4-31b-it",
+} as const;
+
+const FREE_MODEL_IDS = {
+  ultra: "nvidia/nemotron-3-ultra-550b-a55b:free",
+  super: "nvidia/nemotron-3-super-120b-a12b:free",
+  gemma: "google/gemma-4-31b-it:free",
+} as const;
+
+// Zero-credit OpenRouter accounts can use the free model variants.
+// Set MORNAI_USE_PAID_MODELS=true in Render when paid credits are available.
+const MODEL_IDS =
+  process.env.MORNAI_USE_PAID_MODELS === "true"
+    ? PAID_MODEL_IDS
+    : FREE_MODEL_IDS;
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
 type AiGenerateOptions = { model: string; contents: AiContent | any; config?: { responseMimeType?: string } };
 let geminiClient: GoogleGenAI | null = null;
@@ -143,7 +160,10 @@ function parseAiJson(text: string) {
 async function openRouterGenerateContent(options: AiGenerateOptions) {
   let lastError: unknown = null;
 
-  for (const model of modelFallbacks(options.model)) {
+  for (const model of modelFallbacks(
+    options.model,
+    options.config?.responseMimeType === "application/json",
+  )) {
     const keys = keysForModel(model);
     if (!keys.length) continue;
 
@@ -156,7 +176,10 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
           max_tokens: 2500,
         };
 
-        if (options.config?.responseMimeType === "application/json") {
+        if (
+          options.config?.responseMimeType === "application/json" &&
+          !(MODEL_IDS === FREE_MODEL_IDS && model === FREE_MODEL_IDS.ultra)
+        ) {
           body.response_format = { type: "json_object" };
         }
 
@@ -222,6 +245,25 @@ function resolveModel(requested: string) {
   if (requested === "mornai-gemma") return MODEL_IDS.gemma;
   if (requested === "gemini-3.8-flash") return MODEL_IDS.super;
   return requested;
+}
+
+function modelFallbacks(model: string, needsJson = false) {
+  const fallbackOrder =
+    model === MODEL_IDS.ultra
+      ? [MODEL_IDS.ultra, MODEL_IDS.super, MODEL_IDS.gemma]
+      : model === MODEL_IDS.super
+        ? [MODEL_IDS.super, MODEL_IDS.gemma, MODEL_IDS.ultra]
+        : model === MODEL_IDS.gemma
+          ? [MODEL_IDS.gemma, MODEL_IDS.super, MODEL_IDS.ultra]
+          : [model];
+
+  // Nemotron 3 Ultra's free endpoint does not support response_format.
+  // Prefer the structured-output capable free models for JSON requests.
+  if (needsJson && model === MODEL_IDS.ultra && MODEL_IDS === FREE_MODEL_IDS) {
+    return [MODEL_IDS.super, MODEL_IDS.gemma, MODEL_IDS.ultra];
+  }
+
+  return fallbackOrder;
 }
 function getAiClient() {
   const hasOpenRouter = hasAnyOpenRouterKey();
@@ -313,8 +355,12 @@ app.get("/api/ai/status", (_req, res) => {
   res.json({
     status: hasAnyOpenRouterKey() || keyStatus.geminiFallback ? "configured" : "not-configured",
     provider: hasAnyOpenRouterKey() ? "openrouter" : keyStatus.geminiFallback ? "gemini" : "none",
+    mode: MODEL_IDS === FREE_MODEL_IDS ? "free" : "paid",
     keys: keyStatus,
-    models: configuredModels,
+    models: {
+      ...configuredModels,
+      ids: MODEL_IDS,
+    },
     lastProviderFailure: lastAiProviderFailure,
   });
 });
