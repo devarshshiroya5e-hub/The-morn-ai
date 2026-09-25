@@ -199,6 +199,7 @@ const AiExpandButton = ({
       if (next) onComplete(next);
     } catch (error) {
       console.error('Auth AI writing assist failed:', error);
+      window.dispatchEvent(new CustomEvent('mornai-ai-error', { detail: String((error as Error)?.message || 'AI writing failed.') }));
     } finally {
       setBusy(false);
     }
@@ -208,6 +209,7 @@ const AiExpandButton = ({
     <button
       type="button"
       onClick={() => void run()}
+      onMouseDown={(event) => event.preventDefault()}
       disabled={!String(value || '').trim() || busy}
       title={busy ? 'MornAI is rewriting this field…' : label}
       aria-label={label}
