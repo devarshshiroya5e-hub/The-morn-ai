@@ -1003,6 +1003,59 @@ app.post("/api/ai/profile-assist", async (req, res) => {
   }
 });
 
+// 12. Fast AI text expansion and rewriting for profile/auth/startup fields
+app.post("/api/ai/writing-assist", async (req, res) => {
+  try {
+    const { text: inputText, field, context } = req.body || {};
+    const source = String(inputText || "").trim().slice(0, 6000);
+    const fieldName = String(field || "text").trim().slice(0, 120);
+    const contextText = typeof context === "string"
+      ? context.slice(0, 1800)
+      : JSON.stringify(context || {}).slice(0, 1800);
+
+    if (!source) {
+      return res.status(400).json({ error: "Enter some text before using AI." });
+    }
+
+    const ai = getAiClient();
+    if (!ai) return res.json({ text: source });
+
+    const isShortFactField = /name|email|industry|role|title|skill/i.test(fieldName) && source.length < 100;
+    const prompt = `You are MornAI's ultra-fast writing assistant.
+Rewrite the user's text for the field "${fieldName}" using only facts contained in the input and supplied context.
+
+Rules:
+- Never invent achievements, customers, revenue, metrics, employers, credentials, features, or claims.
+- Preserve names, product names, company names, technologies, numbers, and proper nouns exactly unless grammar requires a tiny correction.
+- For descriptive/profile/startup fields, make the result substantially clearer, deeper, more specific, professional, and well organized while keeping the user's meaning.
+- Use natural paragraphs and short bullet points only when they improve organization.
+- For short factual fields, improve clarity without turning the answer into a long paragraph.
+- Return ONLY the replacement text. No preface, no explanation, no quotation marks.
+- Prefer 80-220 words for descriptive fields; use the shortest useful answer for factual fields.
+- Be fast and concise.
+
+Field: ${fieldName}
+Context: ${contextText || "None"}
+User text:
+${source}`;
+
+    const response = await ai.models.generateContent({
+      model: "mornai-super",
+      contents: prompt,
+      config: {
+        maxTokens: isShortFactField ? 180 : 520,
+        temperature: 0.08,
+      },
+    });
+
+    const rewritten = String(response.text || "").trim();
+    return res.json({ text: rewritten || source });
+  } catch (error) {
+    console.error("Writing assist error:", error);
+    return res.status(200).json({ text: String(req.body?.text || "").trim() });
+  }
+});
+
 // 12. AI website blueprint for the Website Studio
 app.post("/api/ai/website-blueprint", async (req, res) => {
   try {
