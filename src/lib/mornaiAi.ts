@@ -10,6 +10,7 @@ export type MornAIEndpoint =
   | "network-insights"
   | "startup-summary"
   | "profile-assist"
+  | "writing-assist"
   | "website-blueprint";
 
 const apiBase = String(
