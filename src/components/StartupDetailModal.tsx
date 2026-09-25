@@ -19,6 +19,7 @@ import {
 import { RolePost, Startup, StartupMember, User } from '../types';
 import { formatAnyCurrency, formatUsdMoney, useLocalizedCurrency } from '../lib/currency';
 import { InitialAvatar } from './InitialAvatar';
+import { postMornAI } from '../lib/mornaiAi';
 
 interface StartupDetailModalProps {
   startup: Startup | null;
@@ -81,6 +82,21 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<ExplorerTab>('overview');
   const [selectedTeamMember, setSelectedTeamMember] = useState<StartupMember | null>(null);
+  const [aiSummary, setAiSummary] = useState<{ headline: string; summary: string; nextSteps: string[] } | null>(null);
+  const [isLoadingAiSummary, setIsLoadingAiSummary] = useState(false);
+
+  const refreshAiSummary = async () => {
+    if (!startup) return;
+    setIsLoadingAiSummary(true);
+    try {
+      const data = await postMornAI<{ headline: string; summary: string; nextSteps: string[] }>('startup-summary', { startup, currentUser });
+      setAiSummary(data);
+    } catch (error) {
+      console.error('AI startup summary failed:', error);
+    } finally {
+      setIsLoadingAiSummary(false);
+    }
+  };
   const { currency, rates, format: formatMoney } = useLocalizedCurrency(currentUser);
 
   useEffect(() => {
@@ -196,6 +212,18 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
         </header>
 
         <main className="bg-slate-50/70 px-4 py-5 sm:px-6 sm:py-6">
+          <section className="mb-5 rounded-[24px] border border-violet-100 bg-white/80 p-4 shadow-[0_16px_50px_rgba(76,29,149,.06)] backdrop-blur-xl sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-violet-600"><Sparkles className="h-3.5 w-3.5" /> AI startup brief</div>
+                <h3 className="mt-2 text-lg font-black text-slate-950">{isLoadingAiSummary ? 'MornAI is reading this startup…' : (aiSummary?.headline || 'Get an AI brief before you decide')}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{isLoadingAiSummary ? 'Combining the pitch, roles, team, roadmap, and your profile.' : (aiSummary?.summary || 'Ask MornAI to turn the startup context into a concise decision brief.')}</p>
+                {!isLoadingAiSummary && aiSummary?.nextSteps?.length ? <div className="mt-3 flex flex-wrap gap-2">{aiSummary.nextSteps.slice(0, 3).map((step) => <span key={step} className="rounded-full bg-violet-50 px-3 py-1.5 text-[10px] font-bold text-violet-700">{step}</span>)}</div> : null}
+              </div>
+              <button type="button" onClick={() => void refreshAiSummary()} disabled={isLoadingAiSummary} className="shrink-0 rounded-xl border border-violet-200 bg-white px-3.5 py-2 text-[10px] font-black text-violet-700 shadow-sm hover:bg-violet-50 disabled:opacity-50">{isLoadingAiSummary ? 'Analyzing…' : 'Generate AI brief'}</button>
+            </div>
+          </section>
+
           {activeTab === 'overview' && (
             <div className="space-y-5">
               <section className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,.85fr)]">
