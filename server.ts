@@ -115,12 +115,17 @@ function getGeminiClient(): GoogleGenAI | null {
 }
 function uniqueKeys(values: Array<string | undefined>) { return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean))); }
 function keysForModel(model: string) {
-  const specific =
-    model === MODEL_IDS.ultra
-      ? process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA
-      : model === MODEL_IDS.super
-        ? process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER
-        : process.env.OPENROUTER_API_KEY_GEMMA;
+  const isUltra = model === PAID_MODEL_IDS.ultra || model === FREE_MODEL_IDS.ultra;
+  const isSuper = model === PAID_MODEL_IDS.super || model === FREE_MODEL_IDS.super;
+  const isGemma = model === PAID_MODEL_IDS.gemma || model === FREE_MODEL_IDS.gemma;
+
+  const specific = isUltra
+    ? process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA
+    : isSuper
+      ? process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER
+      : isGemma
+        ? process.env.OPENROUTER_API_KEY_GEMMA
+        : undefined;
 
   return uniqueKeys([
     specific,
