@@ -172,7 +172,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
             .filter((member) => member.userId !== currentUser.id && member.status === 'active')
             .forEach((member) => {
               privateRooms.push({
-                id: `private-${startup.id}-${member.userId}`,
+                id: 'dm-' + [currentUser.id, member.userId].sort().join('-'),
                 title: member.name,
                 subtitle: `${startup.name} • ${member.role}`,
                 kind: 'private',
@@ -199,7 +199,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         )
         .forEach((startup) => {
           privateRooms.push({
-            id: `private-${startup.id}-${currentUser.id}`,
+            id: 'dm-' + [currentUser.id, startup.founderId].sort().join('-'),
             title: startup.founderName,
             subtitle: `${startup.name} • Founder`,
             kind: 'private',
@@ -396,6 +396,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       where('roomType', '==', room.kind),
       where('participants', 'array-contains', userId),
     ];
+
+    if (room.kind === 'startup' && room.startup?.id) {
+      filters.push(where('startupId', '==', room.startup.id));
+    }
 
     return query(collection(db, 'messages'), ...filters);
   };
