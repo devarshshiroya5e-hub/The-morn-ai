@@ -44,22 +44,72 @@ const createRateLimiter = (limit: number, windowMs: number) => (req: express.Req
 
 app.use("/api/ai", createRateLimiter(20, 60_000));
 
-// Initialize Google GenAI client if key is available
-let aiClient: GoogleGenAI | null = null;
-function getAiClient(): GoogleGenAI | null {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
-      },
-    });
-  }
-  return aiClient;
+// Unified MornAI AI provider: OpenRouter first, Gemini fallback.
+const MODEL_IDS = { ultra: "nvidia/nemotron-3-ultra-550b-a55b", super: "nvidia/nemotron-3-super-120b-a12b", gemma: "google/gemma-4-31b-it" } as const;
+type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
+type AiGenerateOptions = { model: string; contents: AiContent | any; config?: { responseMimeType?: string } };
+let geminiClient: GoogleGenAI | null = null;
+function getGeminiClient(): GoogleGenAI | null {
+  if (!geminiClient && process.env.GEMINI_API_KEY) geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { headers: { "User-Agent": "mornai-production" } } });
+  return geminiClient;
 }
-
+function uniqueKeys(values: Array<string | undefined>) { return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean))); }
+function keysForModel(model: string) {
+  const specific = model === MODEL_IDS.ultra ? process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA : model === MODEL_IDS.super ? process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER : process.env.OPENROUTER_API_KEY_GEMMA;
+  return uniqueKeys([specific, process.env.OPENROUTER_API_KEY, process.env.OPENROUTER_API_KEY_1]);
+}
+function normalizeMessages(contents: AiContent | any) {
+  if (typeof contents === "string") return [{ role: "user", content: contents }];
+  if (!Array.isArray(contents)) return [{ role: "user", content: String(contents ?? "") }];
+  return contents.map((entry: any) => ({ role: entry?.role === "assistant" ? "assistant" : "user", content: Array.isArray(entry?.parts) ? entry.parts.map((part: any) => part?.text || "").join("\n") : String(entry?.content ?? entry?.text ?? "") }));
+}
+function parseAiJson(text: string) {
+  const clean = String(text || "").trim();
+  try { return JSON.parse(clean); } catch {}
+  const fenced = clean.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i)?.[1];
+  if (fenced) { try { return JSON.parse(fenced); } catch {} }
+  const objectStart = clean.indexOf("{"); const objectEnd = clean.lastIndexOf("}");
+  if (objectStart >= 0 && objectEnd > objectStart) { try { return JSON.parse(clean.slice(objectStart, objectEnd + 1)); } catch {} }
+  return null;
+}
+async function openRouterGenerateContent(options: AiGenerateOptions) {
+  const keys = keysForModel(options.model);
+  if (!keys.length) throw new Error("OpenRouter is not configured");
+  let lastError: unknown = null;
+  for (const key of keys) {
+    try {
+      const body: Record<string, unknown> = { model: options.model, messages: normalizeMessages(options.contents), temperature: 0.25, max_tokens: 2500 };
+      if (options.config?.responseMimeType === "application/json") body.response_format = { type: "json_object" };
+      const headers: Record<string, string> = { Authorization: "Bearer " + key, "Content-Type": "application/json", "X-Title": "THE MORN AI" };
+      if (process.env.MORNAI_APP_URL) headers["HTTP-Referer"] = process.env.MORNAI_APP_URL;
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", headers, body: JSON.stringify(body) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) { lastError = new Error(payload?.error?.message || "OpenRouter request failed (" + response.status + ")"); continue; }
+      const text = payload?.choices?.[0]?.message?.content;
+      if (!text) { lastError = new Error("OpenRouter returned an empty response"); continue; }
+      return { text: String(text) };
+    } catch (error) { lastError = error; }
+  }
+  throw lastError instanceof Error ? lastError : new Error("OpenRouter request failed");
+}
+function resolveModel(requested: string) {
+  if (requested === "mornai-ultra") return MODEL_IDS.ultra;
+  if (requested === "mornai-super") return MODEL_IDS.super;
+  if (requested === "mornai-gemma") return MODEL_IDS.gemma;
+  if (requested === "gemini-3.8-flash") return MODEL_IDS.super;
+  return requested;
+}
+function getAiClient() {
+  const hasOpenRouter = keysForModel(MODEL_IDS.super).length > 0; const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+  if (!hasOpenRouter && !hasGemini) return null;
+  return { models: { generateContent: async (options: AiGenerateOptions) => {
+    const model = resolveModel(options.model);
+    if (hasOpenRouter) { try { return await openRouterGenerateContent({ ...options, model }); } catch (error) { console.error("OpenRouter AI request failed; trying fallback:", error); } }
+    const gemini = getGeminiClient();
+    if (gemini) { const response = await gemini.models.generateContent({ model: "mornai-ultra", contents: options.contents as any, config: options.config as any }); return { text: response.text || "" }; }
+    throw new Error("No AI provider is available");
+  } } };
+}
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({
@@ -155,7 +205,7 @@ Tone: sharp, tactical, encouraging and disciplined. Give concise, actionable adv
     ];
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "mornai-ultra",
       contents: contents as any,
     });
 
@@ -248,7 +298,7 @@ Respond strictly in valid JSON without markdown wrapping or backticks. Format:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "mornai-super",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -310,7 +360,7 @@ Return strictly JSON with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "mornai-super",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -394,7 +444,7 @@ Return strictly JSON formatted as:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "mornai-super",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -450,7 +500,7 @@ Return strictly JSON with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "mornai-ultra",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -510,7 +560,7 @@ Return strictly JSON:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "mornai-gemma",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
