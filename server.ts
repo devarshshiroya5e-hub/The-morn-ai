@@ -616,6 +616,89 @@ Return JSON:
   }
 });
 
+// 8. Personalized AI daily briefing
+app.post("/api/ai/daily-briefing", async (req, res) => {
+  try {
+    const { currentUser, startups, appointments, connections } = req.body;
+    const ai = getAiClient();
+    const fallback = {
+      headline: currentUser?.role === "founder" ? "Protect the next milestone." : "Turn your strongest skill into your next conversation.",
+      summary: "MornAI is using your live startup, appointment, connection, and profile context to focus today.",
+      actions: currentUser?.role === "founder" ? ["Review the highest-priority roadmap item", "Check open roles and pending syncs", "Ask MornAI to pressure-test your next decision"] : ["Review your strongest startup matches", "Refresh one proof point on your profile", "Start one focused founder conversation"],
+    };
+    if (!ai) return res.json(fallback);
+    const prompt = "You are MornAI daily operating assistant. Return JSON only with headline, summary, and exactly 3 actions. Do not invent facts.\nUser: " + JSON.stringify(currentUser || {}) + "\nStartups: " + JSON.stringify((startups || []).slice(0, 10)) + "\nAppointments: " + JSON.stringify((appointments || []).slice(0, 10)) + "\nConnections: " + JSON.stringify((connections || []).slice(0, 10));
+    const response = await ai.models.generateContent({ model: "mornai-gemma", contents: prompt, config: { responseMimeType: "application/json" } });
+    res.json(parseAiJson(response.text) || fallback);
+  } catch (error) {
+    console.error("Daily briefing error:", error);
+    res.status(200).json({ headline: "Your next useful move", summary: "MornAI could not refresh the briefing right now.", actions: ["Open your workspace", "Review network matches", "Ask MornAI directly"] });
+  }
+});
+
+// 9. AI network explanation
+app.post("/api/ai/network-insights", async (req, res) => {
+  try {
+    const { currentUser, people, startups, query } = req.body;
+    const ai = getAiClient();
+    const fallback = { summary: "Matching combines skills, role fit, startup stage, availability, and current activity.", focus: ["Strong skill alignment", "Relevant startup stage", "Clear next action"] };
+    if (!ai) return res.json(fallback);
+    const prompt = "Act as MornAI network intelligence. Explain the most useful matching signals without inventing qualifications. Return JSON with summary and exactly 3 focus items.\nUser: " + JSON.stringify(currentUser || {}) + "\nPeople: " + JSON.stringify((people || []).slice(0, 20)) + "\nStartups: " + JSON.stringify((startups || []).slice(0, 20)) + "\nSearch: " + String(query || "");
+    const response = await ai.models.generateContent({ model: "mornai-gemma", contents: prompt, config: { responseMimeType: "application/json" } });
+    res.json(parseAiJson(response.text) || fallback);
+  } catch (error) {
+    console.error("Network insights error:", error);
+    res.status(200).json({ summary: "Matching is based on live profile and network context.", focus: ["Skills", "Role fit", "Availability"] });
+  }
+});
+
+// 10. AI startup explorer brief
+app.post("/api/ai/startup-summary", async (req, res) => {
+  try {
+    const { startup, currentUser } = req.body;
+    const ai = getAiClient();
+    const fallback = { headline: (startup?.name || "Startup") + " at a glance", summary: startup?.pitch || startup?.tagline || "Explore the startup context, open roles and roadmap.", nextSteps: ["Review open roles", "Review the team", "Open MornAI strategist"] };
+    if (!ai) return res.json(fallback);
+    const prompt = "You are the MornAI startup explorer. Summarize this startup for a potential contributor or collaborator. Return JSON with headline, summary, and exactly 3 nextSteps. Ground every statement in supplied data.\nStartup: " + JSON.stringify(startup || {}) + "\nViewer profile: " + JSON.stringify(currentUser || {});
+    const response = await ai.models.generateContent({ model: "mornai-gemma", contents: prompt, config: { responseMimeType: "application/json" } });
+    res.json(parseAiJson(response.text) || fallback);
+  } catch (error) {
+    console.error("Startup summary error:", error);
+    res.status(200).json({ headline: "Startup overview", summary: startup?.pitch || startup?.tagline || "", nextSteps: ["Review roles", "Review team", "Ask MornAI"] });
+  }
+});
+
+// 11. AI profile optimizer
+app.post("/api/ai/profile-assist", async (req, res) => {
+  try {
+    const { profile } = req.body;
+    const ai = getAiClient();
+    const fallback = { suggestedTitle: profile?.title || (profile?.role === "founder" ? "Startup Founder" : "Startup Contributor"), suggestedBio: profile?.bio || "", suggestedSkills: profile?.skills || [], profileStrengths: ["Clear role positioning", "Specific skills", "Concrete outcomes"] };
+    if (!ai) return res.json(fallback);
+    const prompt = "Improve this MornAI profile without inventing experience. Return JSON with suggestedTitle, suggestedBio, suggestedSkills, and exactly 3 profileStrengths.\nProfile: " + JSON.stringify(profile || {});
+    const response = await ai.models.generateContent({ model: "mornai-gemma", contents: prompt, config: { responseMimeType: "application/json" } });
+    res.json(parseAiJson(response.text) || fallback);
+  } catch (error) {
+    console.error("Profile assist error:", error);
+    res.status(200).json({ suggestedTitle: profile?.title || "Startup Contributor", suggestedBio: profile?.bio || "", suggestedSkills: profile?.skills || [], profileStrengths: ["Specific skills", "Role context", "Clear goals"] });
+  }
+});
+
+// 12. AI website blueprint for the Website Studio
+app.post("/api/ai/website-blueprint", async (req, res) => {
+  try {
+    const { startup, prompt: founderBrief, imageProvided } = req.body;
+    const ai = getAiClient();
+    const fallback = { title: (startup?.name || "Startup") + " website", tagline: startup?.tagline || startup?.pitch || "Build something people want.", pages: ["Home", "Product", "About", "Contact"], sections: ["Hero", "Value proposition", "How it works", "Proof", "CTA"], visualDirection: imageProvided ? "Use the uploaded product image as the primary visual anchor." : "Premium modern startup interface with restrained glass and blue-violet accents." };
+    if (!ai) return res.json(fallback);
+    const prompt = "Design an AI website blueprint. Do not claim to have analyzed image pixels; imageProvided only means an image was uploaded. Return JSON with title, tagline, pages, sections, and visualDirection.\nStartup: " + JSON.stringify(startup || {}) + "\nFounder brief: " + String(founderBrief || "") + "\nImage provided: " + Boolean(imageProvided);
+    const response = await ai.models.generateContent({ model: "mornai-gemma", contents: prompt, config: { responseMimeType: "application/json" } });
+    res.json(parseAiJson(response.text) || fallback);
+  } catch (error) {
+    console.error("Website blueprint error:", error);
+    res.status(200).json({ title: startup?.name || "Startup website", tagline: startup?.tagline || startup?.pitch || "", pages: ["Home", "Product", "About", "Contact"], sections: ["Hero", "Value proposition", "CTA"], visualDirection: "Premium modern startup website." });
+  }
+});
 // Vite middleware / static serving
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
