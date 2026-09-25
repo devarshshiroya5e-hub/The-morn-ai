@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { InitialAvatar } from './InitialAvatar';
 import {
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Appointment, ConnectionRequest, Startup, User } from '../types';
 import { buildMornaiNotifications, formatRelativeDate, scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
+import { postMornAI } from '../lib/mornaiAi';
 
 interface HomeDashboardProps {
   currentUser: User;
@@ -64,6 +65,30 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onSelectStartup,
   onBookAppointment,
 }) => {
+  const [aiBriefing, setAiBriefing] = useState<{ headline: string; summary: string; actions: string[] } | null>(null);
+  const [isLoadingAiBriefing, setIsLoadingAiBriefing] = useState(false);
+
+  const refreshAiBriefing = async () => {
+    setIsLoadingAiBriefing(true);
+    try {
+      const data = await postMornAI<{ headline: string; summary: string; actions: string[] }>('daily-briefing', {
+        currentUser,
+        startups: startups.slice(0, 8),
+        appointments: appointments.slice(0, 8),
+        connections: connections.slice(0, 12),
+      });
+      setAiBriefing(data);
+    } catch (error) {
+      console.error('AI daily briefing failed:', error);
+    } finally {
+      setIsLoadingAiBriefing(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshAiBriefing();
+  }, [currentUser.id]);
+
   const isFounder = currentUser.role === 'founder';
   const liveStartups = useMemo(() => startups.filter((startup) => startup.persisted), [startups]);
   const relatedStartup = useMemo(
@@ -257,6 +282,32 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      <section className="rounded-[26px] border border-violet-100 bg-white/75 p-5 shadow-[0_18px_60px_rgba(76,29,149,.07)] backdrop-blur-xl sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-violet-600">
+              <Sparkles className="h-3.5 w-3.5" /> AI daily briefing
+            </div>
+            <h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">
+              {isLoadingAiBriefing ? 'MornAI is reading your context…' : (aiBriefing?.headline || 'Your AI operating brief')}
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+              {isLoadingAiBriefing ? 'Combining your live startup, network and execution signals.' : (aiBriefing?.summary || 'Ask MornAI to turn today’s context into three concrete actions.')}
+            </p>
+            {!isLoadingAiBriefing && aiBriefing?.actions?.length ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {aiBriefing.actions.slice(0, 3).map((action) => (
+                  <span key={action} className="rounded-full border border-violet-100 bg-violet-50 px-3 py-2 text-[10px] font-bold text-violet-700">{action}</span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <button type="button" onClick={() => void refreshAiBriefing()} disabled={isLoadingAiBriefing} className="shrink-0 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white transition hover:bg-violet-700 disabled:opacity-50">
+            {isLoadingAiBriefing ? 'Thinking…' : 'Refresh AI brief'}
+          </button>
+        </div>
+      </section>
 
       <div className="mornai-daily-loop">
         <div className="flex min-w-0 items-center gap-3">
