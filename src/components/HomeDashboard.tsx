@@ -71,13 +71,28 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const refreshAiBriefing = async () => {
     setIsLoadingAiBriefing(true);
     try {
-      const data = await postMornAI<{ headline: string; summary: string; actions: string[] }>('daily-briefing', {
+      const data = await postMornAI<any>('daily-briefing', {
         currentUser,
         startups: startups.slice(0, 8),
         appointments: appointments.slice(0, 8),
         connections: connections.slice(0, 12),
       });
-      setAiBriefing(data);
+      const safeActions = Array.isArray(data?.actions)
+        ? data.actions
+            .map((item: any) => {
+              if (typeof item === 'string') return item.trim();
+              if (item && typeof item.action === 'string') return item.action.trim();
+              if (item && typeof item.text === 'string') return item.text.trim();
+              return '';
+            })
+            .filter(Boolean)
+            .slice(0, 3)
+        : [];
+      setAiBriefing({
+        headline: typeof data?.headline === 'string' ? data.headline : 'Your AI operating brief',
+        summary: typeof data?.summary === 'string' ? data.summary : 'Ask MornAI to turn today’s context into three concrete actions.',
+        actions: safeActions,
+      });
     } catch (error) {
       console.error('AI daily briefing failed:', error);
     } finally {
