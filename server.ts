@@ -92,8 +92,33 @@ function getGeminiClient(): GoogleGenAI | null {
 }
 function uniqueKeys(values: Array<string | undefined>) { return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean))); }
 function keysForModel(model: string) {
-  const specific = model === MODEL_IDS.ultra ? process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA : model === MODEL_IDS.super ? process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER : process.env.OPENROUTER_API_KEY_GEMMA;
-  return uniqueKeys([specific, process.env.OPENROUTER_API_KEY, process.env.OPENROUTER_API_KEY_1]);
+  const specific =
+    model === MODEL_IDS.ultra
+      ? process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA
+      : model === MODEL_IDS.super
+        ? process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER
+        : process.env.OPENROUTER_API_KEY_GEMMA;
+
+  return uniqueKeys([
+    specific,
+    process.env.OPENROUTER_API_KEY,
+    process.env.OPENROUTER_API_KEY_1,
+  ]);
+}
+
+function hasAnyOpenRouterKey() {
+  return Boolean(
+    keysForModel(MODEL_IDS.ultra).length ||
+    keysForModel(MODEL_IDS.super).length ||
+    keysForModel(MODEL_IDS.gemma).length
+  );
+}
+
+function modelFallbacks(model: string) {
+  if (model === MODEL_IDS.ultra) return [MODEL_IDS.ultra, MODEL_IDS.super, MODEL_IDS.gemma];
+  if (model === MODEL_IDS.super) return [MODEL_IDS.super, MODEL_IDS.gemma];
+  if (model === MODEL_IDS.gemma) return [MODEL_IDS.gemma, MODEL_IDS.super];
+  return [model];
 }
 function normalizeMessages(contents: AiContent | any) {
   if (typeof contents === "string") return [{ role: "user", content: contents }];
@@ -110,24 +135,66 @@ function parseAiJson(text: string) {
   return null;
 }
 async function openRouterGenerateContent(options: AiGenerateOptions) {
-  const keys = keysForModel(options.model);
-  if (!keys.length) throw new Error("OpenRouter is not configured");
   let lastError: unknown = null;
-  for (const key of keys) {
-    try {
-      const body: Record<string, unknown> = { model: options.model, messages: normalizeMessages(options.contents), temperature: 0.25, max_tokens: 2500 };
-      if (options.config?.responseMimeType === "application/json") body.response_format = { type: "json_object" };
-      const headers: Record<string, string> = { Authorization: "Bearer " + key, "Content-Type": "application/json", "X-Title": "THE MORN AI" };
-      if (process.env.MORNAI_APP_URL) headers["HTTP-Referer"] = process.env.MORNAI_APP_URL;
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", headers, body: JSON.stringify(body) });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) { lastError = new Error(payload?.error?.message || "OpenRouter request failed (" + response.status + ")"); continue; }
-      const text = payload?.choices?.[0]?.message?.content;
-      if (!text) { lastError = new Error("OpenRouter returned an empty response"); continue; }
-      return { text: String(text) };
-    } catch (error) { lastError = error; }
+
+  for (const model of modelFallbacks(options.model)) {
+    const keys = keysForModel(model);
+    if (!keys.length) continue;
+
+    for (const key of keys) {
+      try {
+        const body: Record<string, unknown> = {
+          model,
+          messages: normalizeMessages(options.contents),
+          temperature: 0.25,
+          max_tokens: 2500,
+        };
+
+        if (options.config?.responseMimeType === "application/json") {
+          body.response_format = { type: "json_object" };
+        }
+
+        const headers: Record<string, string> = {
+          Authorization: "Bearer " + key,
+          "Content-Type": "application/json",
+          "X-Title": "THE MORN AI",
+        };
+
+        if (process.env.MORNAI_APP_URL) {
+          headers["HTTP-Referer"] = process.env.MORNAI_APP_URL;
+        }
+
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          { method: "POST", headers, body: JSON.stringify(body) },
+        );
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          lastError = new Error(
+            payload?.error?.message ||
+            "OpenRouter request failed (" + response.status + ")",
+          );
+          continue;
+        }
+
+        const text = payload?.choices?.[0]?.message?.content;
+        if (!text) {
+          lastError = new Error("OpenRouter returned an empty response");
+          continue;
+        }
+
+        return { text: String(text) };
+      } catch (error) {
+        lastError = error;
+      }
+    }
   }
-  throw lastError instanceof Error ? lastError : new Error("OpenRouter request failed");
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("OpenRouter request failed");
 }
 function resolveModel(requested: string) {
   if (requested === "mornai-ultra") return MODEL_IDS.ultra;
@@ -137,15 +204,42 @@ function resolveModel(requested: string) {
   return requested;
 }
 function getAiClient() {
-  const hasOpenRouter = keysForModel(MODEL_IDS.super).length > 0; const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+  const hasOpenRouter = hasAnyOpenRouterKey();
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+
   if (!hasOpenRouter && !hasGemini) return null;
-  return { models: { generateContent: async (options: AiGenerateOptions) => {
-    const model = resolveModel(options.model);
-    if (hasOpenRouter) { try { return await openRouterGenerateContent({ ...options, model }); } catch (error) { console.error("OpenRouter AI request failed; trying fallback:", error); } }
-    const gemini = getGeminiClient();
-    if (gemini) { const response = await gemini.models.generateContent({ model: "mornai-ultra", contents: options.contents as any, config: options.config as any }); return { text: response.text || "" }; }
-    throw new Error("No AI provider is available");
-  } } };
+
+  return {
+    models: {
+      generateContent: async (options: AiGenerateOptions) => {
+        const model = resolveModel(options.model);
+
+        if (hasOpenRouter) {
+          try {
+            return await openRouterGenerateContent({ ...options, model });
+          } catch (error) {
+            console.error("OpenRouter AI request failed; trying Gemini fallback:", error);
+          }
+        }
+
+        const gemini = getGeminiClient();
+        if (gemini) {
+          try {
+            const response = await gemini.models.generateContent({
+              model: "mornai-ultra",
+              contents: options.contents as any,
+              config: options.config as any,
+            });
+            return { text: response.text || "" };
+          } catch (error) {
+            console.error("Gemini AI fallback failed:", error);
+          }
+        }
+
+        throw new Error("No AI provider could complete the request");
+      },
+    },
+  };
 }
 app.get("/api/firebase-config", async (_req, res) => {
   try {
