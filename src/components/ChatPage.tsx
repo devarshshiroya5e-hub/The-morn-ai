@@ -315,17 +315,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     if (!userId) return null;
 
-    const filters = [
-      where('roomId', '==', room.id),
-      where('roomType', '==', room.kind),
+    // Query only by participant so private chat does not depend on a
+    // multi-field composite index. Filter the exact room client-side.
+    return query(
+      collection(db, 'messages'),
       where('participants', 'array-contains', userId),
-    ];
-
-    if (room.kind === 'startup' && room.startup?.id) {
-      filters.push(where('startupId', '==', room.startup.id));
-    }
-
-    return query(collection(db, 'messages'), ...filters);
+    );
   };
 
   useEffect(() => {
@@ -340,6 +335,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         (snapshot) => {
           const latest = snapshot.docs
             .map(toMessage)
+            .filter((message) =>
+              message.roomId === room.id &&
+              message.roomType === room.kind &&
+              (room.kind !== 'startup' || message.startupId === room.startup?.id)
+            )
             .sort((a, b) => roomTimestamp(a) - roomTimestamp(b))
             .at(-1);
           if (!latest) return;
@@ -379,9 +379,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     const unsubscribe = onSnapshot(
       messagesQuery,
       (snapshot) => {
-        const nextMessages = snapshot.docs.map(toMessage).sort(
-          (a, b) => roomTimestamp(a) - roomTimestamp(b),
-        );
+        const nextMessages = snapshot.docs
+          .map(toMessage)
+          .filter((message) =>
+            message.roomId === activeRoom.id &&
+            message.roomType === activeRoom.kind &&
+            (activeRoom.kind !== 'startup' || message.startupId === activeRoom.startup?.id)
+          )
+          .sort((a, b) => roomTimestamp(a) - roomTimestamp(b));
         setMessages((previous) => {
           const localOnly = previous.filter(
             (message) =>
