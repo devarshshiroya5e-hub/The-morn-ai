@@ -25,9 +25,14 @@ const getApiBases = () => {
   // AI is served by Render. Never fall back to the main frontend origin:
   // Firebase/Vite rewrites unknown routes to index.html, which causes the
   // "AI endpoint returned HTML instead of JSON" failure.
+  const configuredIsFrontendOrigin =
+    typeof window !== "undefined" &&
+    configuredApiBase &&
+    configuredApiBase === window.location.origin;
+
   const bases = [
-    configuredApiBase,
     RENDER_MORNAI_API,
+    configuredApiBase && !configuredIsFrontendOrigin ? configuredApiBase : "",
   ]
     .map((value) => String(value || "").replace(/\/$/, ""))
     .filter(Boolean);
