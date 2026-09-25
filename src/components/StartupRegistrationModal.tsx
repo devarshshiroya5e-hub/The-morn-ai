@@ -686,15 +686,15 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
               </div>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <StartupQuestion label="What problem are you solving?" value={problem} onChange={setProblem} min={40} rows={4} placeholder="Explain the customer pain, who experiences it, and why it matters." />
-              <StartupQuestion label="How does your solution work?" value={solution} onChange={setSolution} min={40} rows={4} placeholder="Describe the product, service, workflow or technology." />
-              <StartupQuestion label="Who is the target customer?" value={targetCustomer} onChange={setTargetCustomer} min={25} rows={3} placeholder="Define the buyer, user, market segment or customer profile." />
-              <StartupQuestion label="How does the startup make money?" value={businessModel} onChange={setBusinessModel} min={20} rows={3} placeholder="Describe pricing, subscriptions, transactions or services." />
-              <StartupQuestion label="What traction or validation do you have?" value={tractionDetails} onChange={setTractionDetails} min={20} rows={3} placeholder="Users, revenue, pilots, waitlist, experiments or partnerships." />
-              <StartupQuestion label="What is your competitive advantage?" value={competitiveAdvantage} onChange={setCompetitiveAdvantage} min={30} rows={3} placeholder="Explain why this startup can win and what is hard to copy." />
-              <StartupQuestion label="Why did you start this company?" value={foundingStory} onChange={setFoundingStory} min={30} rows={3} placeholder="Share the founder insight, story or experience behind the startup." />
-              <StartupQuestion label="What is the long-term vision?" value={vision} onChange={setVision} min={30} rows={3} placeholder="Describe what you want this company to become." />
-              <StartupQuestion label="What are the biggest challenges right now?" value={currentChallenges} onChange={setCurrentChallenges} min={20} rows={3} placeholder="List the bottlenecks where the right contributor can create leverage." />
+              <StartupQuestion label="What problem are you solving?" value={problem} onChange={setProblem} min={40} rows={4} placeholder="Explain the customer pain, who experiences it, and why it matters."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="How does your solution work?" value={solution} onChange={setSolution} min={40} rows={4} placeholder="Describe the product, service, workflow or technology."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="Who is the target customer?" value={targetCustomer} onChange={setTargetCustomer} min={25} rows={3} placeholder="Define the buyer, user, market segment or customer profile."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="How does the startup make money?" value={businessModel} onChange={setBusinessModel} min={20} rows={3} placeholder="Describe pricing, subscriptions, transactions or services."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="What traction or validation do you have?" value={tractionDetails} onChange={setTractionDetails} min={20} rows={3} placeholder="Users, revenue, pilots, waitlist, experiments or partnerships."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="What is your competitive advantage?" value={competitiveAdvantage} onChange={setCompetitiveAdvantage} min={30} rows={3} placeholder="Explain why this startup can win and what is hard to copy."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="Why did you start this company?" value={foundingStory} onChange={setFoundingStory} min={30} rows={3} placeholder="Share the founder insight, story or experience behind the startup."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="What is the long-term vision?" value={vision} onChange={setVision} min={30} rows={3} placeholder="Describe what you want this company to become."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
+              <StartupQuestion label="What are the biggest challenges right now?" value={currentChallenges} onChange={setCurrentChallenges} min={20} rows={3} placeholder="List the bottlenecks where the right contributor can create leverage."  context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}. Other startup context should remain grounded in the text already entered.`} />
             </div>
           </section>
 
@@ -908,7 +908,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
             </label>
             <div className="relative">
               <textarea rows={3} placeholder="Describe the market opportunity, customer pain points, and current traction..." value={pitch} onChange={(e) => setPitch(e.target.value)} className="w-full px-3 py-2 pr-16 pb-10 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium" />
-              <AiAssistButton />
+              <AiAssistButton value={pitch} onComplete={setPitch} field="Problem & Solution Pitch" context={`Startup: ${name || "Unnamed startup"}. Industry: ${industry}. Stage: ${stage}. Tagline: ${tagline}.`} />
             </div>
           </div>
 
@@ -951,24 +951,59 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
 };
 
 
-const AiAssistButton = () => (
-  <button
-    type="button"
-    disabled
-    title="AI startup writing assistance will be connected in the final AI rollout."
-    className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
-  >
-    <Sparkles className="h-3 w-3" /> AI
-  </button>
-);
+const AiAssistButton = ({
+  value = '',
+  onComplete,
+  field = 'Startup description',
+  context = '',
+}: {
+  value?: string;
+  onComplete?: (next: string) => void;
+  field?: string;
+  context?: string;
+}) => {
+  const [busy, setBusy] = useState(false);
 
-const StartupQuestion = ({ label, value, onChange, min, rows, placeholder }: {
+  const run = async () => {
+    const source = String(value || '').trim();
+    if (!source || !onComplete || busy) return;
+    setBusy(true);
+    try {
+      const data = await postMornAI<{ text?: string }>('writing-assist', {
+        text: source,
+        field,
+        context,
+      });
+      const next = String(data?.text || '').trim();
+      if (next) onComplete(next);
+    } catch (error) {
+      console.error('Startup AI writing assist failed:', error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void run()}
+      disabled={!String(value || '').trim() || busy}
+      title={busy ? 'MornAI is rewriting this field…' : `AI assist: ${field}`}
+      className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} /> {busy ? 'AI…' : 'AI'}
+    </button>
+  );
+};
+
+const StartupQuestion = ({ label, value, onChange, min, rows, placeholder, context }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   min: number;
   rows: number;
   placeholder: string;
+  context?: string;
 }) => (
   <label className="block">
     <span className="mb-2 block text-[10px] font-black uppercase tracking-[.11em] text-slate-500">
@@ -976,7 +1011,7 @@ const StartupQuestion = ({ label, value, onChange, min, rows, placeholder }: {
     </span>
     <div className="relative">
       <textarea required minLength={min} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 pb-10 text-xs leading-6 text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-50" />
-      <AiAssistButton />
+      <AiAssistButton value={value} onComplete={onChange} field={label} context={context} />
     </div>
   </label>
 );
