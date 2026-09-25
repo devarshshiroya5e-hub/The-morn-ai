@@ -33,6 +33,54 @@ interface ChatMessage {
   suggestions?: string[];
 }
 
+const renderAiText = (text: string) => {
+  const lines = String(text || '').split(/\r?\n/);
+  return (
+    <div className="space-y-2">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={`spacer-${index}`} className="h-1" />;
+
+        if (/^#{1,3}\s+/.test(trimmed)) {
+          return (
+            <div key={`heading-${index}`} className="pt-1 text-[13px] font-extrabold text-slate-950">
+              {trimmed.replace(/^#{1,3}\s+/, '')}
+            </div>
+          );
+        }
+
+        const bullet = trimmed.match(/^[-•*]\s+(.*)$/);
+        if (bullet) {
+          return (
+            <div key={`bullet-${index}`} className="flex items-start gap-2 text-[13px] leading-6 text-slate-700">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
+              <span>{bullet[1]}</span>
+            </div>
+          );
+        }
+
+        const numbered = trimmed.match(/^\d+[.)]\s+(.*)$/);
+        if (numbered) {
+          return (
+            <div key={`number-${index}`} className="flex items-start gap-2.5 text-[13px] leading-6 text-slate-700">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-indigo-50 px-1 text-[10px] font-extrabold text-indigo-600">
+                {trimmed.match(/^\d+/)?.[0]}
+              </span>
+              <span>{numbered[1]}</span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={`text-${index}`} className="text-[13px] leading-6 text-slate-700">
+            {trimmed}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
 export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   isOpen,
   onClose,
@@ -145,13 +193,13 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
   };
 
   return createPortal(
-    <div className="mornai-ai-drawer fixed right-4 top-20 z-[110] flex h-[min(800px,calc(100dvh-6.5rem))] max-h-[800px] min-h-0 w-[calc(100vw-2rem)] max-w-[440px] flex-col overflow-hidden rounded-[32px] border border-white/80 bg-white/78 shadow-[0_30px_100px_rgba(15,23,42,.20)] backdrop-blur-2xl animate-in slide-in-from-right-8 fade-in duration-300 sm:right-6">
+    <div className="mornai-ai-drawer fixed right-0 top-0 z-[110] flex h-[100dvh] min-h-0 w-full max-w-[560px] flex-col overflow-hidden rounded-l-[28px] border-y-0 border-r-0 border-l border-white/80 bg-white/92 shadow-[-24px_0_90px_rgba(15,23,42,.16)] backdrop-blur-2xl animate-in slide-in-from-right-8 fade-in duration-300">
       
       {/* Header */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-violet-300/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-sky-300/25 blur-3xl" />
 
-      <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
+      <div className="px-5 py-5 sm:px-6 sm:py-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between border-b border-indigo-900/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600/90 flex items-center justify-center text-white border border-indigo-400/30 shadow-sm">
             <BrainCircuit className="w-5 h-5 text-indigo-200" />
@@ -183,7 +231,7 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
 
       {/* Context Switcher */}
       {currentUser.role === 'founder' && activeStartup && (
-      <div className="px-4 py-2 bg-indigo-50/60 border-b border-indigo-100 flex items-center justify-between text-xs flex-shrink-0">
+      <div className="px-5 py-3 bg-indigo-50/60 border-b border-indigo-100 flex items-center justify-between text-xs flex-shrink-0">
         <span className="text-slate-500 font-medium">Advising Startup:</span>
         <select
           value={activeStartup.id}
@@ -203,13 +251,13 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
       )}
 
       {/* Chat Messages Body */}
-      <div ref={chatScrollRef} className="mornai-ai-chat min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 bg-slate-50/50 touch-pan-y">
+      <div ref={chatScrollRef} className="mornai-ai-chat min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6 sm:py-7 space-y-5 bg-slate-50/55 touch-pan-y">
         {messages?.map((msg) => (
           <div
             key={msg.id}
             className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
           >
-            <div className="flex items-start gap-2 max-w-[88%]">
+            <div className="flex w-full items-start gap-2">
               {msg.sender === 'ai' && (
                 <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5 text-xs">
                   <Bot className="w-4 h-4" />
@@ -219,11 +267,13 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
               <div
                 className={`p-3.5 rounded-2xl text-xs leading-relaxed shadow-xs ${
                   msg.sender === 'user'
-                    ? 'bg-indigo-600 text-white rounded-br-none'
-                    : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'
+                    ? 'bg-indigo-600 text-white rounded-br-none max-w-[78%]'
+                    : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none w-[min(100%,520px)]'
                 }`}
               >
-                <div className="whitespace-pre-line">{msg.text}</div>
+                {msg.sender === 'ai' ? renderAiText(msg.text) : (
+                  <div className="whitespace-pre-line text-[13px] leading-6">{msg.text}</div>
+                )}
 
                 {/* Prompt Suggestions */}
                 {msg.suggestions && msg.suggestions.length > 0 && (
@@ -273,36 +323,42 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
       </div>
 
       {/* Chat Input */}
-      <div className="p-3 sm:p-4 bg-white border-t border-slate-200 flex-shrink-0">
+      <div className="shrink-0 border-t border-slate-200 bg-white/95 px-5 py-4 sm:px-6 sm:py-5">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
           }}
-          className="flex items-center gap-2"
+          className="flex items-end gap-3"
         >
-          <input
-            type="text"
+          <textarea
             id="ai-co-founder-chat-input"
+            rows={4}
             placeholder={currentUser.role === 'employee'
               ? 'Ask about jobs, pitching, role fit, pricing or your profile...'
-              : 'Ask anything about roadmap, hiring, roles or sprint delegation...'}
+              : 'Ask anything about roadmap, hiring, roles, product strategy or sprint delegation...'}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isLoading}
-            className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            className="min-h-[112px] max-h-44 flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50 disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={isLoading || !inputText.trim()}
             id="send-ai-chat-btn"
-            className="p-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl shadow-sm transition-colors"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 disabled:translate-y-0 disabled:opacity-40"
           >
-            <Send className="w-4 h-4" />
+            <Send className="h-4 w-4" />
           </button>
         </form>
-        <p className="text-[10px] text-slate-400 mt-1.5 text-center">
-          Powered by MornAI AI • {currentUser.role === 'employee' ? 'Career & contributor coaching' : 'Startup context: ' + activeStartup.name}
+        <p className="mt-2 text-center text-[10px] text-slate-400">
+          Enter to send • Shift+Enter for a new line • Powered by MornAI AI
         </p>
       </div>
 
