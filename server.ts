@@ -679,7 +679,7 @@ Return strictly JSON with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "mornai-super",
+      model: FREE_MODEL_IDS.super,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
