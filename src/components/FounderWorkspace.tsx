@@ -130,15 +130,10 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const handleGenerateRoadmap = async () => {
     setIsGeneratingRoadmap(true);
     try {
-      const res = await fetch('/api/ai/generate-roadmap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postMornAI<any>('generate-roadmap', {
           startup,
           goal: roadmapGoalInput.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
+        });
       if (data.roadmap && Array.isArray(data.roadmap)) {
         const formattedRoadmap = (data.roadmap || []).map((rm: any, idx: number) => ({
           id: `rm-${Date.now()}-${idx}`,
@@ -195,15 +190,10 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const handleGenerateRolePost = async () => {
     setIsGeneratingRole(true);
     try {
-      const res = await fetch('/api/ai/generate-role-post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postMornAI<any>('generate-role-post', {
           startup,
           targetRoleTitle: targetRoleInput.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
+        });
       if (data.rolePost) {
         const draft: RolePost = {
           id: `role-${Date.now()}`,
@@ -252,17 +242,12 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
 
     setIsDelegatingTasks(true);
     try {
-      const res = await fetch('/api/ai/delegate-tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postMornAI<any>('delegate-tasks', {
           startup,
           employee: assignee,
           roadmapPhase: startup.roadmap[0]?.phase || 'Phase 1 MVP',
           founderInstruction: delegationBrief.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
+        });
       if (data.tasks && Array.isArray(data.tasks)) {
         const newTasks: TaskItem[] = (data.tasks || []).map((t: any, i: number) => ({
           id: `task-${Date.now()}-${i}`,
@@ -298,12 +283,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const handleLoadPredictive = async () => {
     setIsGeneratingPredictive(true);
     try {
-      const res = await fetch('/api/ai/predictive-insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startup }),
-      });
-      const data = await res.json();
+      const data = await postMornAI<any>('predictive-insights', { startup });
       setPredictiveData(data);
     } catch (err) {
       console.error('Predictive error:', err);
