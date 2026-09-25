@@ -257,13 +257,15 @@ function resolveModel(requested: string) {
 
 function modelFallbacks(model: string, needsJson = false) {
   const fallbackOrder =
-    model === MODEL_IDS.ultra
-      ? [MODEL_IDS.ultra, MODEL_IDS.super, MODEL_IDS.gemma]
-      : model === MODEL_IDS.super
-        ? [MODEL_IDS.super, MODEL_IDS.gemma, MODEL_IDS.ultra]
-        : model === MODEL_IDS.gemma
-          ? [MODEL_IDS.gemma, MODEL_IDS.super, MODEL_IDS.ultra]
-          : [model];
+    model === FAST_FREE_TEXT_MODEL
+      ? [FAST_FREE_TEXT_MODEL, FREE_MODEL_IDS.super, FREE_MODEL_IDS.gemma]
+      : model === MODEL_IDS.ultra
+        ? [MODEL_IDS.ultra, MODEL_IDS.super, MODEL_IDS.gemma]
+        : model === MODEL_IDS.super
+          ? [MODEL_IDS.super, MODEL_IDS.gemma, MODEL_IDS.ultra]
+          : model === MODEL_IDS.gemma
+            ? [MODEL_IDS.gemma, MODEL_IDS.super, MODEL_IDS.ultra]
+            : [model];
 
   // Nemotron 3 Ultra's free endpoint does not support response_format.
   // Prefer the structured-output capable free models for JSON requests.
