@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { postMornAI } from '../lib/mornaiAi';
 import { Startup, User, TaskItem, StartupHistoryLog, RolePost, Appointment, PredictiveInsights, PartnershipMode } from '../types';
 import { 
   BrainCircuit, 
@@ -56,11 +57,30 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const [isGeneratingPredictive, setIsGeneratingPredictive] = useState(false);
   const [predictiveData, setPredictiveData] = useState<PredictiveInsights | null>(null);
 
-  // Design-only website studio
+  // AI website studio
   const [showWebsiteStudio, setShowWebsiteStudio] = useState(false);
   const [websitePrompt, setWebsitePrompt] = useState('');
   const [websiteImagePreview, setWebsiteImagePreview] = useState('');
   const [websitePreviewMode, setWebsitePreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [isGeneratingWebsite, setIsGeneratingWebsite] = useState(false);
+  const [websiteBlueprint, setWebsiteBlueprint] = useState<{ title: string; tagline: string; pages: string[]; sections: string[]; visualDirection: string } | null>(null);
+
+  const handleGenerateWebsiteConcept = async () => {
+    if (!websitePrompt.trim() && !startup.pitch && !startup.tagline) return;
+    setIsGeneratingWebsite(true);
+    try {
+      const data = await postMornAI<{ title: string; tagline: string; pages: string[]; sections: string[]; visualDirection: string }>('website-blueprint', {
+        startup,
+        prompt: websitePrompt.trim(),
+        imageProvided: Boolean(websiteImagePreview),
+      });
+      setWebsiteBlueprint(data);
+    } catch (error) {
+      console.error('AI website blueprint failed:', error);
+    } finally {
+      setIsGeneratingWebsite(false);
+    }
+  };
 
   // AI input design
   const [roadmapGoalInput, setRoadmapGoalInput] = useState('');
@@ -1236,7 +1256,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                     <BrainCircuit className="h-4 w-4 text-violet-600" />
                     Full AI Website Chat
                   </div>
-                  <p className="mt-1 text-[10px] leading-5 text-slate-500">This is the future chat surface. For now it is a visual prototype.</p>
+                  <p className="mt-1 text-[10px] leading-5 text-slate-500">MornAI turns your startup context and brief into a website blueprint you can refine in the preview.</p>
 
                   <div className="mt-4 space-y-3">
                     <div className="max-w-[92%] rounded-2xl rounded-tl-md bg-slate-50 px-3.5 py-3 text-[11px] leading-5 text-slate-600">
@@ -1264,7 +1284,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-black text-slate-900">Upload a product photo</p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">Use a product image as visual context for the future AI builder.</p>
+                      <p className="mt-0.5 text-[10px] text-slate-500">Use the product image as visual context for the website direction. Image pixels are not sent to the AI service.</p>
                     </div>
                     <UploadCloud className="h-4 w-4 text-slate-400" />
                   </label>
@@ -1277,10 +1297,12 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
 
                   <button
                     type="button"
-                    className="mornai-workspace-ai-primary mt-4 w-full justify-center"
+                    onClick={() => void handleGenerateWebsiteConcept()}
+                    disabled={isGeneratingWebsite}
+                    className="mornai-workspace-ai-primary mt-4 w-full justify-center disabled:opacity-50"
                   >
                     <BrainCircuit className="h-4 w-4" />
-                    Generate Website Concept
+                    {isGeneratingWebsite ? 'Generating with MornAI…' : 'Generate Website Concept'}
                   </button>
                 </div>
               </aside>
@@ -1289,7 +1311,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <span className="mornai-workspace-ai-kicker">Live Preview</span>
-                    <p className="mt-1 text-xs font-bold text-slate-700">AI-generated website preview surface</p>
+                    <p className="mt-1 text-xs font-bold text-slate-700">AI-generated website blueprint preview</p>
                   </div>
                   <div className="mornai-preview-switch">
                     <button type="button" onClick={() => setWebsitePreviewMode('desktop')} className={websitePreviewMode === 'desktop' ? 'is-active' : ''}><Monitor className="h-3.5 w-3.5" /> Desktop</button>
@@ -1300,7 +1322,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                 <div className="flex min-h-[480px] items-center justify-center overflow-auto rounded-[28px] border border-white/80 bg-white/55 p-4 shadow-inner backdrop-blur-xl">
                   <div className={websitePreviewMode === 'mobile' ? 'mornai-website-preview is-mobile' : 'mornai-website-preview'}>
                     <div className="mornai-website-preview-topbar">
-                      <span>{startup.name}</span>
+                      <span>{websiteBlueprint?.title || startup.name}</span>
                       <div className="flex items-center gap-2">
                         <span>About</span><span>Solutions</span><span>Contact</span>
                       </div>
@@ -1308,8 +1330,8 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                     <div className="mornai-website-preview-hero">
                       <div className="min-w-0">
                         <span className="mornai-website-preview-badge">Built with MornAI</span>
-                        <h3>{startup.name}</h3>
-                        <p>{websitePrompt || startup.tagline || 'A clear, modern digital home for your startup.'}</p>
+                        <h3>{websiteBlueprint?.title || startup.name}</h3>
+                        <p>{websiteBlueprint?.tagline || websitePrompt || startup.tagline || 'A clear, modern digital home for your startup.'}</p>
                         <button type="button">Get Started</button>
                       </div>
                       <div className="mornai-website-preview-media">
@@ -1324,9 +1346,9 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                       </div>
                     </div>
                     <div className="mornai-website-preview-cards">
-                      <div><span>01</span><strong>What you solve</strong><p>Problem-focused startup positioning.</p></div>
-                      <div><span>02</span><strong>How it works</strong><p>Simple product story and value flow.</p></div>
-                      <div><span>03</span><strong>Why trust you</strong><p>Proof, traction, team and credibility.</p></div>
+                      {(websiteBlueprint?.sections?.slice(0, 3) || ['What you solve', 'How it works', 'Why trust you']).map((section, index) => (
+                        <div key={section}><span>{String(index + 1).padStart(2, '0')}</span><strong>{section}</strong><p>{websiteBlueprint?.visualDirection || 'Clear, conversion-focused startup positioning.'}</p></div>
+                      ))}
                     </div>
                   </div>
                 </div>
