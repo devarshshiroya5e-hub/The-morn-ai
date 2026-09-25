@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { postMornAI } from '../lib/mornaiAi';
 import { Startup, User, RolePost, Appointment, MatchingAnalysis } from '../types';
 import { 
   X, 
@@ -54,15 +55,10 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     const analyzeMatch = async () => {
       setIsLoadingMatch(true);
       try {
-        const res = await fetch('/api/ai/match-analysis', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const data = await postMornAI<any>('match-analysis', {
             startup,
             candidate: currentUser,
-          }),
-        });
-        const data = await res.json();
+          });
         setMatchAnalysis(data);
       } catch (err) {
         console.error('Match error:', err);
