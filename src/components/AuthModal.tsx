@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile, User as FirebaseUser } from 'firebase/auth';
+import { postMornAI } from '../lib/mornaiAi';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -171,18 +172,52 @@ const formatAuthError = (error: any, fallback: string) => {
   return String(error?.message || fallback).replace('Firebase: ', '');
 };
 
-const AiExpandButton = ({ label = 'AI expand' }: { label?: string }) => (
-  <button
-    type="button"
-    disabled
-    title="AI writing assistance will be connected in the final AI rollout."
-    aria-label={label}
-    className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/85 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
-  >
-    <Sparkles className="h-3 w-3" />
-    AI
-  </button>
-);
+const AiExpandButton = ({
+  label = 'AI expand',
+  value,
+  onComplete,
+  field,
+}: {
+  label?: string;
+  value?: string;
+  onComplete?: (next: string) => void;
+  field?: string;
+}) => {
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    const source = String(value || '').trim();
+    if (!source || !onComplete || busy) return;
+    setBusy(true);
+    try {
+      const data = await postMornAI<{ text?: string }>('writing-assist', {
+        text: source,
+        field: field || label,
+        context: 'Authentication and onboarding profile for THE MORN AI.',
+      });
+      const next = String(data?.text || '').trim();
+      if (next) onComplete(next);
+    } catch (error) {
+      console.error('Auth AI writing assist failed:', error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void run()}
+      disabled={!String(value || '').trim() || busy}
+      title={busy ? 'MornAI is rewriting this field…' : label}
+      aria-label={label}
+      className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} />
+      {busy ? 'AI…' : 'AI'}
+    </button>
+  );
+};
 
 const glass =
   'mornai-glass-button border-slate-200/70';
@@ -899,7 +934,9 @@ const Field = ({ icon, type, placeholder, value, set, disabled, minLength }: any
       onChange={(e) => set(e.target.value)}
       className={`mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50 disabled:opacity-60 ${type !== 'password' && type !== 'email' ? 'pb-9' : ''}`}
     />
-    {type !== 'password' && type !== 'email' && <AiExpandButton />}
+    {type !== 'password' && type !== 'email' && (
+      <AiExpandButton value={value} onComplete={set} field={placeholder} label={`AI assist: ${placeholder}`} />
+    )}
   </motion.div>
 );
 
@@ -913,7 +950,7 @@ const Text = ({ p, v, s, min = 0 }: any) => (
       placeholder={p}
       className="mornai-signup-field w-full rounded-2xl px-4 pb-10 pt-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
     />
-    <AiExpandButton />
+    <AiExpandButton value={v} onComplete={s} field={p} label={`AI assist: ${p}`} />
   </div>
 );
 
@@ -929,7 +966,7 @@ const TextArea = ({ label, value, set, min, rows }: any) => (
         rows={rows}
         className="mornai-signup-field w-full rounded-2xl px-4 pb-10 pt-3.5 text-sm leading-6 text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
       />
-      <AiExpandButton />
+      <AiExpandButton value={value} onComplete={set} field={label} label={`AI assist: ${label}`} />
     </div>
   </label>
 );
