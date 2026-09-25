@@ -34,13 +34,7 @@ service cloud.firestore {
           && resource.data.roomId == 'world'
         )
         || (
-          resource.data.roomType == 'private'
-          && resource.data.participants is list
-          && request.auth.uid in resource.data.participants
-        )
-        || (
-          resource.data.roomType == 'startup'
-          && resource.data.participants is list
+          resource.data.participants is list
           && request.auth.uid in resource.data.participants
         )
       );
