@@ -21,6 +21,15 @@
             "value": "same-origin-allow-popups"
           }
         ]
+      },
+      {
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store, max-age=0"
+          }
+        ]
       }
     ]
   },
