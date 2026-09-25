@@ -52,7 +52,6 @@ service cloud.firestore {
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000
-        && request.resource.data.participants is list
         && request.resource.data.createdAtClient is number
         && (
           (
@@ -62,6 +61,7 @@ service cloud.firestore {
           ||
           (
             request.resource.data.roomType == 'private'
+            && request.resource.data.participants is list
             && request.auth.uid in request.resource.data.participants
             && request.resource.data.participants.size() == 2
             && request.resource.data.recipientId is string
@@ -73,9 +73,9 @@ service cloud.firestore {
             request.resource.data.roomType == 'startup'
             && request.resource.data.startupId is string
             && request.resource.data.roomId == 'startup-chat-' + request.resource.data.startupId
-            && isMember(request.resource.data.startupId)
             && request.resource.data.participants is list
             && request.auth.uid in request.resource.data.participants
+            && isMember(request.resource.data.startupId)
           )
         );
 
