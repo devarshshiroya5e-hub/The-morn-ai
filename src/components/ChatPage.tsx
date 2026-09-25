@@ -284,13 +284,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   }, [currentUser.id]);
 
   useEffect(() => {
+    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
+    if (!userId) {
+      setDirectChatRooms([]);
+      return;
+    }
+
     const byA = query(
       collection(db, 'directChats'),
-      where('participantAId', '==', currentUser.id),
+      where('participantAId', '==', userId),
     );
     const byB = query(
       collection(db, 'directChats'),
-      where('participantBId', '==', currentUser.id),
+      where('participantBId', '==', userId),
     );
 
     const mapRooms = (snapshot: any): Room[] =>
@@ -372,6 +378,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   };
 
   const messagesQueryForRoom = (room: Room) => {
+    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
+    if (!room?.id || !room?.kind) return null;
+
     if (room.kind === 'world') {
       return query(
         collection(db, 'messages'),
@@ -380,10 +389,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       );
     }
 
+    if (!userId) return null;
+
     const filters = [
       where('roomId', '==', room.id),
       where('roomType', '==', room.kind),
-      where('participants', 'array-contains', currentUser.id),
+      where('participants', 'array-contains', userId),
     ];
 
     return query(collection(db, 'messages'), ...filters);
@@ -394,6 +405,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     const unsubscribes = rooms.map((room) => {
       const latestQuery = messagesQueryForRoom(room);
+      if (!latestQuery) return () => undefined;
 
       return onSnapshot(
         latestQuery,
@@ -430,6 +442,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     initialScrollPendingRef.current = true;
 
     const messagesQuery = messagesQueryForRoom(activeRoom);
+    if (!messagesQuery) {
+      setIsLoadingMessages(false);
+      setChatError('Your account session is still loading. Please try again in a moment.');
+      return;
+    }
 
     const unsubscribe = onSnapshot(
       messagesQuery,
