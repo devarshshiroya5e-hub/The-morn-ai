@@ -8,18 +8,51 @@ type FirebaseWebConfig = {
   measurementId?: string;
 };
 
-const loadFirebaseHostingConfig = async () => {
+const applyFirebaseConfig = (config: FirebaseWebConfig | null | undefined) => {
+  if (
+    !config ||
+    typeof config.apiKey !== 'string' ||
+    !config.apiKey.trim() ||
+    typeof config.projectId !== 'string' ||
+    !config.projectId.trim()
+  ) {
+    return false;
+  }
+
+  (window as Window & { __MORNAI_FIREBASE_CONFIG__?: FirebaseWebConfig }).__MORNAI_FIREBASE_CONFIG__ = config;
+  return true;
+};
+
+const loadFirebaseConfig = async () => {
   if (typeof window === 'undefined') return;
 
-  // Only use the Firebase Hosting reserved endpoint when the app itself is
-  // running on Firebase Hosting. Cross-origin requests to another Firebase
-  // Hosting project are intentionally avoided because init.json does not
-  // provide CORS headers.
+  // Render can safely retrieve the public Firebase web config server-side.
+  // This avoids cross-origin requests to Firebase Hosting's reserved init
+  // endpoint, which intentionally does not expose CORS headers.
+  try {
+    const response = await fetch('/api/firebase-config', {
+      cache: 'no-store',
+      credentials: 'same-origin',
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const config = (await response.json()) as FirebaseWebConfig;
+        if (applyFirebaseConfig(config)) return;
+      }
+    }
+  } catch {
+    // Continue to Firebase Hosting/build-time config below.
+  }
+
+  // This is only reachable when the frontend itself is hosted by Firebase.
   try {
     const response = await fetch('/__/firebase/init.json', {
       cache: 'no-store',
       credentials: 'same-origin',
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(2000),
     });
 
     if (!response.ok) return;
@@ -28,19 +61,12 @@ const loadFirebaseHostingConfig = async () => {
     if (!contentType.includes('application/json')) return;
 
     const config = (await response.json()) as FirebaseWebConfig;
-    if (
-      typeof config?.apiKey === 'string' &&
-      config.apiKey.trim() &&
-      typeof config?.projectId === 'string' &&
-      config.projectId.trim()
-    ) {
-      (window as Window & { __MORNAI_FIREBASE_CONFIG__?: FirebaseWebConfig }).__MORNAI_FIREBASE_CONFIG__ = config;
-    }
+    applyFirebaseConfig(config);
   } catch {
-    // Render and other non-Firebase hosts use Vite environment configuration.
+    // Render/local builds can fall back to Vite environment configuration.
   }
 };
 
-loadFirebaseHostingConfig()
+loadFirebaseConfig()
   .catch(() => undefined)
   .finally(() => import('./main.tsx'));
