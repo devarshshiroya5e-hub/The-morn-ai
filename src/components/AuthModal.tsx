@@ -184,11 +184,13 @@ const AiExpandButton = ({
   field?: string;
 }) => {
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const run = async () => {
     const source = String(value || '').trim();
     if (!source || !onComplete || busy) return;
     setBusy(true);
+    setFailed(false);
     try {
       const data = await postMornAI<{ text?: string }>('writing-assist', {
         text: source,
@@ -199,6 +201,7 @@ const AiExpandButton = ({
       if (next) onComplete(next);
     } catch (error) {
       console.error('Auth AI writing assist failed:', error);
+      setFailed(true);
       window.dispatchEvent(new CustomEvent('mornai-ai-error', { detail: String((error as Error)?.message || 'AI writing failed.') }));
     } finally {
       setBusy(false);
@@ -211,12 +214,12 @@ const AiExpandButton = ({
       onClick={() => void run()}
       onMouseDown={(event) => event.preventDefault()}
       disabled={!String(value || '').trim() || busy}
-      title={busy ? 'MornAI is rewriting this field…' : label}
+      title={busy ? 'MornAI is rewriting this field…' : failed ? 'AI failed. Click to retry.' : label}
       aria-label={label}
       className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} />
-      {busy ? 'AI…' : 'AI'}
+      {busy ? 'AI…' : failed ? 'Retry' : 'AI'}
     </button>
   );
 };
