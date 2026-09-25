@@ -24,15 +24,50 @@ const hostingConfig = typeof window !== 'undefined'
     }).__MORNAI_FIREBASE_CONFIG__
   : undefined;
 
-const firebaseConfig = {
-  apiKey: hostingConfig?.apiKey || import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBDSpsFJ9Z0-7EXVLleO7MQgsYLhAZK8N8',
-  authDomain: hostingConfig?.authDomain || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'themorn-ai.firebaseapp.com',
-  projectId: hostingConfig?.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID || 'themorn-ai',
-  storageBucket: hostingConfig?.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'themorn-ai.firebasestorage.app',
-  messagingSenderId: hostingConfig?.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '753741589591',
-  appId: hostingConfig?.appId || import.meta.env.VITE_FIREBASE_APP_ID || '1:753741589591:web:b7d75cc2eee68b4c920712',
-  measurementId: hostingConfig?.measurementId || import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-QKMT76SRKH',
+const isUsableConfigValue = (value: unknown) =>
+  typeof value === 'string' &&
+  value.trim().length > 0 &&
+  !/^(YOUR_|MY_|your-|your_|<|>)|\.\.\.$/i.test(value.trim());
+
+const envConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
+
+const firebaseConfig = {
+  apiKey: isUsableConfigValue(hostingConfig?.apiKey)
+    ? hostingConfig!.apiKey
+    : envConfig.apiKey,
+  authDomain: isUsableConfigValue(hostingConfig?.authDomain)
+    ? hostingConfig!.authDomain
+    : envConfig.authDomain || 'themorn-ai.firebaseapp.com',
+  projectId: isUsableConfigValue(hostingConfig?.projectId)
+    ? hostingConfig!.projectId
+    : envConfig.projectId || 'themorn-ai',
+  storageBucket: isUsableConfigValue(hostingConfig?.storageBucket)
+    ? hostingConfig!.storageBucket
+    : envConfig.storageBucket || 'themorn-ai.firebasestorage.app',
+  messagingSenderId: isUsableConfigValue(hostingConfig?.messagingSenderId)
+    ? hostingConfig!.messagingSenderId
+    : envConfig.messagingSenderId || '753741589591',
+  appId: isUsableConfigValue(hostingConfig?.appId)
+    ? hostingConfig!.appId
+    : envConfig.appId || '1:753741589591:web:b7d75cc2eee68b4c920712',
+  measurementId: isUsableConfigValue(hostingConfig?.measurementId)
+    ? hostingConfig!.measurementId
+    : envConfig.measurementId || 'G-QKMT76SRKH',
+};
+
+if (!isUsableConfigValue(firebaseConfig.apiKey)) {
+  throw new Error(
+    'MornAI Firebase is missing a valid Web API key. Deploy through Firebase Hosting or set VITE_FIREBASE_API_KEY to the API key from Firebase Console → Project settings → Your apps → Web app.'
+  );
+}
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
