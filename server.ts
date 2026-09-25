@@ -101,7 +101,15 @@ const MODEL_IDS =
     ? PAID_MODEL_IDS
     : FREE_MODEL_IDS;
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
-type AiGenerateOptions = { model: string; contents: AiContent | any; config?: { responseMimeType?: string } };
+type AiGenerateOptions = {
+  model: string;
+  contents: AiContent | any;
+  config?: {
+    responseMimeType?: string;
+    maxTokens?: number;
+    temperature?: number;
+  };
+};
 let geminiClient: GoogleGenAI | null = null;
 let lastAiProviderFailure: {
   at: string;
@@ -171,8 +179,8 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         const body: Record<string, unknown> = {
           model,
           messages: normalizeMessages(options.contents),
-          temperature: 0.25,
-          max_tokens: 2500,
+          temperature: options.config?.temperature ?? 0.2,
+          max_tokens: options.config?.maxTokens ?? 1200,
         };
 
         if (
@@ -426,7 +434,25 @@ Contributor profile:
 - Goal: ${userProfile?.onboarding?.goal || ""}
 
 The contributor may ask how to get a job, how to pitch themselves, how to price work, which startup role fits, how to write a proposal, how to prepare for a founder call, or how to improve their MornAI profile.
-Give practical, specific coaching. Never pretend to guarantee a job. Help them turn skills into a strong pitch and concrete next actions. Keep answers concise and useful.`
+Give practical, specific coaching. Never pretend to guarantee a job. Help them turn skills into a strong pitch and concrete next actions.
+
+Response format:
+### Answer
+Give the direct answer in 2-5 short paragraphs.
+
+### Key points
+- Give 3-5 concrete points when useful.
+
+### Next actions
+1. Give 1-3 specific actions the user can take now.
+
+Rules:
+- Keep normal answers around 120-300 words.
+- Keep simple questions under 150 words.
+- Prioritize the highest-impact information first.
+- Use short sentences and bullets.
+- Do not invent experience, salary, job availability or qualifications.
+- Do not use tables unless the user specifically asks for one.`
       : `You are an elite AI Co-Founder and Chief Business Strategist for an ambitious startup named "${startup?.name || "Startup"}".
 Startup Details:
 - Industry: ${startup?.industry || "Tech"}
@@ -437,7 +463,25 @@ Startup Details:
 - Active Team Size: ${(startup?.members || []).length} contributors
 - Current Strategic Goals: ${startup?.currentGoals || "Scale MVP and onboard key talent"}
 
-Tone: sharp, tactical, encouraging and disciplined. Give concise, actionable advice and reference relevant startup context.`;
+Tone: sharp, tactical, direct and practical. Do not repeat the user's question. Do not write a long essay.
+
+Response format:
+### Answer
+Give the direct answer in 2-5 short paragraphs.
+
+### Key points
+- Give 3-5 concrete points when useful.
+
+### Next actions
+1. Give 1-3 specific actions the user can take now.
+
+Rules:
+- Keep normal answers around 120-300 words.
+- Keep simple questions under 150 words.
+- Prioritize the highest-impact information first.
+- Use short sentences and bullets.
+- Do not invent startup facts, metrics or people.
+- Do not use tables unless the user specifically asks for one.`;
 
     const contents = [
       {
@@ -450,9 +494,18 @@ Tone: sharp, tactical, encouraging and disciplined. Give concise, actionable adv
       },
     ];
 
+    const chatModel =
+      process.env.MORNAI_USE_PAID_MODELS === "true"
+        ? MODEL_IDS.ultra
+        : MODEL_IDS.super;
+
     const response = await ai.models.generateContent({
-      model: "mornai-ultra",
+      model: chatModel,
       contents: contents as any,
+      config: {
+        maxTokens: 900,
+        temperature: 0.15,
+      },
     });
 
     res.json({
