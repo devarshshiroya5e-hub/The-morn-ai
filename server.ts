@@ -100,6 +100,7 @@ const MODEL_IDS =
   process.env.MORNAI_USE_PAID_MODELS === "true"
     ? PAID_MODEL_IDS
     : FREE_MODEL_IDS;
+const FAST_FREE_TEXT_MODEL = "stealth/space-bunny-alpha";
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
 type AiGenerateOptions = {
   model: string;
@@ -504,7 +505,7 @@ Rules:
     const chatModel =
       process.env.MORNAI_USE_PAID_MODELS === "true"
         ? MODEL_IDS.ultra
-        : MODEL_IDS.super;
+        : FAST_FREE_TEXT_MODEL;
 
     const response = await ai.models.generateContent({
       model: chatModel,
@@ -763,7 +764,7 @@ Return strictly JSON formatted as:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "mornai-super",
+      model: FAST_FREE_TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -947,8 +948,24 @@ app.post("/api/ai/daily-briefing", async (req, res) => {
     };
     if (!ai) return res.json(fallback);
     const prompt = "You are MornAI daily operating assistant. Return JSON only with headline, summary, and exactly 3 actions. Do not invent facts.\nUser: " + JSON.stringify(currentUser || {}) + "\nStartups: " + JSON.stringify((startups || []).slice(0, 10)) + "\nAppointments: " + JSON.stringify((appointments || []).slice(0, 10)) + "\nConnections: " + JSON.stringify((connections || []).slice(0, 10));
-    const response = await ai.models.generateContent({ model: "mornai-gemma", contents: prompt, config: { responseMimeType: "application/json" } });
-    res.json(parseAiJson(response.text) || fallback);
+    const response = await ai.models.generateContent({ model: MODEL_IDS.gemma, contents: prompt, config: { responseMimeType: "application/json" } });
+    const parsed = parseAiJson(response.text) || {};
+    const safeActions = Array.isArray(parsed.actions)
+      ? parsed.actions
+          .map((item: any) => {
+            if (typeof item === "string") return item.trim();
+            if (item && typeof item.action === "string") return item.action.trim();
+            if (item && typeof item.text === "string") return item.text.trim();
+            return "";
+          })
+          .filter(Boolean)
+          .slice(0, 3)
+      : [];
+    res.json({
+      headline: typeof parsed.headline === "string" && parsed.headline.trim() ? parsed.headline.trim() : fallback.headline,
+      summary: typeof parsed.summary === "string" && parsed.summary.trim() ? parsed.summary.trim() : fallback.summary,
+      actions: safeActions.length === 3 ? safeActions : fallback.actions,
+    });
   } catch (error) {
     console.error("Daily briefing error:", error);
     res.status(200).json({ headline: "Your next useful move", summary: "MornAI could not refresh the briefing right now.", actions: ["Open your workspace", "Review network matches", "Ask MornAI directly"] });
