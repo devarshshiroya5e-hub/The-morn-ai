@@ -22,9 +22,15 @@ const configuredApiBase = String(
 ).replace(/\/$/, "");
 
 const getApiBases = () => {
+  const configuredIsFrontendOrigin =
+    typeof window !== "undefined" &&
+    configuredApiBase &&
+    configuredApiBase === window.location.origin;
+
   const bases = [
-    configuredApiBase,
+    configuredApiBase && !configuredIsFrontendOrigin ? configuredApiBase : "",
     RENDER_MORNAI_API,
+    configuredIsFrontendOrigin ? configuredApiBase : "",
     typeof window !== "undefined" && window.location.origin !== RENDER_MORNAI_API
       ? window.location.origin
       : "",
