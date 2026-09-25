@@ -86,6 +86,12 @@ const MODEL_IDS = { ultra: "nvidia/nemotron-3-ultra-550b-a55b", super: "nvidia/n
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
 type AiGenerateOptions = { model: string; contents: AiContent | any; config?: { responseMimeType?: string } };
 let geminiClient: GoogleGenAI | null = null;
+let lastAiProviderFailure: {
+  at: string;
+  model: string;
+  status?: number;
+  message: string;
+} | null = null;
 function getGeminiClient(): GoogleGenAI | null {
   if (!geminiClient && process.env.GEMINI_API_KEY) geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { headers: { "User-Agent": "mornai-production" } } });
   return geminiClient;
@@ -172,10 +178,18 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         const payload = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          lastError = new Error(
+          const providerMessage =
             payload?.error?.message ||
-            "OpenRouter request failed (" + response.status + ")",
-          );
+            "OpenRouter request failed (" + response.status + ")";
+
+          lastAiProviderFailure = {
+            at: new Date().toISOString(),
+            model,
+            status: response.status,
+            message: String(providerMessage).slice(0, 500),
+          };
+
+          lastError = new Error(String(providerMessage));
           continue;
         }
 
@@ -187,6 +201,12 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
 
         return { text: String(text) };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        lastAiProviderFailure = {
+          at: new Date().toISOString(),
+          model,
+          message: message.slice(0, 500),
+        };
         lastError = error;
       }
     }
@@ -295,6 +315,7 @@ app.get("/api/ai/status", (_req, res) => {
     provider: hasAnyOpenRouterKey() ? "openrouter" : keyStatus.geminiFallback ? "gemini" : "none",
     keys: keyStatus,
     models: configuredModels,
+    lastProviderFailure: lastAiProviderFailure,
   });
 });
 
