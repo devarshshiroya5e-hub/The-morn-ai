@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { auth, db } from '../lib/firebase';
 import { User } from '../types';
+import { postMornAI } from '../lib/mornaiAi';
 
 interface ProfilePageProps {
   currentUser: User;
@@ -34,6 +35,27 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [isOptimizingWithAi, setIsOptimizingWithAi] = useState(false);
+  const [aiProfileStrengths, setAiProfileStrengths] = useState<string[]>([]);
+
+  const optimizeWithAi = async () => {
+    setIsOptimizingWithAi(true);
+    setError('');
+    try {
+      const data = await postMornAI<{ suggestedTitle: string; suggestedBio: string; suggestedSkills: string[]; profileStrengths: string[] }>('profile-assist', {
+        profile: { ...currentUser, name, title, bio, skills, onboarding: onboardingState },
+      });
+      if (data.suggestedTitle) setTitle(data.suggestedTitle);
+      if (data.suggestedBio) setBio(data.suggestedBio);
+      if (Array.isArray(data.suggestedSkills) && data.suggestedSkills.length) setSkills(Array.from(new Set(data.suggestedSkills)).slice(0, 12));
+      setAiProfileStrengths(Array.isArray(data.profileStrengths) ? data.profileStrengths : []);
+      setSaved(false);
+    } catch (e: any) {
+      setError((e.message || 'AI profile optimization failed.').replace('Firebase: ', ''));
+    } finally {
+      setIsOptimizingWithAi(false);
+    }
+  };
 
   useEffect(() => {
     setName(currentUser.name || '');
@@ -158,14 +180,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
             </div>
           </section>
 
-          <section className="mornai-glass-card rounded-[28px] p-6">
-            <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-indigo-600" />
-              <h3 className="font-extrabold text-slate-950">Why your profile is stronger</h3>
+          <section id="profile-ai-optimizer" className="mornai-glass-card rounded-[28px] p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-indigo-600" />
+                <h3 className="font-extrabold text-slate-950">Why your profile is stronger</h3>
+              </div>
+              <button type="button" onClick={() => void optimizeWithAi()} disabled={isOptimizingWithAi} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-[10px] font-black text-white hover:bg-violet-700 disabled:opacity-50">
+                <Sparkles className="h-3 w-3" /> {isOptimizingWithAi ? 'Optimizing…' : 'Optimize with AI'}
+              </button>
             </div>
             <p className="mt-3 text-sm leading-7 text-slate-500">
               Specific skills, clear outcomes, a concrete goal and a real story give founders and the AI more useful signals than a generic title ever could.
             </p>
+            {aiProfileStrengths.length > 0 && (
+              <div className="mt-4 rounded-2xl bg-violet-50/80 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[.14em] text-violet-600">AI profile read</p>
+                <div className="mt-2 space-y-1">{aiProfileStrengths.slice(0, 3).map((item) => <p key={item} className="text-xs font-semibold text-violet-800">• {item}</p>)}</div>
+              </div>
+            )}
             <div className="mt-5 grid gap-2 text-xs font-semibold text-slate-600">
               {['Skills are searchable', 'Role-specific context is stored', 'Your goals stay attached to your profile', 'Everything here is editable'].map((x) => (
                 <div key={x} className="flex items-center gap-2 rounded-xl bg-white/60 px-3 py-2.5">
@@ -285,8 +318,7 @@ const MiniStat = ({ icon, label, value }: any) => (
 const AiAssistButton = ({ label = 'AI assist' }: { label?: string }) => (
   <button
     type="button"
-    disabled
-    title="AI writing assistance will be connected in the final AI rollout."
+    title="Use Optimize with AI to refresh your profile positioning."
     aria-label={label}
     className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
   >
