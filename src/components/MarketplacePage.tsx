@@ -28,6 +28,7 @@ import { ConnectionRequest, RolePost, Startup, User } from '../types';
 import { formatAnyCurrency, useLocalizedCurrency } from '../lib/currency';
 import { scoreStartupForTalent, scoreTalentForStartup } from './mornaiSignals';
 import { InitialAvatar } from './InitialAvatar';
+import { postMornAI } from '../lib/mornaiAi';
 
 type MarketplaceTab = 'people' | 'startups' | 'opportunities' | 'connections' | 'saved';
 
@@ -80,6 +81,25 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   const [industry, setIndustry] = useState('All');
   const [selectedTalent, setSelectedTalent] = useState<User | null>(null);
   const [onlyStrongMatches, setOnlyStrongMatches] = useState(false);
+  const [aiNetworkInsight, setAiNetworkInsight] = useState<{ summary: string; focus: string[] } | null>(null);
+  const [isLoadingAiNetworkInsight, setIsLoadingAiNetworkInsight] = useState(false);
+
+  const refreshAiNetworkInsight = async () => {
+    setIsLoadingAiNetworkInsight(true);
+    try {
+      const data = await postMornAI<{ summary: string; focus: string[] }>('network-insights', {
+        currentUser,
+        people: allPeople.slice(0, 20),
+        startups: networkStartups.slice(0, 20),
+        query,
+      });
+      setAiNetworkInsight(data);
+    } catch (error) {
+      console.error('AI network insight failed:', error);
+    } finally {
+      setIsLoadingAiNetworkInsight(false);
+    }
+  };
   const { format: formatMoney } = useLocalizedCurrency(currentUser);
 
   const networkStartups = useMemo(() => startups, [startups]);
@@ -199,6 +219,19 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
           </div>
         </div>
       </div>
+
+      <section className="rounded-[24px] border border-violet-100 bg-white/75 p-4 shadow-[0_16px_50px_rgba(76,29,149,.06)] backdrop-blur-xl sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-violet-600"><Sparkles className="h-3.5 w-3.5" /> AI network intelligence</div>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{isLoadingAiNetworkInsight ? 'MornAI is analyzing the live network around you…' : (aiNetworkInsight?.summary || 'Ask MornAI why the current people, startups, and opportunities fit your context.')}</p>
+            {!isLoadingAiNetworkInsight && aiNetworkInsight?.focus?.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">{aiNetworkInsight.focus.slice(0, 3).map((item) => <span key={item} className="rounded-full bg-violet-50 px-3 py-1.5 text-[10px] font-bold text-violet-700">{item}</span>)}</div>
+            ) : null}
+          </div>
+          <button type="button" onClick={() => void refreshAiNetworkInsight()} disabled={isLoadingAiNetworkInsight} className="shrink-0 rounded-xl border border-violet-200 bg-white px-3.5 py-2 text-[10px] font-black text-violet-700 shadow-sm hover:bg-violet-50 disabled:opacity-50">{isLoadingAiNetworkInsight ? 'Analyzing…' : 'Explain my matches'}</button>
+        </div>
+      </section>
 
       <div className="mornai-market-toolbar rounded-[24px] p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
