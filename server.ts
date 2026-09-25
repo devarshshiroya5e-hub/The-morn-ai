@@ -617,7 +617,7 @@ Respond strictly in valid JSON without markdown wrapping or backticks. Format:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "mornai-super",
+      model: FREE_MODEL_IDS.super,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -1056,8 +1056,8 @@ app.post("/api/ai/writing-assist", async (req, res) => {
 
     let rewritten = String(response.text || "").trim();
     rewritten = rewritten
-      .replace(/^\`\`\`(?:text)?\\s*/i, "")
-      .replace(/\\s*\`\`\`$/i, "")
+      .replace(/^\`\`\`(?:text)?\s*/i, "")
+      .replace(/\s*\`\`\`$/i, "")
       .trim();
 
     const leakage = /we need to rewrite|requirements:|user text:|context:|return only|must preserve|do not invent|you are mornai|source text:/i.test(rewritten);
