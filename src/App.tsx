@@ -466,18 +466,20 @@ export default function App() {
   // Two simple equality listeners avoid Firestore composite-filter OR syntax and
   // still include legacy documents that predate the participants array.
   useEffect(() => {
-    if (!isLoggedIn) {
+    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
+
+    if (!isLoggedIn || !userId) {
       setConnections([]);
       return;
     }
 
     const byFrom = query(
       collection(db, 'connections'),
-      where('fromUserId', '==', currentUser.id),
+      where('fromUserId', '==', userId),
     );
     const byTo = query(
       collection(db, 'connections'),
-      where('toUserId', '==', currentUser.id),
+      where('toUserId', '==', userId),
     );
 
     let fromDocs: ConnectionRequest[] = [];
@@ -549,18 +551,20 @@ export default function App() {
   // Appointments are persisted centrally. Use two simple equality listeners
   // so legacy records and the rules remain compatible without composite OR filters.
   useEffect(() => {
-    if (!isLoggedIn) {
+    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
+
+    if (!isLoggedIn || !userId) {
       setAppointments([]);
       return;
     }
 
     const byFounder = query(
       collection(db, 'appointments'),
-      where('founderId', '==', currentUser.id),
+      where('founderId', '==', userId),
     );
     const byTalent = query(
       collection(db, 'appointments'),
-      where('talentId', '==', currentUser.id),
+      where('talentId', '==', userId),
     );
 
     let founderDocs: Appointment[] = [];
