@@ -1052,15 +1052,27 @@ app.post("/api/ai/writing-assist", async (req, res) => {
       "\nContext: " + (contextText || "None");
 
     // Reuse the exact model family/path already proven by Optimize with AI.
-    const response = await ai.models.generateContent({
-      model: MODEL_IDS.gemma,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        maxTokens: source.length < 100 && /name|email|industry|role|title|skill/i.test(fieldName) ? 120 : 300,
-        temperature: 0.05,
-      },
-    });
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: FREE_MODEL_IDS.gemma,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          maxTokens: source.length < 100 && /name|email|industry|role|title|skill/i.test(fieldName) ? 120 : 300,
+          temperature: 0.05,
+        },
+      });
+    } catch {
+      response = await ai.models.generateContent({
+        model: FREE_MODEL_IDS.super,
+        contents: prompt,
+        config: {
+          maxTokens: source.length < 100 && /name|email|industry|role|title|skill/i.test(fieldName) ? 100 : 260,
+          temperature: 0.05,
+        },
+      });
+    }
 
     const parsed = parseAiJson(response.text);
     let rewritten = typeof parsed?.text === "string" ? parsed.text.trim() : "";
