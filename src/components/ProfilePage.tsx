@@ -326,11 +326,13 @@ const AiAssistButton = ({
   field?: string;
 }) => {
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const run = async () => {
     const source = String(value || '').trim();
     if (!source || !onComplete || busy) return;
     setBusy(true);
+    setFailed(false);
     try {
       const data = await postMornAI<{ text?: string }>('writing-assist', {
         text: source,
@@ -341,6 +343,7 @@ const AiAssistButton = ({
       if (next) onComplete(next);
     } catch (error) {
       console.error('Profile AI writing assist failed:', error);
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -350,12 +353,13 @@ const AiAssistButton = ({
     <button
       type="button"
       onClick={() => void run()}
+      onMouseDown={(event) => event.preventDefault()}
       disabled={!String(value || '').trim() || busy}
-      title={busy ? 'MornAI is rewriting this field…' : label}
+      title={busy ? 'MornAI is rewriting this field…' : failed ? 'AI failed. Click to retry.' : label}
       aria-label={label}
       className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} /> {busy ? 'AI…' : 'AI'}
+      <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} /> {busy ? 'AI…' : failed ? 'Retry' : 'AI'}
     </button>
   );
 };
