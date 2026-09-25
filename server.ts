@@ -372,9 +372,22 @@ Tone: sharp, tactical, encouraging and disciplined. Give concise, actionable adv
     });
   } catch (err: any) {
     console.error("AI coach chat error:", err);
-    res.status(500).json({
-      error: "Failed to generate AI response",
-      fallback: "I could not reach the AI service right now. Re-check your goal, strongest proof of work, availability and desired outcome, then try again.",
+
+    const isContributor = req.body?.userRole === "employee";
+    const profile = req.body?.userProfile || {};
+    const startup = req.body?.startup || {};
+    const userMessage = String(req.body?.message || req.body?.userPrompt || "").trim();
+
+    const fallbackReply = isContributor
+      ? `I could not reach the model service for this message, but your next useful move is to turn "${userMessage || "your current goal"}" into one concrete outcome, one proof point, and one startup conversation. Your profile currently emphasizes ${profile?.title || "your startup skills"}.`
+      : `I could not reach the model service for this message, but the immediate move for ${startup?.name || "your startup"} is to define one measurable outcome for "${userMessage || "the current priority"}" and assign the smallest actionable next step.`;
+
+    // AI provider/model failures should not crash the product shell. Return a
+    // usable degraded response so the frontend remains functional while the
+    // provider recovers or configuration is corrected.
+    res.status(200).json({
+      reply: fallbackReply,
+      degraded: true,
     });
   }
 });
