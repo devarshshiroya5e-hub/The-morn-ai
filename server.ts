@@ -1024,68 +1024,61 @@ app.post("/api/ai/profile-assist", async (req, res) => {
 
 // 12. Fast AI text expansion and rewriting for profile/auth/startup fields
 app.post("/api/ai/writing-assist", async (req, res) => {
+  const { text: inputText, field, context } = req.body || {};
+  const source = String(inputText || "").trim().slice(0, 4500);
+  const fieldName = String(field || "text").trim().slice(0, 120);
+  const contextText = typeof context === "string"
+    ? context.slice(0, 1200)
+    : JSON.stringify(context || {}).slice(0, 1200);
+
+  if (!source) return res.status(400).json({ error: "Enter some text before using AI." });
+
+  const fallback = { text: source };
+
   try {
-    const { text: inputText, field, context } = req.body || {};
-    const source = String(inputText || "").trim().slice(0, 4500);
-    const fieldName = String(field || "text").trim().slice(0, 120);
-    const contextText = typeof context === "string"
-      ? context.slice(0, 1200)
-      : JSON.stringify(context || {}).slice(0, 1200);
-
-    if (!source) {
-      return res.status(400).json({ error: "Enter some text before using AI." });
-    }
-
     const ai = getAiClient();
-    if (!ai) return res.json({ text: source });
+    if (!ai) return res.json(fallback);
 
-    const isShortFactField =
-      /name|email|industry|role|title|skill/i.test(fieldName) && source.length < 100;
+    const prompt =
+      "Rewrite the supplied user text for the named field. Return JSON only with exactly one key: text. " +
+      "The text value must contain only the final rewritten content, never instructions, analysis, JSON, labels, or commentary. " +
+      "Use only facts present in the supplied text/context. Do not invent credentials, customers, revenue, metrics, achievements, employers, dates, features, or claims. " +
+      "Preserve useful details and expand them instead of summarizing them away. " +
+      "For profile/startup descriptive fields, make it deeper, clearer, more specific, professional, and well organized. " +
+      "Use short paragraphs and bullets only when genuinely useful. " +
+      "For short factual fields, keep it concise. " +
+      "User field: " + fieldName +
+      "\nUser text: " + source +
+      "\nContext: " + (contextText || "None");
 
-    const prompt = [
-      `Rewrite ONLY the user text below for the field "${fieldName}".`,
-      "",
-      "USER TEXT:",
-      `<<<${source}>>>`,
-      "",
-      "CONTEXT:",
-      `<<<${contextText || "None"}>>>`,
-      "",
-      "Requirements:",
-      "- Output ONLY the rewritten text. Never output instructions, analysis, labels, notes, or JSON.",
-      "- Use only facts present in the user text or context. Never invent credentials, customers, metrics, revenue, achievements, employers, dates, features, or claims.",
-      "- Preserve useful details, names, technologies, numbers, and proper nouns.",
-      "- For profile and startup descriptions, make the writing deeper, clearer, more specific, professional, and well organized.",
-      "- Expand useful details instead of summarizing them away.",
-      "- Use short paragraphs. Use bullets only when they improve clarity.",
-      "- Do not greet the user or explain what you changed.",
-      "- For descriptive fields target about 90-170 words. For short factual fields, use the shortest useful rewrite.",
-      "",
-      "Return only the replacement text.",
-    ].join("\n");
-
+    // Reuse the exact model family/path already proven by Optimize with AI.
     const response = await ai.models.generateContent({
-      model: "mornai-super",
+      model: MODEL_IDS.gemma,
       contents: prompt,
       config: {
-        maxTokens: isShortFactField ? 120 : 300,
+        responseMimeType: "application/json",
+        maxTokens: source.length < 100 && /name|email|industry|role|title|skill/i.test(fieldName) ? 120 : 300,
         temperature: 0.05,
       },
     });
 
-    let rewritten = String(response.text || "").trim();
-    rewritten = rewritten
-      .replace(/^\`\`\`(?:text)?\s*/i, "")
-      .replace(/\s*\`\`\`$/i, "")
-      .trim();
+    const parsed = parseAiJson(response.text);
+    let rewritten = typeof parsed?.text === "string" ? parsed.text.trim() : "";
 
-    const leakage = /we need to rewrite|requirements:|user text:|context:|return only|must preserve|do not invent|you are mornai|source text:/i.test(rewritten);
-    if (leakage || !rewritten) rewritten = source;
+    if (!rewritten) {
+      const raw = String(response.text || "").trim();
+      if (raw && !raw.startsWith("{")) rewritten = raw;
+    }
+
+    const leaked =
+      /we need to rewrite|requirements:|user text:|context:|return json|return only|must preserve|do not invent|you are mornai|source text:/i.test(rewritten);
+
+    if (leaked || !rewritten) return res.json(fallback);
 
     return res.json({ text: rewritten.slice(0, 5000) });
   } catch (error) {
     console.error("Writing assist error:", error);
-    return res.status(200).json({ text: String(req.body?.text || "").trim() });
+    return res.status(200).json(fallback);
   }
 });
 
