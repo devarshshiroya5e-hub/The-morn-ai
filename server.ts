@@ -1040,6 +1040,7 @@ Rules:
 - Use only facts explicitly present in SOURCE TEXT or CONTEXT. Never invent metrics, customers, employers, credentials, revenue, achievements, features, dates, or other facts.
 - Preserve names, company names, technologies, numbers, and proper nouns.
 - For descriptive profile/startup fields, make the text substantially clearer, deeper, specific, professional, and well organized while preserving the user's meaning.
+- Expand and organize the user's important details rather than summarizing them away. Keep every useful fact from the source when possible.
 - Use short paragraphs; use bullets only when they genuinely improve organization.
 - Do not add a greeting, conclusion about yourself, or meta commentary.
 - For descriptive fields target about 90-170 words.
