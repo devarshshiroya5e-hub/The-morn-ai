@@ -318,9 +318,10 @@ const MiniStat = ({ icon, label, value }: any) => (
 const AiAssistButton = ({ label = 'AI assist' }: { label?: string }) => (
   <button
     type="button"
-    title="Use Optimize with AI to refresh your profile positioning."
+    onClick={() => document.getElementById('profile-ai-optimizer')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+    title="Open the live MornAI profile optimizer."
     aria-label={label}
-    className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm opacity-90 disabled:cursor-not-allowed"
+    className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50"
   >
     <Sparkles className="h-3 w-3" /> AI
   </button>
