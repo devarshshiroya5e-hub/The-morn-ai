@@ -156,6 +156,21 @@ const consumeAuthAttempt = () => {
   }
 };
 
+const formatAuthError = (error: any, fallback: string) => {
+  const code = String(error?.code || '');
+
+  if (code === 'auth/unauthorized-domain') {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+    return `This site (${hostname}) is not authorized for Firebase Authentication. Add ${hostname} in Firebase Console → Authentication → Settings → Authorized domains, then reload MornAI.`;
+  }
+
+  if (code === 'auth/api-key-not-valid') {
+    return 'Firebase Authentication is using an invalid Web API key. Update VITE_FIREBASE_API_KEY in the deployed MornAI environment with the current key from Firebase Console → Project settings → Your apps → Web app, then redeploy.';
+  }
+
+  return String(error?.message || fallback).replace('Firebase: ', '');
+};
+
 const AiExpandButton = ({ label = 'AI expand' }: { label?: string }) => (
   <button
     type="button"
@@ -442,7 +457,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       );
       onClose();
     } catch (e: any) {
-      setError((e.message || 'Unable to log in.').replace('Firebase: ', ''));
+      setError(formatAuthError(e, 'Unable to log in.'));
     } finally {
       setLoading(false);
     }
@@ -470,7 +485,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setStep(2);
       }
     } catch (e: any) {
-      setError((e.message || 'Unable to continue with Google.').replace('Firebase: ', ''));
+      setError(formatAuthError(e, 'Unable to continue with Google.'));
     } finally {
       setLoading(false);
     }
@@ -496,7 +511,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setGoogleUser(user);
       setStep(2);
     } catch (e: any) {
-      setError((e.message || 'Unable to create the account.').replace('Firebase: ', ''));
+      setError(formatAuthError(e, 'Unable to create the account.'));
     } finally {
       setLoading(false);
     }
@@ -527,7 +542,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       await saveProfile(googleUser);
     } catch (e: any) {
-      setError((e.message || 'Unable to save your profile.').replace('Firebase: ', ''));
+      setError(formatAuthError(e, 'Unable to save your profile.'));
     } finally {
       setLoading(false);
     }
