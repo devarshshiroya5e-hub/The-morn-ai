@@ -137,12 +137,6 @@ function hasAnyOpenRouterKey() {
   );
 }
 
-function modelFallbacks(model: string) {
-  if (model === MODEL_IDS.ultra) return [MODEL_IDS.ultra, MODEL_IDS.super, MODEL_IDS.gemma];
-  if (model === MODEL_IDS.super) return [MODEL_IDS.super, MODEL_IDS.gemma];
-  if (model === MODEL_IDS.gemma) return [MODEL_IDS.gemma, MODEL_IDS.super];
-  return [model];
-}
 function normalizeMessages(contents: AiContent | any) {
   if (typeof contents === "string") return [{ role: "user", content: contents }];
   if (!Array.isArray(contents)) return [{ role: "user", content: String(contents ?? "") }];
