@@ -11,6 +11,14 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.set("trust proxy", 1);
+
+// Firebase Google OAuth uses a cross-origin popup. Keep the opener in the
+// browser context group so Firebase can safely inspect popup state.
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
 app.use(express.json({ limit: "64kb" }));
 
 app.use((req, res, next) => {
