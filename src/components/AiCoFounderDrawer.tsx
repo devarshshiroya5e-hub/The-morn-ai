@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { postMornAI } from '../lib/mornaiAi';
 import { createPortal } from 'react-dom';
 import { Startup, User } from '../types';
 import { 
@@ -101,20 +102,14 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/ai/co-founder-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postMornAI<any>('co-founder-chat', {
           startup: currentUser.role === 'founder' ? activeStartup : null,
           message: textToSend,
           userPrompt: textToSend,
           userRole: currentUser.role,
           userProfile: currentUser,
           chatHistory: messages.slice(-8),
-        }),
-      });
-
-      const data = await res.json();
+        });
       const aiReply: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
