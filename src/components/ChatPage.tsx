@@ -112,7 +112,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [mobileRoomListOpen, setMobileRoomListOpen] = useState(false);
   const [chatRetryKey, setChatRetryKey] = useState(0);
-  const [directChatRooms, setDirectChatRooms] = useState<Room[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messageViewportRef = useRef<HTMLDivElement>(null);
   const initialScrollPendingRef = useRef(true);
@@ -234,8 +233,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       });
 
     const roomMap = new Map<string, Room>();
-    privateRooms.forEach((room) => roomMap.set(room.id, room));
-    directChatRooms.forEach((room) => {
+    privateRooms.forEach((room) => {
       const existing = roomMap.get(room.id);
       if (!existing || (!existing.connectionId && room.connectionId)) {
         roomMap.set(room.id, room);
@@ -251,7 +249,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       },
       ...Array.from(roomMap.values()),
     ];
-  }, [currentUser, startups, connections, directChatRooms, initialContact, initialConnectionId]);
+  }, [currentUser, startups, connections, initialContact, initialConnectionId]);
 
   useEffect(() => {
     if (initialContact && initialContact.id !== currentUser.id) {
@@ -281,80 +279,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
     } catch {
       setReadAt({});
     }
-  }, [currentUser.id]);
-
-  useEffect(() => {
-    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
-    if (!userId) {
-      setDirectChatRooms([]);
-      return;
-    }
-
-    const byA = query(
-      collection(db, 'directChats'),
-      where('participantAId', '==', userId),
-    );
-    const byB = query(
-      collection(db, 'directChats'),
-      where('participantBId', '==', userId),
-    );
-
-    const mapRooms = (snapshot: any): Room[] =>
-      snapshot.docs
-        .map((snap: any) => {
-          const data = snap.data();
-          const isA = data.participantAId === currentUser.id;
-          const contactId = isA ? data.participantBId : data.participantAId;
-          const contactName = isA ? data.participantBName : data.participantAName;
-          const contactAvatar = isA ? data.participantBAvatar : data.participantAAvatar;
-          if (typeof contactId !== 'string' || typeof contactName !== 'string') return null;
-          return {
-            id: typeof data.roomId === 'string' ? data.roomId : snap.id,
-            title: contactName,
-            subtitle: 'Private conversation',
-            kind: 'private' as const,
-            contact: {
-              id: contactId,
-              name: contactName,
-              avatar: typeof contactAvatar === 'string' ? contactAvatar : undefined,
-              role: 'Network connection',
-            },
-            connectionId: typeof data.connectionId === 'string' ? data.connectionId : undefined,
-          };
-        })
-        .filter((room: Room | null): room is Room => room !== null);
-
-    let roomsA: Room[] = [];
-    let roomsB: Room[] = [];
-
-    const syncRooms = () => {
-      const merged = new Map<string, Room>();
-      [...roomsA, ...roomsB].forEach((room) => merged.set(room.id, room));
-      setDirectChatRooms(Array.from(merged.values()));
-    };
-
-    const unsubscribeA = onSnapshot(
-      byA,
-      (snapshot) => {
-        roomsA = mapRooms(snapshot);
-        syncRooms();
-      },
-      (error) => console.error('Direct chat rooms (A) error:', error),
-    );
-
-    const unsubscribeB = onSnapshot(
-      byB,
-      (snapshot) => {
-        roomsB = mapRooms(snapshot);
-        syncRooms();
-      },
-      (error) => console.error('Direct chat rooms (B) error:', error),
-    );
-
-    return () => {
-      unsubscribeA();
-      unsubscribeB();
-    };
   }, [currentUser.id]);
 
   const participantsForRoom = (room: Room) => {
