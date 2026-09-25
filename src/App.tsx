@@ -667,30 +667,9 @@ export default function App() {
 
   const openPrivateChat = (contact: User, connectionId?: string) => {
     if (contact.id && contact.id !== currentUser.id) {
-      const participantIds = [currentUser.id, contact.id].sort();
-      const roomId = 'dm-' + participantIds.join('-');
-      void setDoc(
-        doc(db, 'directChats', roomId),
-        {
-          roomId,
-          participants: participantIds,
-          participantAId: participantIds[0],
-          participantAName: participantIds[0] === currentUser.id ? currentUser.name : contact.name,
-          participantAAvatar: participantIds[0] === currentUser.id ? currentUser.avatar || null : contact.avatar || null,
-          participantBId: participantIds[1],
-          participantBName: participantIds[1] === currentUser.id ? currentUser.name : contact.name,
-          participantBAvatar: participantIds[1] === currentUser.id ? currentUser.avatar || null : contact.avatar || null,
-          ...(connectionId ? { connectionId } : {}),
-          updatedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-        },
-        { merge: true },
-      ).catch((error) => {
-        // Opening the chat should never produce an uncaught promise rejection.
-        // The Messages page can still open even if room metadata has not yet
-        // been permitted by the deployed Firestore rules.
-        console.error('Direct chat room metadata error:', error);
-      });
+      // Private chat rooms are derived from the accepted connection/startup
+      // relationship and stored message participants. No separate room metadata
+      // document is required to open or send a direct message.
     }
     setPrivateChatContact(contact);
     setPrivateChatConnectionId(connectionId || null);
