@@ -1043,7 +1043,7 @@ ${source}`;
       model: "mornai-super",
       contents: prompt,
       config: {
-        maxTokens: isShortFactField ? 180 : 520,
+        maxTokens: isShortFactField ? 160 : 420,
         temperature: 0.08,
       },
     });
