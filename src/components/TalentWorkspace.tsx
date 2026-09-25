@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { postMornAI } from '../lib/mornaiAi';
 import { User, Startup, Appointment, TaskItem } from '../types';
 import { 
   CheckCircle2, 
@@ -71,16 +72,11 @@ export const TalentWorkspace: React.FC<TalentWorkspaceProps> = ({
     setMentoringModalTask(task);
     setIsRequestingMentor(true);
     try {
-      const res = await fetch('/api/ai/mentor-suggestion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postMornAI<any>('mentor-suggestion', {
           role: currentUser.title,
           context: `Task: ${task.title}. ${task.description}`,
           topic: 'Architecture, velocity and milestone completion',
-        }),
-      });
-      const data = await res.json();
+        });
       setLiveMentorTip({
         tip: data.suggestion || 'Break task into smaller verification stages.',
         takeaway: data.keyTakeaway || 'Focus on rapid testability.',
