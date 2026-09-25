@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { postMornAI } from '../lib/mornaiAi';
 import { PartnershipMode, RolePartnership, Startup, User } from '../types';
 import { convertLocalToUsd, convertUsd, formatAnyCurrency, getCurrencyOptions, useLocalizedCurrency } from '../lib/currency';
 import { storage } from '../lib/firebase';
@@ -467,12 +468,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
 
     // Attempt AI roadmap enhancement
     try {
-      const res = await fetch('/api/ai/generate-roadmap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startup: newStartup }),
-      });
-      const data = await res.json();
+      const data = await postMornAI<any>('generate-roadmap', { startup: newStartup });
       if (data.roadmap && Array.isArray(data.roadmap) && data.roadmap.length > 0) {
         newStartup.roadmap = data.roadmap.map((rm: any, idx: number) => ({
           id: `rm-gen-${Date.now()}-${idx}`,
