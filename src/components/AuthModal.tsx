@@ -818,7 +818,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                               ))}
                             </div>
                             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                              <Text p={role === 'founder' ? 'Founder focus (e.g. product + growth)' : 'Professional title (e.g. Frontend Developer)'} v={profileTitle} s={setProfileTitle} min={3} />
+                              <Text ai={false} p={role === 'founder' ? 'Founder focus (e.g. product + growth)' : 'Professional title (e.g. Frontend Developer)'} v={profileTitle} s={setProfileTitle} min={3} />
                               <Select p="Experience level" value={experienceLevel} set={setExperienceLevel} options={['Student / Early career','1–2 years','3–5 years','6–10 years','10+ years']} />
                             </div>
                             <TextArea label={role === 'founder' ? 'What can you personally contribute to the startup? (minimum 40 characters)' : 'What can a startup count on you to deliver? (minimum 40 characters)'} value={contribution} set={setContribution} min={40} rows={5} />
@@ -831,8 +831,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           <>
                             <Head n="04" title="Tell MornAI about the company" text="These answers become structured startup context that can improve your roadmap, AI advice and matching." />
                             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                              <Text p="Startup / project name" v={startup} s={setStartup} min={2} />
-                              <Text p="Industry" v={industry} s={setIndustry} min={2} />
+                              <Text ai={false} p="Startup / project name" v={startup} s={setStartup} min={2} />
+                              <Text ai={false} p="Industry" v={industry} s={setIndustry} min={2} />
                               <Select p="Current stage" value={stage} set={setStage} options={['Idea','MVP','Early traction','Growing team']} />
                               <Select p="Current traction" value={traction} set={setTraction} options={['Pre-launch','MVP users','Early revenue','Growing revenue','Established customer base']} />
                             </div>
@@ -934,13 +934,10 @@ const Field = ({ icon, type, placeholder, value, set, disabled, minLength }: any
       onChange={(e) => set(e.target.value)}
       className={`mornai-auth-field w-full rounded-2xl border border-white/80 bg-white/[0.52] py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 hover:border-indigo-200 focus:border-indigo-300 focus:bg-white/80 focus:ring-4 focus:ring-indigo-50 disabled:opacity-60 ${type !== 'password' && type !== 'email' ? 'pb-9' : ''}`}
     />
-    {type !== 'password' && type !== 'email' && (
-      <AiExpandButton value={value} onComplete={set} field={placeholder} label={`AI assist: ${placeholder}`} />
-    )}
   </motion.div>
 );
 
-const Text = ({ p, v, s, min = 0 }: any) => (
+const Text = ({ p, v, s, min = 0, ai = true }: any) => (
   <div className="relative">
     <input
       required
@@ -948,9 +945,9 @@ const Text = ({ p, v, s, min = 0 }: any) => (
       value={v}
       onChange={(e) => s(e.target.value)}
       placeholder={p}
-      className="mornai-signup-field w-full rounded-2xl px-4 pb-10 pt-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80"
+      className={`mornai-signup-field w-full rounded-2xl px-4 ${ai ? 'pb-10' : 'py-3.5'} pt-3.5 text-sm text-slate-900 outline-none backdrop-blur-2xl transition-all placeholder:text-slate-400 focus:bg-white/80`}
     />
-    <AiExpandButton value={v} onComplete={s} field={p} label={`AI assist: ${p}`} />
+    {ai && <AiExpandButton value={v} onComplete={s} field={p} label={`AI assist: ${p}`} />}
   </div>
 );
 
