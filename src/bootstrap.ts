@@ -5,10 +5,13 @@ const loadFirebaseHostingConfig = async () => {
     const response = await fetch('/__/firebase/init.json', {
       cache: 'no-store',
       credentials: 'same-origin',
-      signal: AbortSignal.timeout(1500),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) return;
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) return;
 
     const config = await response.json();
     if (typeof config?.apiKey !== 'string' || typeof config?.projectId !== 'string') return;
