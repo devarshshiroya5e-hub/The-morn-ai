@@ -488,7 +488,14 @@ Rules:
         role: "user",
         parts: [{
           text: "System Context: " + systemPrompt +
-            "\n\nRecent Chat:\n" + JSON.stringify(chatHistory || []) +
+            "\n\nRecent Chat:\n" + JSON.stringify(
+              (chatHistory || [])
+                .slice(-4)
+                .map((entry: any) => ({
+                  sender: entry?.sender,
+                  text: String(entry?.text || "").slice(-900),
+                })),
+            ) +
             "\n\nUser Query: " + message,
         }],
       },
@@ -503,8 +510,8 @@ Rules:
       model: chatModel,
       contents: contents as any,
       config: {
-        maxTokens: 900,
-        temperature: 0.15,
+        maxTokens: 700,
+        temperature: 0.12,
       },
     });
 
