@@ -682,7 +682,7 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-violet-600 shadow-sm"><BrainCircuit className="h-4 w-4" /></span>
               <div>
                 <p className="text-xs font-black text-slate-950">Build a clear startup profile</p>
-                <p className="mt-1 text-[10px] leading-5 text-slate-500">Answer these questions so contributors can understand the startup before they connect. The AI buttons are design-only for now.</p>
+                <p className="mt-1 text-[10px] leading-5 text-slate-500">Answer these questions so contributors can understand the startup before they connect. Use the AI button in any text box to turn rough notes into a deeper, organized description automatically.</p>
               </div>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
