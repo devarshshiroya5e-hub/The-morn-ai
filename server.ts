@@ -274,6 +274,30 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/api/ai/status", (_req, res) => {
+  const keyStatus = {
+    generic: Boolean(process.env.OPENROUTER_API_KEY),
+    secondary: Boolean(process.env.OPENROUTER_API_KEY_1),
+    gemma: Boolean(process.env.OPENROUTER_API_KEY_GEMMA),
+    nemotronSuper: Boolean(process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER),
+    nemotronUltra: Boolean(process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA),
+    geminiFallback: Boolean(process.env.GEMINI_API_KEY),
+  };
+
+  const configuredModels = {
+    ultra: keysForModel(MODEL_IDS.ultra).length > 0,
+    super: keysForModel(MODEL_IDS.super).length > 0,
+    gemma: keysForModel(MODEL_IDS.gemma).length > 0,
+  };
+
+  res.json({
+    status: hasAnyOpenRouterKey() || keyStatus.geminiFallback ? "configured" : "not-configured",
+    provider: hasAnyOpenRouterKey() ? "openrouter" : keyStatus.geminiFallback ? "gemini" : "none",
+    keys: keyStatus,
+    models: configuredModels,
+  });
+});
+
 let fxCache: { fetchedAt: number; rates: Record<string, number> } | null = null;
 
 app.get("/api/fx-rates", async (_req, res) => {
