@@ -12,7 +12,7 @@ service cloud.firestore {
     match /publicProfiles/{userId} { allow read: if signedIn(); allow create, update, delete: if isUser(userId); }
 
     match /connections/{connectionId} {
-      allow read: if signedIn() && (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid || isParticipant(resource.data));
+      allow read: if isParticipant(resource.data);
       allow create: if signedIn() && request.resource.data.fromUserId == request.auth.uid && request.resource.data.toUserId is string && request.resource.data.toUserId != request.auth.uid && request.resource.data.participants is list && request.auth.uid in request.resource.data.participants && request.resource.data.participants.size() == 2 && request.resource.data.status == 'pending';
       allow update: if signedIn() && (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid || isParticipant(resource.data)) && request.resource.data.fromUserId == resource.data.fromUserId && request.resource.data.toUserId == resource.data.toUserId && ((request.auth.uid == resource.data.toUserId && request.resource.data.status in ['accepted', 'declined']) || (request.auth.uid == resource.data.fromUserId && request.resource.data.status == 'cancelled'));
       allow delete: if false;
@@ -83,7 +83,7 @@ service cloud.firestore {
     }
 
     match /appointments/{appointmentId} {
-      allow read: if signedIn() && (resource.data.founderId == request.auth.uid || resource.data.talentId == request.auth.uid || isParticipant(resource.data));
+      allow read: if isParticipant(resource.data);
       allow create: if signedIn() && request.resource.data.participants is list && request.resource.data.participants.size() == 2 && request.auth.uid in request.resource.data.participants && request.resource.data.founderId is string && request.resource.data.talentId is string && request.auth.uid in [request.resource.data.founderId, request.resource.data.talentId];
       allow update: if signedIn() && (resource.data.founderId == request.auth.uid || resource.data.talentId == request.auth.uid || isParticipant(resource.data)) && request.resource.data.founderId == resource.data.founderId && request.resource.data.talentId == resource.data.talentId;
       allow delete: if false;
