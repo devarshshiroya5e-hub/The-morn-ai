@@ -13,60 +13,86 @@ export type MornAIEndpoint =
   | "writing-assist"
   | "website-blueprint";
 
-const apiBase = String(
+const DEFAULT_MORNAI_API_URL = "https://the-morn-ai.onrender.com";
+
+const configuredApiBase = String(
   import.meta.env.VITE_MORNAI_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
   "",
 ).replace(/\/$/, "");
 
+const getApiBases = () => {
+  const bases = [
+    configuredApiBase,
+    typeof window !== "undefined" && /\.onrender\.com$/i.test(window.location.hostname)
+      ? window.location.origin
+      : "",
+    DEFAULT_MORNAI_API_URL,
+  ]
+    .map((value) => String(value || "").replace(/\/$/, ""))
+    .filter(Boolean);
+
+  return Array.from(new Set(bases));
+};
+
 export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknown): Promise<T> {
-  const url = `${apiBase}/api/ai/${endpoint}`;
+  const bases = getApiBases();
+  let lastError: Error | null = null;
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  } catch (error) {
-    throw new Error(
-      "MornAI AI server could not be reached. Check VITE_MORNAI_API_URL and the Render backend.",
-    );
-  }
+  for (const base of bases) {
+    const url = base + "/api/ai/" + endpoint;
 
-  const contentType = response.headers.get("content-type") || "";
-  const raw = await response.text();
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
-  if (!response.ok) {
-    const errorMessage = contentType.includes("application/json")
-      ? (() => {
+      const contentType = response.headers.get("content-type") || "";
+      const raw = await response.text();
+
+      if (!response.ok) {
+        let message = "MornAI AI server returned HTTP " + response.status;
+        if (contentType.includes("application/json")) {
           try {
             const payload = JSON.parse(raw);
-            return payload?.error || `MornAI AI server returned HTTP ${response.status}`;
+            message = payload?.error || message;
           } catch {
-            return `MornAI AI server returned HTTP ${response.status}`;
+            // Keep the HTTP status message.
           }
-        })()
-      : raw.startsWith("<!doctype") || raw.startsWith("<html")
-        ? `MornAI AI endpoint returned HTML instead of JSON. Check VITE_MORNAI_API_URL (current: ${url}).`
-        : `MornAI AI server returned HTTP ${response.status}`;
+        } else if (raw.startsWith("<!doctype") || raw.startsWith("<html")) {
+          message = "AI endpoint returned the frontend page instead of the MornAI Render API.";
+        }
+        lastError = new Error(message);
+        continue;
+      }
 
-    throw new Error(errorMessage);
-  }
+      if (!contentType.includes("application/json")) {
+        lastError = new Error(
+          raw.startsWith("<!doctype") || raw.startsWith("<html")
+            ? "AI endpoint returned the frontend page instead of JSON."
+            : "MornAI AI server returned a non-JSON response.",
+        );
+        continue;
+      }
 
-  if (!contentType.includes("application/json")) {
-    if (raw.startsWith("<!doctype") || raw.startsWith("<html")) {
-      throw new Error(
-        `MornAI AI endpoint returned the frontend HTML page instead of JSON. Set VITE_MORNAI_API_URL to your Render API service URL (current: ${url}).`,
-      );
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        lastError = new Error("MornAI AI server returned malformed JSON.");
+      }
+    } catch (error) {
+      lastError = error instanceof Error
+        ? error
+        : new Error("MornAI AI server could not be reached.");
     }
-    throw new Error("MornAI AI server returned a non-JSON response.");
   }
 
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    throw new Error("MornAI AI server returned malformed JSON.");
-  }
+  throw lastError || new Error(
+    "MornAI AI server could not be reached. Check the Render backend.",
+  );
 }
