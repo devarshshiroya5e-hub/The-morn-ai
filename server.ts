@@ -139,6 +139,31 @@ function getAiClient() {
     throw new Error("No AI provider is available");
   } } };
 }
+app.get("/api/firebase-config", async (_req, res) => {
+  try {
+    const response = await fetch("https://themorn-ai.firebaseapp.com/__/firebase/init.json", {
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      return res.status(502).json({ error: "Firebase web configuration is unavailable" });
+    }
+
+    const config = await response.json();
+    if (
+      typeof config?.apiKey !== "string" ||
+      typeof config?.projectId !== "string"
+    ) {
+      return res.status(502).json({ error: "Firebase web configuration is invalid" });
+    }
+
+    return res.json(config);
+  } catch (error) {
+    console.error("Firebase config proxy failed:", error);
+    return res.status(502).json({ error: "Firebase web configuration is unavailable" });
+  }
+});
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({
