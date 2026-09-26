@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, BrainCircuit, Rocket, UsersRound, Target, BriefcaseBusiness, ArrowRight, ChevronDown, ChevronUp, ShieldCheck, Zap, Bot, BarChart3 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface LandingPageProps {
   onOpenAuth: (mode: 'login' | 'signup') => void;
@@ -70,9 +71,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
       <header className="fixed left-0 right-0 top-4 z-50 px-4">
         <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-auto flex max-w-6xl items-center justify-between mornai-glass-nav rounded-full px-5 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <motion.span animate={{ rotate: [0, 6, -6, 0] }} transition={{ duration: 2.8, repeat: Infinity }} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
-              <Sparkles className="h-5 w-5" />
-            </motion.span>
+            <BrandLogo className="grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-white/80" />
             <div>
               <b className="text-lg tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
               <p className="hidden text-[9px] font-bold uppercase tracking-[.18em] text-slate-400 sm:block">Human startup network + AI operating layer</p>

@@ -21,18 +21,18 @@ const configuredApiBase = String(
   "",
 ).replace(/\/$/, "");
 
-const getApiBases = () => {
-  // AI is served by Render. Never fall back to the main frontend origin:
-  // Firebase/Vite rewrites unknown routes to index.html, which causes the
-  // "AI endpoint returned HTML instead of JSON" failure.
-  const configuredIsFrontendOrigin =
-    typeof window !== "undefined" &&
-    configuredApiBase &&
-    configuredApiBase === window.location.origin;
+let pinnedApiBase: string | null = null;
 
+const getApiBases = () => {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "";
+
+  // Prefer same-origin first so local `npm run dev` does not wait on Render cold starts.
   const bases = [
+    pinnedApiBase || "",
+    origin,
+    configuredApiBase && configuredApiBase !== origin ? configuredApiBase : "",
     RENDER_MORNAI_API,
-    configuredApiBase && !configuredIsFrontendOrigin ? configuredApiBase : "",
   ]
     .map((value) => String(value || "").replace(/\/$/, ""))
     .filter(Boolean);
@@ -40,9 +40,9 @@ const getApiBases = () => {
   return Array.from(new Set(bases));
 };
 
-const requestJson = async (url: string, body: unknown) => {
+const requestJson = async (url: string, body: unknown, timeoutMs = 18_000) => {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 25_000);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(url, {
@@ -67,9 +67,13 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
 
   for (const base of bases) {
     const url = base + "/api/ai/" + endpoint;
+    // Fail faster on remote fallbacks; give the first/pinned base more time.
+    const timeoutMs = base === pinnedApiBase || base === (typeof window !== "undefined" ? window.location.origin : "")
+      ? 18_000
+      : 8_000;
 
     try {
-      const response = await requestJson(url, body);
+      const response = await requestJson(url, body, timeoutMs);
       const contentType = response.headers.get("content-type") || "";
       const raw = await response.text();
 
@@ -99,7 +103,9 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
       }
 
       try {
-        return JSON.parse(raw) as T;
+        const parsed = JSON.parse(raw) as T;
+        pinnedApiBase = base;
+        return parsed;
       } catch {
         lastError = new Error("MornAI AI server returned malformed JSON.");
       }
@@ -120,13 +126,20 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
 export async function checkMornAIConnection(): Promise<{ ok: boolean; base: string; error?: string }> {
   for (const base of getApiBases()) {
     try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 5_000);
       const response = await fetch(base + "/api/health", {
         method: "GET",
         mode: "cors",
         credentials: "omit",
         cache: "no-store",
+        signal: controller.signal,
       });
-      if (response.ok) return { ok: true, base };
+      window.clearTimeout(timeout);
+      if (response.ok) {
+        pinnedApiBase = base;
+        return { ok: true, base };
+      }
     } catch {}
   }
 

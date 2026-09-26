@@ -3,11 +3,23 @@
 @layer base {
   html {
     scroll-behavior: auto;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
   }
   body {
     background-color: #ffffff;
     color: #0f172a;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  #root {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
   }
 }
 
@@ -72,20 +84,38 @@
   .mornai-auth-scroll{scroll-behavior:auto;}
 }
 
-/* MornAI logged-in product shell */
-.mornai-app-shell{position:relative;isolation:isolate;min-height:100vh;background:
-  radial-gradient(circle at 7% 4%,rgba(124,58,237,.13),transparent 29%),
-  radial-gradient(circle at 93% 12%,rgba(59,130,246,.11),transparent 31%),
-  radial-gradient(circle at 52% 86%,rgba(14,165,233,.07),transparent 26%),
-  linear-gradient(180deg,#f8fbff 0%,#f7f9fc 48%,#ffffff 100%);}
+/* MornAI logged-in product shell — locked viewport; only .mornai-main scrolls */
+.mornai-app-shell{
+  position:relative;
+  isolation:isolate;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  height:100dvh;
+  max-height:100dvh;
+  overflow:hidden;
+  background:
+  radial-gradient(circle at 7% 4%,rgba(168,85,247,.22),transparent 30%),
+  radial-gradient(circle at 93% 12%,rgba(56,189,248,.18),transparent 32%),
+  radial-gradient(circle at 52% 86%,rgba(167,139,250,.12),transparent 28%),
+  linear-gradient(180deg,#faf5ff 0%,#f8fafc 48%,#ffffff 100%);
+}
 .mornai-app-shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
-  radial-gradient(circle at 16% 24%,rgba(139,92,246,.09),transparent 24%),
-  radial-gradient(circle at 82% 64%,rgba(56,189,248,.07),transparent 27%),
-  radial-gradient(circle at 50% 10%,rgba(255,255,255,.85),transparent 34%);}
+  radial-gradient(circle at 16% 24%,rgba(168,85,247,.14),transparent 26%),
+  radial-gradient(circle at 82% 64%,rgba(56,189,248,.12),transparent 28%),
+  radial-gradient(circle at 50% 10%,rgba(255,255,255,.9),transparent 34%);}
 .mornai-app-shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
-  linear-gradient(115deg,transparent 0%,rgba(255,255,255,.22) 42%,transparent 68%);
+  linear-gradient(115deg,transparent 0%,rgba(255,255,255,.28) 42%,transparent 68%);
   mix-blend-mode:screen;}
-.mornai-app-nav-wrap{pointer-events:none;}
+.mornai-public-scroll{
+  height:100%;
+  height:100dvh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.mornai-app-nav-wrap{pointer-events:none;flex-shrink:0;z-index:40;}
 .mornai-app-nav-wrap>*{pointer-events:auto;}
 .mornai-app-nav{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.96);box-shadow:0 18px 55px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(99,102,241,.05);backdrop-filter:blur(28px) saturate(175%) contrast(108%);-webkit-backdrop-filter:blur(28px) saturate(175%) contrast(108%);}
 .mornai-app-nav-pills{background:rgba(248,250,252,.72);border:1px solid rgba(226,232,240,.7);}
@@ -97,7 +127,28 @@
 .mornai-user-menu{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.78);box-shadow:0 28px 70px rgba(15,23,42,.14),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);}
 .mornai-menu-item{display:flex;width:100%;align-items:center;gap:.6rem;border-radius:.8rem;padding:.7rem .75rem;text-align:left;font-size:.72rem;font-weight:700;color:#475569;transition:background .16s ease,color .16s ease,transform .16s ease;}
 .mornai-menu-item:hover{background:rgba(238,242,255,.82);color:#0f172a;transform:translateX(2px);}
-.mornai-mobile-nav{border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.78);box-shadow:0 14px 32px rgba(15,23,42,.07);backdrop-filter:blur(16px) saturate(160%);}
+.mornai-mobile-nav{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:45;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  gap:.15rem;
+  padding:.45rem .55rem calc(.45rem + env(safe-area-inset-bottom,0px));
+  border-top:1px solid rgba(255,255,255,.92);
+  border-left:0;
+  border-right:0;
+  border-bottom:0;
+  border-radius:22px 22px 0 0;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 -12px 40px rgba(15,23,42,.08);
+  backdrop-filter:blur(20px) saturate(170%);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);
+  pointer-events:auto;
+}
 .mornai-mobile-nav-active{background:rgba(79,70,229,.10);color:#4338ca;box-shadow:inset 0 1px 0 rgba(255,255,255,.95);}
 .mornai-page-transition{
   will-change:opacity,transform,filter;
@@ -111,13 +162,93 @@
   scrollbar-gutter:stable;
   -webkit-overflow-scrolling:touch;
 }
-.mornai-main{position:relative;}
+.mornai-main{
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:auto;
+  touch-action:pan-y;
+  padding-bottom:calc(4.75rem + env(safe-area-inset-bottom,0px));
+}
+@media (min-width:768px){
+  .mornai-main{padding-bottom:1.25rem;}
+  .mornai-mobile-nav{display:none;}
+}
+.mornai-main.is-fill-view{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0;}
+.mornai-main.is-fill-view>.mornai-page-transition{flex:1;min-height:0;display:flex;flex-direction:column;}
+.mornai-chat-page{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  height:100%;
+  width:100%;
+  padding:.55rem .55rem calc(4.85rem + env(safe-area-inset-bottom,0px));
+}
+@media (min-width:768px){
+  .mornai-chat-page{padding:.85rem 1.25rem 1rem;}
+}
+.mornai-chat-shell{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+}
+.mornai-chat-hero{
+  flex-shrink:0;
+  background:linear-gradient(135deg,#111827 0%,#25133f 48%,#6d28d9 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+.mornai-chat-body{
+  display:flex;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+}
+@media (min-width:1024px){
+  .mornai-chat-body{display:grid;grid-template-columns:270px 1fr;}
+}
+.mornai-chat-thread{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  min-width:0;
+  overflow:hidden;
+}
+.mornai-chat-messages{
+  flex:1;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
+.mornai-chat-composer{
+  flex-shrink:0;
+  position:sticky;
+  bottom:0;
+  z-index:5;
+  background:rgba(255,255,255,.96);
+  border-top:1px solid rgba(226,232,240,.85);
+  padding-bottom:max(.35rem, env(safe-area-inset-bottom,0px));
+}
+.mornai-app-footer{flex-shrink:0;}
+@media (max-width:767px){
+  .mornai-app-footer{display:none;}
+}
 .mornai-main>.max-w-7xl,.mornai-main>.mornai-discover-page{position:relative;}
 .mornai-main .bg-white.rounded-2xl.border.border-slate-200{background:rgba(255,255,255,.72)!important;border-color:rgba(255,255,255,.92)!important;box-shadow:0 18px 48px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.96);}
 .mornai-main .bg-white.rounded-2xl.border.border-slate-200:hover{border-color:rgba(129,140,248,.28)!important;}
 .mornai-section-kicker{display:inline-flex;align-items:center;gap:.45rem;border-radius:9999px;background:rgba(238,242,255,.92);padding:.45rem .7rem;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#4f46e5;}
 .mornai-inline-stat{display:inline-flex;align-items:center;gap:.5rem;width:max-content;border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.66);padding:.6rem .8rem;border-radius:9999px;font-size:.7rem;font-weight:800;color:#475569;box-shadow:0 10px 24px rgba(15,23,42,.06);backdrop-filter:blur(14px);}
-.mornai-discover-hero{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 46%,#312e81 100%);}
+.mornai-discover-hero{background:linear-gradient(135deg,#111827 0%,#1e1b4b 46%,#312e81 100%);}
 .mornai-discover-hero::after{content:"";position:absolute;inset:auto -7rem -10rem auto;width:24rem;height:24rem;border-radius:9999px;background:radial-gradient(circle,rgba(99,102,241,.42),transparent 68%);filter:blur(12px);pointer-events:none;}
 .mornai-filter-bar{box-shadow:0 18px 48px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.96);}
 .mornai-startup-card{box-shadow:0 16px 42px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.92);}
@@ -126,7 +257,17 @@
 .mornai-secondary-action:hover{background:rgba(226,232,240,.95);transform:translateY(-1px);}
 .mornai-primary-action{background:linear-gradient(135deg,#312e81,#4f46e5);box-shadow:0 10px 24px rgba(79,70,229,.22);}
 .mornai-primary-action:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(79,70,229,.28);}
-@media (max-width:767px){.mornai-app-nav{border-radius:18px;}.mornai-discover-hero{border-radius:24px;}.mornai-main .bg-white.rounded-2xl.border.border-slate-200{box-shadow:0 12px 32px rgba(15,23,42,.05);}}
+@media (max-width:767px){
+  .mornai-app-nav{border-radius:18px;}
+  .mornai-discover-hero{border-radius:24px;}
+  .mornai-main .bg-white.rounded-2xl.border.border-slate-200{box-shadow:0 12px 32px rgba(15,23,42,.05);}
+  .mornai-app-shell button:hover{transform:none;}
+  .mornai-person-card:hover,
+  .mornai-startup-network-card:hover,
+  .mornai-role-card:hover,
+  .mornai-startup-card:hover{transform:none;}
+  .mornai-orb{display:none;}
+}
 
 .mornai-discover-box{position:relative;border-color:rgba(196,181,253,.34)!important;box-shadow:0 0 0 1px rgba(124,58,237,.09),0 0 22px rgba(124,58,237,.10),0 14px 40px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.94)!important;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;}
 .mornai-discover-box:hover{border-color:rgba(168,85,247,.48)!important;box-shadow:0 0 0 1px rgba(168,85,247,.12),0 0 30px rgba(168,85,247,.16),0 18px 48px rgba(124,58,237,.08),inset 0 1px 0 rgba(255,255,255,.98)!important;}
@@ -182,12 +323,32 @@
 .mornai-app-nav{border-color:rgba(124,58,237,.24);box-shadow:0 18px 55px rgba(15,23,42,.10),0 0 28px rgba(124,58,237,.08),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(124,58,237,.07);}
 .mornai-app-nav-pills{border-color:rgba(124,58,237,.13);box-shadow:0 0 16px rgba(124,58,237,.05);}
 .mornai-app-nav-item-active{color:#6d28d9;background:rgba(255,255,255,.96);box-shadow:0 0 0 1px rgba(124,58,237,.16),0 0 18px rgba(124,58,237,.12),inset 0 1px 0 rgba(255,255,255,1);}
-.mornai-ai-btn{background:linear-gradient(135deg,#1f1638 0%,#6d28d9 62%,#a855f7 100%);box-shadow:0 0 0 1px rgba(168,85,247,.34),0 12px 34px rgba(124,58,237,.24),0 0 26px rgba(168,85,247,.18);}
-.mornai-ai-btn:hover{box-shadow:0 0 0 1px rgba(196,181,253,.5),0 16px 42px rgba(124,58,237,.30),0 0 34px rgba(168,85,247,.24);}
+.mornai-ai-btn{background:linear-gradient(135deg,#312e81 0%,#7c3aed 55%,#c084fc 100%);box-shadow:0 0 0 1px rgba(196,181,253,.45),0 12px 34px rgba(124,58,237,.28),0 0 30px rgba(168,85,247,.22);}
+.mornai-ai-btn:hover{box-shadow:0 0 0 1px rgba(221,214,254,.6),0 16px 42px rgba(124,58,237,.34),0 0 38px rgba(168,85,247,.28);}
 .mornai-discover-hero{background:linear-gradient(135deg,#111827 0%,#24113f 45%,#4c1d95 100%);}
 .mornai-discover-hero::after{background:radial-gradient(circle,rgba(168,85,247,.42),transparent 68%);}
 .mornai-primary-action{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.30),0 10px 24px rgba(124,58,237,.22),0 0 18px rgba(168,85,247,.16);}
 .mornai-primary-action:hover{box-shadow:0 0 0 1px rgba(196,181,253,.44),0 14px 30px rgba(124,58,237,.28),0 0 24px rgba(168,85,247,.20);}
+.mornai-home-hero{background:linear-gradient(135deg,#111827 0%,#261342 42%,#6d28d9 100%);box-shadow:0 30px 90px rgba(76,29,149,.18),inset 0 1px 0 rgba(255,255,255,.16);}
+.mornai-market-hero{background:linear-gradient(135deg,#111827 0%,#24113f 46%,#4c1d95 100%);box-shadow:0 28px 80px rgba(76,29,149,.16),inset 0 1px 0 rgba(255,255,255,.13);}
+.mornai-booking-hero{background:linear-gradient(135deg,#111827 0%,#27153f 48%,#6d28d9 100%);}
+.mornai-job-cta{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.28),0 7px 16px rgba(124,58,237,.20);}
+.mornai-price-badge{background:linear-gradient(135deg,#6d28d9,#a855f7);}
+.mornai-price-primary{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 12px 24px rgba(124,58,237,.18);}
+.mornai-workspace-ai-primary{background:linear-gradient(135deg,#6d28d9,#4f46e5);}
+.mornai-app-shell{
+  background:
+  radial-gradient(circle at 7% 4%,rgba(168,85,247,.22),transparent 30%),
+  radial-gradient(circle at 93% 12%,rgba(56,189,248,.18),transparent 32%),
+  radial-gradient(circle at 52% 86%,rgba(167,139,250,.12),transparent 28%),
+  linear-gradient(180deg,#faf5ff 0%,#f8fafc 48%,#ffffff 100%);
+}
+.mornai-app-shell::before{background:
+  radial-gradient(circle at 16% 24%,rgba(168,85,247,.14),transparent 26%),
+  radial-gradient(circle at 82% 64%,rgba(56,189,248,.12),transparent 28%),
+  radial-gradient(circle at 50% 10%,rgba(255,255,255,.9),transparent 34%);}
+.mornai-ambient{background:radial-gradient(circle at 10% 8%,rgba(168,85,247,.24),transparent 31%),radial-gradient(circle at 90% 18%,rgba(56,189,248,.2),transparent 33%),radial-gradient(circle at 45% 92%,rgba(129,140,248,.14),transparent 28%),linear-gradient(135deg,#fff 0%,#faf5ff 46%,#fff 100%);}
+.mornai-home-page::before,.mornai-marketplace-page::before{background:rgba(168,85,247,.09);}
 
 
 .mornai-book-sync-page{position:relative;overflow:hidden;background:
@@ -258,7 +419,13 @@
 .mornai-home-value-icon{display:grid;place-items:center;width:2rem;height:2rem;border-radius:12px;background:white;box-shadow:0 8px 18px rgba(15,23,42,.06);}
 .mornai-tone-violet{color:#7c3aed}.mornai-tone-sky{color:#0284c7}.mornai-tone-amber{color:#d97706}
 
-.mornai-marketplace-page{padding-bottom:2rem;}
+.mornai-marketplace-page{padding-bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));}
+@media (max-width:767px){
+  .mornai-marketplace-page{padding-bottom:1rem;}
+  .mornai-marketplace-page .mornai-person-card,
+  .mornai-marketplace-page .mornai-role-card,
+  .mornai-marketplace-page .mornai-startup-network-card{transform:none;}
+}
 .mornai-market-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#111827 0%,#24113f 46%,#4c1d95 100%);box-shadow:0 28px 80px rgba(76,29,149,.16),inset 0 1px 0 rgba(255,255,255,.13);}
 .mornai-market-hero::after{content:"";position:absolute;right:-9rem;bottom:-10rem;width:28rem;height:28rem;border-radius:9999px;background:radial-gradient(circle,rgba(168,85,247,.35),transparent 68%);filter:blur(12px);pointer-events:none;}
 .mornai-market-toolbar{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.72);box-shadow:0 18px 46px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
@@ -761,6 +928,7 @@ body {
 .mornai-main {
   /* Do not create a containing block for viewport-fixed drawers/modals. */
   contain: none;
+  transform: none;
 }
 .mornai-auth-scroll {
   contain: layout style;
@@ -820,7 +988,7 @@ body {
 
 /* Smooth interaction layer */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 body {
   -webkit-font-smoothing: antialiased;

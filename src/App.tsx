@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
@@ -15,13 +15,13 @@ import { StartupRegistrationModal } from './components/StartupRegistrationModal'
 import { ProfilePage } from './components/ProfilePage';
 import { ChatPage } from './components/ChatPage';
 import { VideoCallPage } from './components/VideoCallPage';
+import { IncomingCallOverlay, IncomingCallInfo } from './components/IncomingCallOverlay';
 import { LandingPage } from './components/LandingPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { HomeDashboard } from './components/HomeDashboard';
 import { MarketplacePage } from './components/MarketplacePage';
 import { NotificationCenter } from './components/NotificationCenter';
 import { PricingModal } from './components/PricingModal';
-import { PullToRefresh } from './components/PullToRefresh';
 import { buildMornaiNotifications, MornaiPreferences, nextDailyState, normalizePreferences } from './components/mornaiSignals';
 
 import { 
@@ -30,6 +30,16 @@ import {
   mockFounderUser
 } from './data/mockData';
 import { ConnectionRequest, Startup, User, RolePost, Appointment, TaskItem } from './types';
+
+const scrollDocumentToTop = () => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const main = document.querySelector('.mornai-main') as HTMLElement | null;
+  if (main) main.scrollTop = 0;
+  const publicScroll = document.querySelector('.mornai-public-scroll') as HTMLElement | null;
+  if (publicScroll) publicScroll.scrollTop = 0;
+};
 
 const normalizeStartup = (raw: Partial<Startup>): Startup => {
   const safeName = typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Untitled startup';
@@ -112,6 +122,13 @@ const buildStartupListing = (startup: Startup) => ({
   investorReadinessScore: startup.investorReadinessScore,
   growthVelocityScore: startup.growthVelocityScore,
   verified: startup.verified,
+  memberIds: Array.from(new Set([
+    startup.founderId,
+    ...(startup.memberIds || []),
+    ...(startup.members || [])
+      .filter((member) => member.status === 'active')
+      .map((member) => member.userId),
+  ].filter(Boolean))),
   openRoles: startup.openRoles.map((role) => ({
     ...role,
     responsibilities: role.responsibilities?.slice(0, 5) || [],
@@ -260,13 +277,18 @@ export default function App() {
   const [activeView, setActiveView] = useState<'home' | 'network' | 'workspace' | 'appointments' | 'booking' | 'messages' | 'video-call' | 'profile' | 'privacy'>('home');
   const [privateChatContact, setPrivateChatContact] = useState<User | null>(null);
   const [privateChatConnectionId, setPrivateChatConnectionId] = useState<string | null>(null);
-  const [videoCallContact, setVideoCallContact] = useState<User | null>(null);
-  const [videoCallConnectionId, setVideoCallConnectionId] = useState<string | null>(null);
-  const [videoCallMode, setVideoCallMode] = useState<'video' | 'audio'>('video');
+  const [activeCall, setActiveCall] = useState<{
+    callId: string;
+    mode: 'video' | 'audio';
+    peers: Array<{ id: string; name: string; avatar?: string }>;
+    isCaller: boolean;
+  } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<IncomingCallInfo | null>(null);
 
-  // Internal navigation preserves the user's current document position.
-  // Navigation: 'discover' (browse startups) | 'workspace' (founder/talent dashboard) | 'appointments' (direct sync list) | 'profile' (profile page)
-
+  // Full-page view changes always open from the top of the document.
+  useEffect(() => {
+    scrollDocumentToTop();
+  }, [activeView]);
 
   // Modals & Drawers
   const [selectedStartupForDetail, setSelectedStartupForDetail] = useState<Startup | null>(null);
@@ -287,6 +309,81 @@ export default function App() {
   // Active startup for the Founder Workspace and AI Co-Founder Chat.
   // It is persisted per user so refreshes cannot silently switch a founder to a demo startup.
   const [activeStartupContext, setActiveStartupContext] = useState<Startup | null>(null);
+
+  const ownedStartups = useMemo(
+    () => startups.filter((startup) => startup.persisted && startup.founderId === currentUser.id),
+    [startups, currentUser.id],
+  );
+
+  // Merge private workspace members into listings so messaging can build team rooms.
+  const chatStartups = useMemo(() => {
+    return startups.map((startup) => {
+      if (activeStartupContext && startup.id === activeStartupContext.id) {
+        const memberIds = Array.from(new Set([
+          activeStartupContext.founderId,
+          ...(activeStartupContext.memberIds || []),
+          ...(activeStartupContext.members || [])
+            .filter((member) => member.status === 'active')
+            .map((member) => member.userId),
+        ].filter(Boolean)));
+
+        return {
+          ...startup,
+          members: activeStartupContext.members,
+          memberIds,
+          tasks: activeStartupContext.tasks,
+          historyLogs: activeStartupContext.historyLogs,
+        };
+      }
+
+      const memberIds = Array.from(new Set([
+        startup.founderId,
+        ...(startup.memberIds || []),
+        ...(startup.members || [])
+          .filter((member) => member.status === 'active')
+          .map((member) => member.userId),
+      ].filter(Boolean)));
+
+      return { ...startup, memberIds };
+    });
+  }, [startups, activeStartupContext]);
+
+  const selectOwnedStartup = useCallback(async (startupId: string) => {
+    if (!startupId || !currentUser.id) return;
+
+    const ownedListing = ownedStartups.find((startup) => startup.id === startupId);
+    if (!ownedListing) {
+      console.warn('Rejected non-owned startup selection:', startupId);
+      return;
+    }
+
+    try {
+      const privateStartup = await getDoc(doc(db, 'startups', startupId));
+      if (privateStartup.exists()) {
+        const startup = {
+          ...normalizeStartup({ ...(privateStartup.data() as Partial<Startup>), id: privateStartup.id }),
+          persisted: true,
+        };
+
+        if (startup.founderId !== currentUser.id) {
+          window.localStorage.removeItem(`mornai-active-startup:${currentUser.id}`);
+          console.warn('Rejected non-owned private startup:', startupId);
+          return;
+        }
+
+        setActiveStartupContext(startup);
+        window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, startup.id);
+        return;
+      }
+
+      setActiveStartupContext(ownedListing);
+      window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, ownedListing.id);
+    } catch (error) {
+      console.error('Failed to switch startup context:', error);
+      setActiveStartupContext(ownedListing);
+      window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, ownedListing.id);
+    }
+  }, [ownedStartups, currentUser.id]);
 
   // Never leave an invisible AI drawer state behind while the startup context is unavailable.
   useEffect(() => {
@@ -595,7 +692,10 @@ export default function App() {
 
         const privateStartup = await getDoc(doc(db, 'startups', preferredId));
         if (!privateStartup.exists()) {
-          if (!cancelled) setActiveStartupContext(null);
+          if (!cancelled) {
+            setActiveStartupContext(null);
+            window.localStorage.removeItem(`mornai-active-startup:${currentUser.id}`);
+          }
           return;
         }
 
@@ -604,11 +704,23 @@ export default function App() {
           persisted: true,
         };
 
+        const isOwner = startup.founderId === currentUser.id;
+        const isMember = Boolean(
+          startup.memberIds?.includes(currentUser.id) ||
+          startup.members?.some((member) => member.userId === currentUser.id && member.status === 'active'),
+        );
+
+        if (!isOwner && !isMember) {
+          window.localStorage.removeItem(`mornai-active-startup:${currentUser.id}`);
+          if (!cancelled) setActiveStartupContext(null);
+          return;
+        }
+
         if (!cancelled) {
           setActiveStartupContext(startup);
           window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, startup.id);
 
-          if (currentUser.role === 'founder') {
+          if (currentUser.role === 'founder' && isOwner) {
             void setDoc(
               doc(db, 'startupListings', startup.id),
               buildStartupListing(startup),
@@ -676,11 +788,185 @@ export default function App() {
     setActiveView('messages');
   };
 
-  const openVideoCall = (contact: User, connectionId?: string, mode: 'video' | 'audio' = 'video') => {
-    setVideoCallContact(contact);
-    setVideoCallConnectionId(connectionId || null);
-    setVideoCallMode(mode);
-    setActiveView('video-call');
+  const openVideoCall = async (
+    users: User | User[],
+    connectionId?: string,
+    mode: 'video' | 'audio' = 'video',
+  ) => {
+    const peers = (Array.isArray(users) ? users : [users]).filter(
+      (user) => user?.id && user.id !== currentUser.id,
+    );
+    if (!peers.length) {
+      showToast('Pick at least one other person for the call.');
+      return;
+    }
+
+    const callId = `call-${crypto.randomUUID()}`;
+    const participants = Array.from(new Set([currentUser.id, ...peers.map((peer) => peer.id)]));
+
+    try {
+      await setDoc(doc(db, 'videoCalls', callId), {
+        callId,
+        mode,
+        status: 'ringing',
+        callerId: currentUser.id,
+        callerName: currentUser.name,
+        callerAvatar: currentUser.avatar || null,
+        participants,
+        participantProfiles: [
+          {
+            id: currentUser.id,
+            name: currentUser.name,
+            avatar: currentUser.avatar || null,
+          },
+          ...peers.map((peer) => ({
+            id: peer.id,
+            name: peer.name,
+            avatar: peer.avatar || null,
+          })),
+        ],
+        connectionId: connectionId || null,
+        joinedIds: { [currentUser.id]: true },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      setIncomingCall(null);
+      setActiveCall({
+        callId,
+        mode,
+        peers: peers.map((peer) => ({
+          id: peer.id,
+          name: peer.name,
+          avatar: peer.avatar,
+        })),
+        isCaller: true,
+      });
+      setActiveView('video-call');
+      showToast(
+        peers.length > 1
+          ? `Group ${mode} call started — ringing ${peers.length} people.`
+          : `${mode === 'audio' ? 'Voice' : 'Video'} call ringing ${peers[0].name}…`,
+      );
+    } catch (error) {
+      console.error('Failed to start call:', error);
+      showToast('Could not start the call. Check Firebase permissions and try again.');
+    }
+  };
+
+  // Ring the callee(s) even if they are on another page.
+  useEffect(() => {
+    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
+    if (!isLoggedIn || !userId) {
+      setIncomingCall(null);
+      return;
+    }
+
+    const ringingQuery = query(
+      collection(db, 'videoCalls'),
+      where('participants', 'array-contains', userId),
+      where('status', '==', 'ringing'),
+    );
+
+    const unsubscribe = onSnapshot(
+      ringingQuery,
+      (snapshot) => {
+        const match = snapshot.docs
+          .map((callDoc) => ({ id: callDoc.id, ...(callDoc.data() as any) }))
+          .find(
+            (call) =>
+              call.callerId !== userId &&
+              call.status === 'ringing' &&
+              (!activeCall || activeCall.callId !== call.id),
+          );
+
+        if (!match) {
+          setIncomingCall(null);
+          return;
+        }
+
+        setIncomingCall({
+          callId: match.id,
+          mode: match.mode === 'audio' ? 'audio' : 'video',
+          callerId: match.callerId,
+          callerName: match.callerName || 'MornAI member',
+          callerAvatar: match.callerAvatar || undefined,
+          participantCount: Array.isArray(match.participants) ? match.participants.length : 2,
+        });
+      },
+      (error) => console.error('Incoming call listener failed:', error),
+    );
+
+    return () => unsubscribe();
+  }, [isLoggedIn, currentUser.id, activeCall?.callId]);
+
+  const acceptIncomingCall = async () => {
+    if (!incomingCall) return;
+    const callId = incomingCall.callId;
+    try {
+      const snap = await getDoc(doc(db, 'videoCalls', callId));
+      if (!snap.exists()) {
+        setIncomingCall(null);
+        showToast('This call is no longer available.');
+        return;
+      }
+      const data = snap.data() as any;
+      if (data.status === 'ended' || data.status === 'rejected') {
+        setIncomingCall(null);
+        showToast('The caller already ended this ring.');
+        return;
+      }
+
+      const profiles: Array<{ id: string; name: string; avatar?: string }> = Array.isArray(
+        data.participantProfiles,
+      )
+        ? data.participantProfiles
+        : [];
+      const peers = profiles
+        .filter((profile) => profile.id && profile.id !== currentUser.id)
+        .map((profile) => ({
+          id: profile.id,
+          name: profile.name || 'Guest',
+          avatar: profile.avatar || undefined,
+        }));
+
+      await setDoc(
+        doc(db, 'videoCalls', callId),
+        {
+          status: 'active',
+          joinedIds: { ...(data.joinedIds || {}), [currentUser.id]: true },
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      setIncomingCall(null);
+      setActiveCall({
+        callId,
+        mode: data.mode === 'audio' ? 'audio' : 'video',
+        peers,
+        isCaller: false,
+      });
+      setActiveView('video-call');
+    } catch (error) {
+      console.error('Failed to accept call:', error);
+      showToast('Could not pick up the call.');
+    }
+  };
+
+  const rejectIncomingCall = async () => {
+    if (!incomingCall) return;
+    const callId = incomingCall.callId;
+    setIncomingCall(null);
+    try {
+      await updateDoc(doc(db, 'videoCalls', callId), {
+        status: 'rejected',
+        endedBy: currentUser.id,
+        endedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Failed to reject call:', error);
+    }
   };
 
   const handleSelectStartup = (startup: Startup) => {
@@ -963,16 +1249,16 @@ export default function App() {
         initial={{ opacity: 0, y: 4, scale: 0.998 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen will-change-transform"
+        className="mornai-public-scroll"
       >
         <LandingPage
           onOpenAuth={(mode) => {
+            scrollDocumentToTop();
             setAuthMode(mode);
             setIsAuthModalOpen(true);
           }}
           onOpenPrivacy={() => setActiveView('privacy')}
         />
-        <PullToRefresh />
         {authModals}
       </motion.div>
     );
@@ -980,22 +1266,25 @@ export default function App() {
 
   if (activeView === 'privacy') {
     return (
-      <PrivacyPolicyPage
-        onBack={() => setActiveView(isLoggedIn ? 'home' : 'home')}
-      />
+      <div className="mornai-public-scroll">
+        <PrivacyPolicyPage
+          onBack={() => setActiveView(isLoggedIn ? 'home' : 'home')}
+        />
+      </div>
     );
   }
+
+  const fillMainView = activeView === 'messages' || activeView === 'video-call';
 
   return (
     <motion.div
       key="mornai-authenticated-app"
-      initial={{ opacity: 0, y: 4, scale: 0.998 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen will-change-transform"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.12, ease: 'easeOut' }}
+      className="h-full"
     >
-      <div className="mornai-app-shell min-h-screen text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
-      <PullToRefresh />
+      <div className="mornai-app-shell h-full text-slate-900 flex flex-col font-['Plus_Jakarta_Sans']">
       {authModals}
       
       {/* Toast Banner */}
@@ -1006,7 +1295,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Navbar */}
+      {/* Top Navbar — hidden during full-screen calls (avoids white bar above video) */}
+      {activeView !== 'video-call' && (
       <Navbar
         currentUser={currentUser}
         activeTab={
@@ -1036,15 +1326,16 @@ export default function App() {
         appointmentCount={appointments.length}
         onOpenAuthModal={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
       />
+      )}
 
-      {/* Main Content View */}
-      <main className="mornai-main flex-1 pb-16">
+      {/* Main Content View — sole page scroll owner (except fill views like chat/call) */}
+      <main className={`mornai-main flex-1 min-h-0 ${fillMainView ? 'is-fill-view' : ''}`}>
         <motion.div
           key={activeView}
-          initial={{ opacity: 0, y: 4, scale: 0.998 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-          className="mornai-page-transition relative min-h-full will-change-transform"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.1, ease: 'easeOut' }}
+          className={`mornai-page-transition relative ${fillMainView ? 'flex min-h-0 flex-1 flex-col' : ''}`}
         >
 
         {/* AI Co-Founder & Strategist Slide-out Drawer */}
@@ -1052,12 +1343,11 @@ export default function App() {
           <AiCoFounderDrawer
             isOpen={isAiDrawerOpen}
             onClose={() => setIsAiDrawerOpen(false)}
-            activeStartup={activeStartupContext || startups[0]}
+            activeStartup={activeStartupContext}
             currentUser={currentUser}
-            allStartups={startups}
+            allStartups={ownedStartups}
             onSelectStartup={(s) => {
-              setActiveStartupContext(s);
-              window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, s.id);
+              void selectOwnedStartup(s.id);
             }}
           />
         )}
@@ -1135,6 +1425,8 @@ export default function App() {
             activeStartupContext ? (
               <FounderWorkspace
                 startup={activeStartupContext}
+                ownedStartups={ownedStartups}
+                onSwitchStartup={(startupId) => { void selectOwnedStartup(startupId); }}
                 currentUser={currentUser}
                 allTalents={talentUsers}
                 appointments={appointments}
@@ -1163,8 +1455,10 @@ export default function App() {
             activeStartupContext ? (
               <FounderWorkspace
                 startup={activeStartupContext}
+                ownedStartups={ownedStartups}
+                onSwitchStartup={(startupId) => { void selectOwnedStartup(startupId); }}
                 currentUser={currentUser}
-                allTalents={mockTalentUsers}
+                allTalents={talentUsers}
                 appointments={appointments}
                 onUpdateStartup={handleUpdateStartup}
                 onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
@@ -1189,24 +1483,23 @@ export default function App() {
         {activeView === 'messages' && (
           <ChatPage
             currentUser={currentUser}
-            startups={startups}
+            startups={chatStartups}
             connections={connections}
             initialContact={privateChatContact}
             initialConnectionId={privateChatConnectionId || undefined}
           />
         )}
 
-        {/* VIEW 6: IN-APP VIDEO CALL */}
-        {activeView === 'video-call' && videoCallContact && (
+        {/* VIEW 6: IN-APP VIDEO / VOICE / GROUP CALL */}
+        {activeView === 'video-call' && activeCall && (
           <VideoCallPage
             currentUser={currentUser}
-            contact={videoCallContact}
-            connectionId={videoCallConnectionId || undefined}
-            mode={videoCallMode}
+            callId={activeCall.callId}
+            mode={activeCall.mode}
+            peers={activeCall.peers}
+            isCaller={activeCall.isCaller}
             onClose={() => {
-              setVideoCallContact(null);
-              setVideoCallConnectionId(null);
-              setVideoCallMode('video');
+              setActiveCall(null);
               setActiveView('network');
             }}
           />
@@ -1218,7 +1511,7 @@ export default function App() {
             currentUser={currentUser}
             onUpdateUser={setCurrentUser}
             onLogout={async () => {
-              window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+              scrollDocumentToTop();
               setSelectedStartupForDetail(null);
               setIsDetailModalOpen(false);
               setIsAiDrawerOpen(false);
@@ -1247,10 +1540,14 @@ export default function App() {
         currentUser={currentUser}
         onBookAppointment={handleOpenBookingModal}
         onConsultAi={(startup) => {
-          setActiveStartupContext(startup);
-          window.localStorage.setItem(`mornai-active-startup:${currentUser.id}`, startup.id);
-          setIsDetailModalOpen(false);
-          setIsAiDrawerOpen(true);
+          if (startup.founderId !== currentUser.id) {
+            showToast('AI Co-Founder is only available for startups you own.');
+            return;
+          }
+          void selectOwnedStartup(startup.id).then(() => {
+            setIsDetailModalOpen(false);
+            setIsAiDrawerOpen(true);
+          });
         }}
       />
 
@@ -1290,32 +1587,40 @@ export default function App() {
         onClose={() => setIsPricingOpen(false)}
       />
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <IncomingCallOverlay
+        call={incomingCall}
+        onAccept={() => { void acceptIncomingCall(); }}
+        onReject={() => { void rejectIncomingCall(); }}
+      />
+
+      {/* Footer — desktop only; hidden on call/messages fill views */}
+      {activeView !== 'video-call' && activeView !== 'messages' && (
+      <footer className="mornai-app-footer border-t border-slate-200/80 bg-white/80 py-3 text-center text-xs text-slate-500">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row">
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800 font-['Outfit']">MornAI</span>
             <span>• AI Startup Operating Platform</span>
           </div>
-          <div className="text-slate-400">
+          <div className="hidden text-slate-400 lg:block">
             AI Co-Founder • Startup Memory • Roadmaps • Talent • Execution
           </div>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setActiveView('privacy')}
-              className="text-slate-500 hover:text-indigo-400 text-xs underline"
+              className="text-xs text-slate-500 underline hover:text-indigo-400"
             >
               Privacy Policy
             </button>
-            <button 
+            <button
               onClick={() => setIsLegalModalOpen(true)}
-              className="text-slate-500 hover:text-indigo-400 text-xs underline"
+              className="text-xs text-slate-500 underline hover:text-indigo-400"
             >
               Legal Information
             </button>
           </div>
         </div>
       </footer>
+      )}
 
       </div>
     </motion.div>

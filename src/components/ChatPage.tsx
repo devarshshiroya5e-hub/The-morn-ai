@@ -283,7 +283,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
   const participantsForRoom = (room: Room) => {
     if (room.kind === 'private') {
-      return Array.from(new Set([currentUser.id, room.contact!.id]));
+      return Array.from(new Set([currentUser.id, room.contact!.id].filter(Boolean)));
     }
 
     if (room.kind === 'startup' && room.startup) {
@@ -295,7 +295,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
           .map((member) => member.userId),
       ];
 
-      return Array.from(new Set(startupMemberIds.filter(Boolean)));
+      const participants = Array.from(new Set(startupMemberIds.filter(Boolean)));
+      // Always include the sender so permission checks and room membership succeed.
+      if (!participants.includes(currentUser.id)) {
+        participants.push(currentUser.id);
+      }
+      return participants;
     }
 
     return [];
@@ -326,39 +331,70 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   useEffect(() => {
     if (!rooms.length) return;
 
-    const unsubscribes = rooms.map((room) => {
-      const latestQuery = messagesQueryForRoom(room);
-      if (!latestQuery) return () => undefined;
+    const userId = typeof currentUser.id === 'string' ? currentUser.id.trim() : '';
+    const worldRoom = rooms.find((room) => room.kind === 'world');
+    const privateRooms = rooms.filter((room) => room.kind !== 'world');
+    const unsubscribes: Array<() => void> = [];
 
-      return onSnapshot(
-        latestQuery,
-        (snapshot) => {
-          const latest = snapshot.docs
-            .map(toMessage)
-            .filter((message) =>
-              message.roomId === room.id &&
-              message.roomType === room.kind &&
-              (room.kind !== 'startup' || message.startupId === room.startup?.id)
-            )
-            .sort((a, b) => roomTimestamp(a) - roomTimestamp(b))
-            .at(-1);
-          if (!latest) return;
-          const message = latest;
-          setRoomPreviews((prev) => ({
-            ...prev,
-            [room.id]: {
-              text: message.text,
-              createdAt: message.createdAt,
-              senderId: message.senderId,
-            },
-          }));
+    const applyLatestPreview = (room: Room, candidates: ChatMessage[]) => {
+      const latest = candidates
+        .filter((message) =>
+          message.roomId === room.id &&
+          message.roomType === room.kind &&
+          (room.kind !== 'startup' || message.startupId === room.startup?.id),
+        )
+        .sort((a, b) => roomTimestamp(a) - roomTimestamp(b))
+        .at(-1);
+
+      if (!latest) return;
+
+      setRoomPreviews((prev) => ({
+        ...prev,
+        [room.id]: {
+          text: latest.text,
+          createdAt: latest.createdAt,
+          senderId: latest.senderId,
         },
-        (error) => console.error('Room preview error:', error),
+      }));
+    };
+
+    if (worldRoom) {
+      const worldQuery = messagesQueryForRoom(worldRoom);
+      if (worldQuery) {
+        unsubscribes.push(
+          onSnapshot(
+            worldQuery,
+            (snapshot) => {
+              applyLatestPreview(worldRoom, snapshot.docs.map(toMessage));
+            },
+            (error) => console.error('World preview error:', error),
+          ),
+        );
+      }
+    }
+
+    // One participant listener fans out previews for every private/startup room.
+    if (userId && privateRooms.length > 0) {
+      const participantQuery = query(
+        collection(db, 'messages'),
+        where('participants', 'array-contains', userId),
       );
-    });
+
+      unsubscribes.push(
+        onSnapshot(
+          participantQuery,
+          (snapshot) => {
+            const messages = snapshot.docs.map(toMessage);
+            privateRooms.forEach((room) => applyLatestPreview(room, messages));
+          },
+          (error) => console.error('Room preview error:', error),
+        ),
+      );
+    }
 
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  }, [rooms, currentUser.id, currentUser.role]);
+  }, [rooms, currentUser.id]);
+
 
   useEffect(() => {
     if (!activeRoom) return;
@@ -405,7 +441,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       },
       (error) => {
         console.error('Chat subscription error:', error);
-        setChatError(error.message || 'Unable to connect to the message service.');
+        const code = String((error as { code?: string })?.code || '');
+        const messageText = String(error.message || '');
+        setChatError(
+          code === 'permission-denied'
+            ? 'Firebase blocked reading messages (permission-denied). Deploy the latest firestore.rules for project themorn-ai, then refresh while signed in.'
+            : code === 'failed-precondition' || messageText.includes('index')
+              ? 'Firestore needs an index for this chat query. Deploy firestore.indexes.json, or open the index link in the browser console.'
+              : messageText || 'Unable to connect to the message service.',
+        );
         setMessages([]);
         setIsLoadingMessages(false);
       },
@@ -550,7 +594,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     try {
       const participants = participantsForRoom(activeRoom);
-      await addDoc(collection(db, 'messages'), {
+      const payload: Record<string, unknown> = {
         roomId: activeRoom.id,
         roomType: activeRoom.kind,
         senderId: currentUser.id,
@@ -560,25 +604,31 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         clientId,
         createdAt: serverTimestamp(),
         createdAtClient: Date.now(),
-        ...(activeRoom.kind === 'private'
-          ? activeRoom.startup
-            ? {
-                startupId: activeRoom.startup.id,
-                recipientId: activeRoom.contact!.id,
-                participants,
-              }
-            : {
-                recipientId: activeRoom.contact!.id,
-                ...(activeRoom.connectionId ? { connectionId: activeRoom.connectionId } : {}),
-                participants,
-              }
-          : activeRoom.kind === 'startup'
-            ? {
-                startupId: activeRoom.startup!.id,
-                participants,
-              }
-            : {}),
-      });
+      };
+
+      if (activeRoom.kind === 'world') {
+        // World chat is readable by every signed-in user via roomId/roomType rules.
+        payload.participants = [currentUser.id];
+      } else if (activeRoom.kind === 'private') {
+        if (!activeRoom.contact?.id) {
+          throw new Error('Private chat is missing a recipient.');
+        }
+        payload.recipientId = activeRoom.contact.id;
+        payload.participants = participants;
+        if (activeRoom.startup?.id) payload.startupId = activeRoom.startup.id;
+        if (activeRoom.connectionId) payload.connectionId = activeRoom.connectionId;
+      } else if (activeRoom.kind === 'startup') {
+        if (!activeRoom.startup?.id) {
+          throw new Error('Startup chat is missing a startup id.');
+        }
+        if (participants.length < 1) {
+          throw new Error('Startup chat has no participants yet. Refresh and try again.');
+        }
+        payload.startupId = activeRoom.startup.id;
+        payload.participants = participants;
+      }
+
+      await addDoc(collection(db, 'messages'), payload);
 
       setMessages((previous) =>
         previous.map((message) =>
@@ -598,10 +648,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         setDraft(text);
       }
 
+      const code = String(error?.code || '');
+      const messageText = String(error?.message || '');
       setChatError(
-        error?.code === 'permission-denied'
-          ? 'You no longer have permission to send messages in this room.'
-          : error?.message || 'Unable to send the message. Please try again.',
+        code === 'permission-denied'
+          ? 'Firebase blocked this message (permission-denied). Deploy the latest firestore.rules for project themorn-ai, then refresh while signed in.'
+          : code === 'failed-precondition' || messageText.includes('index')
+            ? 'Firestore needs an index for this chat query. Deploy firestore.indexes.json, or open the index link shown in the browser console.'
+            : messageText || 'Unable to send the message. Please try again.',
       );
     } finally {
       setIsSending(false);
@@ -611,34 +665,30 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   const activeReadAt = activeRoom ? readAt[activeRoom.id] || 0 : 0;
 
   return (
-    <div className="mornai-chat-page mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mornai-discover-box overflow-hidden rounded-[32px] border border-white/90 bg-white/70 shadow-[0_30px_90px_rgba(15,23,42,.10)] backdrop-blur-2xl">
-        <div className="border-b border-white/80 bg-[linear-gradient(135deg,#111827_0%,#25133f_48%,#6d28d9_100%)] px-5 py-6 text-white sm:px-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mornai-chat-page mx-auto w-full max-w-7xl">
+      <div className="mornai-chat-shell mornai-discover-box rounded-[22px] border border-white/90 bg-white/80 shadow-[0_24px_70px_rgba(15,23,42,.08)] sm:rounded-[28px]">
+        <div className="mornai-chat-hero border-b border-white/50 px-4 py-3 text-white sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-1.5 sm:gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-100">
-                <MessageCircle className="h-3.5 w-3.5" /> MornAI Message Network
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/20 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[.16em] text-white">
+                <MessageCircle className="h-3 w-3" /> Talk to the community
               </span>
-              <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Talk to the network.</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-violet-100/80">
-                World Chat is open to everyone on THE MORN AI. Private startup rooms appear only after a founder selects you for their team.
+              <h1 className="mt-1.5 text-xl font-extrabold tracking-tight sm:text-2xl">Talk to the network.</h1>
+              <p className="mt-1 hidden max-w-2xl text-sm leading-5 text-violet-50/95 sm:block">
+                World Chat is open to everyone on THE MORN AI. Private rooms appear after a founder selects you.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="mornai-discover-box rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" /> Live global room</div>
-                <div className="mt-1 text-[10px] text-violet-100/65">All authenticated THE MORN AI members</div>
-              </div>
-              <div className="mornai-discover-box hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-3 sm:block">
-                <UsersRound className="h-4 w-4 text-violet-200" />
-                <div className="mt-1 text-[10px] font-bold text-violet-100/70">World + private rooms</div>
+            <div className="hidden items-center gap-3 sm:flex">
+              <div className="rounded-2xl border border-white/20 bg-white/20 px-3.5 py-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-50"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" /> Live global room</div>
+                <div className="mt-0.5 text-[10px] text-white/80">All authenticated members</div>
               </div>
             </div>
           </div>
         </div>
 
         {chatError && (
-          <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800 sm:mx-6">
+          <div className="mx-3 mt-2 flex shrink-0 items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-800 sm:mx-6">
             <div className="min-w-0 flex-1">
               <p className="font-extrabold">Message connection issue</p>
               <p className="mt-1 break-words leading-5">{chatError}</p>
@@ -653,16 +703,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
           </div>
         )}
 
-        <div className="grid min-h-[620px] lg:grid-cols-[290px_1fr]">
-          <aside className={`border-b border-slate-200/80 bg-white/95 p-4 backdrop-blur-xl lg:static lg:flex lg:flex-col lg:border-b-0 lg:border-r ${
+        <div className="mornai-chat-body relative">
+          <aside className={`min-h-0 border-b border-slate-200/80 bg-white/95 p-3 sm:p-4 lg:flex lg:flex-col lg:border-b-0 lg:border-r ${
             mobileRoomListOpen
-              ? 'absolute inset-0 z-30 flex'
-              : 'hidden'
+              ? 'absolute inset-0 z-30 flex flex-col'
+              : 'hidden lg:flex'
           }`}>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex shrink-0 items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-violet-600">Inbox</p>
-                <h2 className="mt-1 text-lg font-extrabold text-slate-950">Your conversations</h2>
+                <h2 className="mt-0.5 text-base font-extrabold text-slate-950 sm:text-lg">Your conversations</h2>
               </div>
               <button
                 type="button"
@@ -674,17 +724,17 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               </button>
             </div>
 
-            <div className="relative mt-4">
+            <div className="relative mt-3 shrink-0">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search conversations"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-10 py-3 text-xs font-semibold text-slate-800 outline-none transition focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-50"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-10 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-50"
               />
             </div>
 
-            <div className="mt-4 space-y-1.5 overflow-y-auto">
+            <div className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain">
               {visibleRooms.map((room) => {
                 const active = room.id === activeRoom?.id;
                 const preview = roomPreviews[room.id];
@@ -754,18 +804,18 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
             )}
           </aside>
 
-          <section className="relative flex min-h-[620px] min-w-0 flex-col bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,.07),transparent_30%),#fff]">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-5 py-4 sm:px-7">
-              <div className="flex items-center gap-3">
+          <section className="mornai-chat-thread bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.10),transparent_32%),#fff]">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200/70 px-3 py-2.5 sm:px-6 sm:py-3">
+              <div className="flex min-w-0 items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setMobileRoomListOpen(true)}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 lg:hidden"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 lg:hidden"
                   aria-label="Open conversations"
                 >
                   <ArrowUp className="h-4 w-4 rotate-90" />
                 </button>
-                <span className="hidden h-10 w-10 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-700 lg:grid">
+                <span className="hidden h-9 w-9 place-items-center overflow-hidden rounded-xl bg-violet-50 text-violet-700 lg:grid">
                   {activeRoom?.kind === 'world' ? <Globe2 className="h-4 w-4" /> : (
                     <InitialAvatar
                       name={activeRoom?.kind === 'startup' ? activeRoom.startup?.name || activeRoom.title : activeRoom?.contact?.name || activeRoom?.title || 'MornAI'}
@@ -775,22 +825,22 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                     />
                   )}
                 </span>
-                <div>
-                  <h2 className="text-sm font-extrabold text-slate-950">{activeRoom?.title || 'World Chat'}</h2>
-                  <p className="text-[10px] font-semibold text-slate-400">{activeRoom?.subtitle || ''}</p>
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-extrabold text-slate-950">{activeRoom?.title || 'World Chat'}</h2>
+                  <p className="truncate text-[10px] font-semibold text-slate-400">{activeRoom?.subtitle || ''}</p>
                 </div>
               </div>
               {activeRoom?.kind === 'private' && (
-                <span className="rounded-full bg-violet-50 px-3 py-1.5 text-[10px] font-extrabold text-violet-700">Selected team member</span>
+                <span className="hidden rounded-full bg-violet-50 px-3 py-1.5 text-[10px] font-extrabold text-violet-700 sm:inline">Selected team member</span>
               )}
             </div>
 
             <div
               ref={messageViewportRef}
-              className="relative flex-1 overflow-y-auto px-3 py-5 sm:px-7"
+              className="mornai-chat-messages px-3 py-3 sm:px-6 sm:py-4"
             >
               {isLoadingMessages && (
-                <div className="mx-auto flex min-h-[360px] max-w-md items-center justify-center">
+                <div className="mx-auto flex min-h-[200px] max-w-md items-center justify-center py-10">
                   <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/60 px-5 py-4 text-center">
                     <RotateCw className="mx-auto h-5 w-5 animate-spin text-violet-600" />
                     <p className="mt-2 text-xs font-extrabold text-violet-700">Connecting to messages...</p>
@@ -800,7 +850,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               )}
 
               {!isLoadingMessages && messages.length === 0 && !chatError && (
-                <div className="flex min-h-[360px] items-center justify-center">
+                <div className="flex min-h-[200px] items-center justify-center py-10">
                   <div className="mx-auto max-w-md rounded-[30px] border border-dashed border-slate-200 bg-white/80 p-8 text-center shadow-sm">
                     <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-violet-50 text-violet-600">
                       {activeRoom?.kind === 'world' ? <Globe2 className="h-5 w-5" /> : activeRoom?.kind === 'startup' ? <UsersRound className="h-5 w-5" /> : <LockKeyhole className="h-5 w-5" />}
@@ -940,9 +990,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                 )}
               </AnimatePresence>
             </div>
-            <div className="border-t border-slate-200/70 bg-white/90 p-3 backdrop-blur-xl sm:p-4">
+            <div className="mornai-chat-composer px-2 pt-2 sm:px-4 sm:pt-2.5">
               <div className="mx-auto max-w-3xl">
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-2 shadow-[0_12px_32px_rgba(15,23,42,.05)] transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_16px_38px_rgba(124,58,237,.10)]">
+                <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50/95 px-2 py-1.5 shadow-sm transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_10px_28px_rgba(124,58,237,.08)]">
                   <textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
@@ -953,28 +1003,25 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                       }
                     }}
                     rows={1}
-                    placeholder={activeRoom?.kind === 'world' ? 'Message everyone...' : 'Write to your startup contact...'}
-                    className="min-h-12 w-full resize-none border-0 bg-transparent px-3 py-2.5 text-xs leading-6 text-slate-900 outline-none placeholder:text-slate-400"
+                    placeholder={activeRoom?.kind === 'world' ? 'Message everyone…' : 'Write a message…'}
+                    className="min-h-9 max-h-24 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
                     aria-label="Message"
                   />
-
-                  <div className="flex items-center justify-between gap-3 px-2 pb-1">
-                    <p className={`text-[9px] font-semibold ${
-                      draft.length > MAX_MESSAGE_LENGTH * .9 ? 'text-amber-600' : 'text-slate-400'
-                    }`}>
-                      {draft.length.toLocaleString()}/{MAX_MESSAGE_LENGTH.toLocaleString()} • Enter to send • Shift + Enter for a new line
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void sendMessage()}
-                      disabled={!draft.trim() || !activeRoom || isSending}
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-950 text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-35"
-                      aria-label="Send message"
-                    >
-                      {isSending ? <RotateCw className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void sendMessage()}
+                    disabled={!draft.trim() || !activeRoom || isSending}
+                    className="mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-slate-950 text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-35"
+                    aria-label="Send message"
+                  >
+                    {isSending ? <RotateCw className="h-3.5 w-3.5 animate-spin" /> : <SendHorizontal className="h-3.5 w-3.5" />}
+                  </button>
                 </div>
+                <p className={`mt-1 px-1 pb-0.5 text-[8px] font-semibold sm:text-[9px] ${
+                  draft.length > MAX_MESSAGE_LENGTH * .9 ? 'text-amber-600' : 'text-slate-400'
+                }`}>
+                  {draft.length.toLocaleString()}/{MAX_MESSAGE_LENGTH.toLocaleString()} • Enter to send
+                </p>
               </div>
             </div>
           </section>

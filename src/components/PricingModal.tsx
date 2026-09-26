@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, Crown, Sparkles, X, Zap } from 'lucide-react';
 import { User } from '../types';
 import { useLocalizedCurrency } from '../lib/currency';
+import { useBodyScrollLock } from '../lib/useBodyScrollLock';
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -12,12 +14,16 @@ interface PricingModalProps {
 
 export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, currentUser }) => {
   const [annual, setAnnual] = useState(true);
-  const { format: formatMoney } = useLocalizedCurrency(currentUser);
+  const { format: formatMoney, currency, regionLabel, rates } = useLocalizedCurrency(currentUser);
+
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
   const proPriceUsd = annual ? 9 : 12;
   const teamPriceUsd = annual ? 19 : 25;
+  const usdInr = rates.INR || 96.02;
 
   const plans = [
     {
@@ -48,9 +54,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, cur
     },
   ];
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <motion.div className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <motion.div className="fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-slate-950/35 p-3 sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
         <div className="flex min-h-full items-start justify-center py-1 sm:py-2">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: .16, ease: 'easeOut' }} className="mornai-pricing-modal w-full max-w-6xl rounded-[28px]">
             <div className="shrink-0 p-4 pb-3 sm:p-5 sm:pb-3">
@@ -59,6 +65,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, cur
               <span className="mornai-section-kicker"><Crown className="h-3.5 w-3.5" /> MornAI Pro</span>
               <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Pay for leverage, not another dashboard.</h2>
               <p className="mt-1 max-w-2xl text-xs leading-6 text-slate-500">The free network helps you connect. Pro removes the friction around matching, company context, hiring, and AI-assisted execution.</p>
+              <p className="mt-2 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-extrabold text-violet-700">
+                Prices shown in {currency === 'INR' ? '₹ INR' : currency} · {regionLabel}
+                {currency === 'INR' ? ` · 1 USD ≈ ₹${usdInr.toFixed(2)}` : ''}
+              </p>
             </div>
             <button type="button" onClick={onClose} className="mornai-close-btn"><X className="h-4 w-4" /></button>
           </div>
@@ -88,13 +98,18 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, cur
           </div>
 
           <div className="mt-4 rounded-[22px] border border-violet-100 bg-gradient-to-r from-violet-50/90 via-white to-sky-50/80 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-600">Pricing principle</p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">The marketplace stays useful for free. Premium is about speed, context, automation, and better decisions. That makes the paid value visible instead of holding basic networking hostage.</p>
+            <p className="text-[10px] font-black uppercase tracking-[.15em] text-violet-600">Regional pricing</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              {currency === 'INR'
+                ? `USD prices are converted to Indian Rupees using the live rate (about ₹${usdInr.toFixed(2)} per $1). Example: Pro $${proPriceUsd}/mo ≈ ${formatMoney(proPriceUsd)}.`
+                : `Subscription amounts convert from USD into ${currency} using live exchange rates for ${regionLabel}. Set your country to India in Profile to see ₹ prices.`}
+            </p>
           </div>
             </div>
           </motion.div>
         </div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };

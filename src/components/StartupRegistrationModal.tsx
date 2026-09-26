@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { postMornAI } from '../lib/mornaiAi';
 import { PartnershipMode, RolePartnership, Startup, User } from '../types';
 import { convertLocalToUsd, convertUsd, formatAnyCurrency, getCurrencyOptions, useLocalizedCurrency } from '../lib/currency';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
+import { useBodyScrollLock } from '../lib/useBodyScrollLock';
 
 
 const ROLE_SUGGESTIONS: Record<string, string[]> = {
@@ -244,6 +246,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
       },
     }));
   };
+
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -513,8 +517,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/55 p-2 backdrop-blur-sm sm:p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/55 p-2 backdrop-blur-sm sm:p-4">
       <div className="relative mx-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2rem)]">
         
         {/* Close Button */}
@@ -946,7 +950,8 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
@@ -974,10 +979,11 @@ const AiAssistButton = ({
       const data = await postMornAI<{ text?: string }>('writing-assist', {
         text: source,
         field,
-        context,
+        context: context || 'Startup registration on THE MORN AI. Expand and organize the draft so founders sound clearer and more compelling.',
       });
       const next = String(data?.text || '').trim();
       if (next) onComplete(next);
+      else setFailed(true);
     } catch (error) {
       console.error('Startup AI writing assist failed:', error);
       setFailed(true);
@@ -989,11 +995,15 @@ const AiAssistButton = ({
   return (
     <button
       type="button"
-      onClick={() => void run()}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void run();
+      }}
       onMouseDown={(event) => event.preventDefault()}
       disabled={!String(value || '').trim() || busy}
       title={busy ? 'MornAI is rewriting this field…' : failed ? 'AI failed. Click to retry.' : `AI assist: ${field}`}
-      className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+      className="absolute bottom-2 right-2 z-20 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/95 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} /> {busy ? 'AI…' : failed ? 'Retry' : 'AI'}
     </button>

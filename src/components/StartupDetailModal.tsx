@@ -182,9 +182,11 @@ export const StartupDetailModal: React.FC<StartupDetailModalProps> = ({
                 <span className="rounded-full bg-slate-100 px-3 py-1.5 text-[9px] font-black text-slate-600">Founded: <b className="text-slate-900">{startup.foundedYear || '—'}</b></span>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => onConsultAi(startup)} className="mornai-market-secondary justify-center">
-                  <BrainCircuit className="h-4 w-4" /> AI Strategist
-                </button>
+                {currentUser.role === 'founder' && startup.founderId === currentUser.id && (
+                  <button type="button" onClick={() => onConsultAi(startup)} className="mornai-market-secondary justify-center">
+                    <BrainCircuit className="h-4 w-4" /> AI Strategist
+                  </button>
+                )}
                 {openRoles.length > 0 && (
                   <button type="button" onClick={() => onBookAppointment(startup, openRoles[0])} className="mornai-market-primary justify-center">
                     <Calendar className="h-4 w-4" /> Start with a role

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile, User as FirebaseUser } from 'firebase/auth';
 import { postMornAI } from '../lib/mornaiAi';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -10,7 +11,8 @@ import {
 } from 'lucide-react';
 import { auth, db, googleProvider } from '../lib/firebase';
 import { User, UserRole } from '../types';
-import { detectCountryCode } from '../lib/currency';
+import { detectCountryCode, getRegionOptions } from '../lib/currency';
+import { BrandLogo } from './BrandLogo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -120,11 +122,7 @@ const skillsList = [
   'Travel Planning','Real Estate','Property Management','Interior Styling','Customer Service','Retail Management'
 ];
 
-const REGION_OPTIONS = [
-  ['IN', 'India'], ['US', 'United States'], ['AE', 'United Arab Emirates'], ['GB', 'United Kingdom'],
-  ['DE', 'Germany'], ['FR', 'France'], ['CA', 'Canada'], ['AU', 'Australia'], ['SG', 'Singapore'],
-  ['JP', 'Japan'], ['BR', 'Brazil'], ['ZA', 'South Africa'], ['OTHER', 'Other / prefer not to say'],
-] as const;
+const REGION_OPTIONS = getRegionOptions();
 
 const avatar = (name: string) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Member')}&background=5B5CF0&color=fff&bold=true`;
@@ -195,10 +193,16 @@ const AiExpandButton = ({
       const data = await postMornAI<{ text?: string }>('writing-assist', {
         text: source,
         field: field || label,
-        context: 'Authentication and onboarding profile for THE MORN AI.',
+        context: 'Authentication and onboarding profile for THE MORN AI. Expand and organize the draft so it is more engaging and descriptive.',
       });
       const next = String(data?.text || '').trim();
-      if (next) onComplete(next);
+      if (next && next !== source) {
+        onComplete(next);
+      } else if (next) {
+        onComplete(next);
+      } else {
+        setFailed(true);
+      }
     } catch (error) {
       console.error('Auth AI writing assist failed:', error);
       setFailed(true);
@@ -211,12 +215,16 @@ const AiExpandButton = ({
   return (
     <button
       type="button"
-      onClick={() => void run()}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void run();
+      }}
       onMouseDown={(event) => event.preventDefault()}
       disabled={!String(value || '').trim() || busy}
       title={busy ? 'MornAI is rewriting this field…' : failed ? 'AI failed. Click to retry.' : label}
       aria-label={label}
-      className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+      className="absolute bottom-2 left-2 z-20 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/95 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} />
       {busy ? 'AI…' : failed ? 'Retry' : 'AI'}
@@ -588,7 +596,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -597,7 +607,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
           ref={scrollRef}
-          className="mornai-auth-scroll fixed inset-0 z-50 h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
+          className="mornai-auth-scroll fixed inset-0 z-[100] h-[100dvh] max-h-[100dvh] overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white/[0.74] backdrop-blur-2xl"
+          style={{ top: 0, left: 0, right: 0, bottom: 0 }}
         >
           <div className="mornai-ambient mornai-auth-ambient pointer-events-none absolute inset-0" aria-hidden="true">
             <span className="mornai-orb mornai-orb-one" />
@@ -615,9 +626,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             >
               <div className="mornai-auth-nav">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-950 text-white">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
+                  <BrandLogo className="grid h-9 w-9 place-items-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80" />
                   <div>
                     <b className="text-sm tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
                     <p className="hidden text-[9px] font-bold uppercase tracking-[.16em] text-slate-400 sm:block">Founder + Talent OS</p>
@@ -639,9 +648,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="pointer-events-none absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-blue-200/45 blur-3xl" />
                   <div className="relative">
                     <div className="flex items-center gap-3">
-                      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg">
-                        <Sparkles className="h-5 w-5" />
-                      </span>
+                      <BrandLogo className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-200/80" />
                       <div>
                         <b className="text-xl tracking-tight text-slate-950">MORN<span className="text-indigo-600">AI</span></b>
                         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Startup operating platform</p>
@@ -908,7 +915,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };
 

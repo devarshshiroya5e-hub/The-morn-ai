@@ -111,7 +111,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   if (!startup) {
     return (
-      <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mornai-book-sync-page min-h-0 px-5 py-8 sm:px-8 sm:py-10">
         <div className="mx-auto max-w-2xl pt-10 text-center">
           <div className="mornai-page-panel mx-auto max-w-xl rounded-[28px] p-10">
             <Calendar className="mx-auto h-10 w-10 text-violet-500" />
@@ -128,8 +128,8 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   if (isInterestRequest) {
     return (
-      <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-8 sm:px-8 sm:py-10">
-        <div className="mx-auto flex min-h-[calc(100vh-180px)] max-w-2xl items-center justify-center">
+      <div className="mornai-book-sync-page min-h-0 px-5 py-8 sm:px-8 sm:py-10">
+        <div className="mx-auto flex min-h-[240px] max-w-2xl items-center justify-center py-16">
           <section className="mornai-page-panel w-full overflow-hidden rounded-[30px]">
             <div className="mornai-booking-hero p-7 text-white sm:p-10">
               <div className="flex items-start gap-4">
@@ -205,7 +205,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   if (isSubmitted) {
     return (
-      <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mornai-book-sync-page min-h-0 px-5 py-8 sm:px-8 sm:py-10">
         <div className="mx-auto max-w-5xl">
           <div className="mornai-book-sync-topbar">
             <button onClick={onCancel} className="mornai-back-action inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold">
@@ -251,7 +251,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
   }
 
   return (
-    <div className="mornai-book-sync-page min-h-[calc(100vh-92px)] px-5 py-7 sm:px-8 sm:py-9">
+    <div className="mornai-book-sync-page min-h-0 px-5 py-7 sm:px-8 sm:py-9">
       <div className="mx-auto max-w-6xl">
         <div className="mornai-book-sync-topbar mb-5">
           <button onClick={onCancel} className="mornai-back-action inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"><ArrowLeft className="h-4 w-4" /> Back to discovery</button>

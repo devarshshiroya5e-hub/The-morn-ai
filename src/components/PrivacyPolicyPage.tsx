@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, ShieldCheck, Database, Lock, UserRound, BrainCircuit, Mail, Sparkles } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface PrivacyPolicyPageProps {
   onBack: () => void;
@@ -93,9 +94,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           </button>
 
           <div className="flex items-center gap-2 rounded-full border border-white/90 bg-white/75 px-3.5 py-2 shadow-sm">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-950 text-white">
-              <Sparkles className="h-4 w-4" />
-            </span>
+            <BrandLogo className="grid h-8 w-8 place-items-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/70" />
             <span className="text-sm font-extrabold tracking-tight">
               MORN<span className="text-indigo-600">AI</span>
             </span>

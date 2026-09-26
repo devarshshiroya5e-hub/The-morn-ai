@@ -8,6 +8,7 @@ import {
 import { auth, db } from '../lib/firebase';
 import { User } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
+import { currencyForCountry, getRegionOptions } from '../lib/currency';
 
 interface ProfilePageProps {
   currentUser: User;
@@ -71,7 +72,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
   );
 
   const setField = (key: string, value: string) => {
-    setOnboardingState((prev) => ({ ...prev, [key]: value }));
+    setOnboardingState((prev) => {
+      if (key === 'countryCode') {
+        const region = getRegionOptions().find(([code]) => code === value)?.[1] || value;
+        return { ...prev, countryCode: value, region };
+      }
+      return { ...prev, [key]: value };
+    });
     setSaved(false);
   };
 
@@ -177,6 +184,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
               <MiniStat icon={<Target />} label="90-day goal" value={onboardingState.goal || 'Add a concrete goal'} />
               <MiniStat icon={<Clock3 />} label="Availability" value={onboardingState.availability || 'Add availability'} />
               <MiniStat icon={<UsersRound />} label="Work style" value={onboardingState.workStyle || 'Add work style'} />
+              <MiniStat
+                icon={<Building2 />}
+                label="Billing currency"
+                value={`${currencyForCountry(onboardingState.countryCode)} · ${onboardingState.region || onboardingState.countryCode || 'Set region'}`}
+              />
             </div>
           </section>
 
@@ -221,6 +233,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
           <div className="grid gap-4 sm:grid-cols-2">
             <EditorField showAi={false} label="Name" value={name} onChange={setName} min={2} />
             <EditorField showAi={false} label="Professional / founder title" value={title} onChange={setTitle} min={3} />
+          </div>
+
+          <div className="mt-4">
+            <label className="mb-2 block text-xs font-bold text-slate-500">Country / region (controls subscription currency)</label>
+            <select
+              value={onboardingState.countryCode || ''}
+              onChange={(event) => setField('countryCode', event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3.5 text-sm font-semibold text-slate-800 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
+            >
+              <option value="">Select your country</option>
+              {getRegionOptions().map(([code, label]) => (
+                <option key={code} value={code}>{label}</option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] text-slate-400">
+              Pro prices will show in {currencyForCountry(onboardingState.countryCode)} for this region.
+            </p>
           </div>
 
           <EditorArea label="Profile story" value={bio} onChange={setBio} min={60} rows={7} />
@@ -337,10 +366,11 @@ const AiAssistButton = ({
       const data = await postMornAI<{ text?: string }>('writing-assist', {
         text: source,
         field,
-        context: 'MornAI professional profile. Improve the user\'s own facts without inventing credentials.',
+        context: 'MornAI professional profile. Expand and organize the user\'s own facts into a clearer, more engaging description without inventing credentials.',
       });
       const next = String(data?.text || '').trim();
       if (next) onComplete(next);
+      else setFailed(true);
     } catch (error) {
       console.error('Profile AI writing assist failed:', error);
       setFailed(true);
@@ -352,12 +382,16 @@ const AiAssistButton = ({
   return (
     <button
       type="button"
-      onClick={() => void run()}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void run();
+      }}
       onMouseDown={(event) => event.preventDefault()}
       disabled={!String(value || '').trim() || busy}
       title={busy ? 'MornAI is rewriting this field…' : failed ? 'AI failed. Click to retry.' : label}
       aria-label={label}
-      className="absolute bottom-2 right-2 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/90 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+      className="absolute bottom-2 right-2 z-20 inline-flex h-7 items-center gap-1 rounded-lg border border-violet-200 bg-white/95 px-2 text-[9px] font-black text-violet-600 shadow-sm transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <Sparkles className={`h-3 w-3 ${busy ? 'animate-spin' : ''}`} /> {busy ? 'AI…' : failed ? 'Retry' : 'AI'}
     </button>
@@ -368,7 +402,7 @@ const EditorField = ({ label, value, onChange, min = 0, showAi = true }: any) =>
   <label className="block">
     <span className="mb-2 block text-xs font-bold text-slate-500">{label}</span>
     <div className="relative">
-      <input minLength={min} value={value} onChange={(e) => onChange(e.target.value)} className={`w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 ${showAi ? 'pr-16' : 'pr-4'} text-sm text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]`} />
+      <input minLength={min} value={value} onChange={(e) => onChange(e.target.value)} className={`w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 ${showAi ? 'pb-10 pt-3.5 pr-16' : 'py-3.5 pr-4'} text-sm text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]`} />
       {showAi && <AiAssistButton value={value} onComplete={onChange} field={label} label={`AI assist: ${label}`} />}
     </div>
   </label>

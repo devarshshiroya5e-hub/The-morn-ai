@@ -79,7 +79,7 @@ const createRateLimiter = (limit: number, windowMs: number) => (req: express.Req
   }
 };
 
-app.use("/api/ai", createRateLimiter(20, 60_000));
+app.use("/api/ai", createRateLimiter(40, 60_000));
 
 // Unified MornAI AI provider: OpenRouter first, Gemini fallback.
 const PAID_MODEL_IDS = {
@@ -181,7 +181,7 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
           model,
           messages: normalizeMessages(options.contents),
           temperature: options.config?.temperature ?? 0.2,
-          max_tokens: options.config?.maxTokens ?? 1200,
+          max_tokens: options.config?.maxTokens ?? 800,
         };
 
         if (
@@ -201,10 +201,18 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
           headers["HTTP-Referer"] = process.env.MORNAI_APP_URL;
         }
 
-        const response = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          { method: "POST", headers, body: JSON.stringify(body) },
-        );
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12_000);
+
+        let response: Response;
+        try {
+          response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal },
+          );
+        } finally {
+          clearTimeout(timeout);
+        }
 
         const payload = await response.json().catch(() => ({}));
 
@@ -256,21 +264,23 @@ function resolveModel(requested: string) {
 }
 
 function modelFallbacks(model: string, needsJson = false) {
+  // Keep fallback chains short so failed free-model queues do not burn 30s+.
   const fallbackOrder =
     model === FAST_FREE_TEXT_MODEL
-      ? [FAST_FREE_TEXT_MODEL, FREE_MODEL_IDS.super, FREE_MODEL_IDS.gemma]
+      ? [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma]
       : model === MODEL_IDS.ultra
-        ? [MODEL_IDS.ultra, MODEL_IDS.super, MODEL_IDS.gemma]
+        ? [MODEL_IDS.ultra, MODEL_IDS.gemma]
         : model === MODEL_IDS.super
-          ? [MODEL_IDS.super, MODEL_IDS.gemma, MODEL_IDS.ultra]
+          ? [MODEL_IDS.super, MODEL_IDS.gemma]
           : model === MODEL_IDS.gemma
-            ? [MODEL_IDS.gemma, MODEL_IDS.super, MODEL_IDS.ultra]
+            ? [MODEL_IDS.gemma, FAST_FREE_TEXT_MODEL]
             : [model];
 
-  // Nemotron 3 Ultra's free endpoint does not support response_format.
-  // Prefer the structured-output capable free models for JSON requests.
-  if (needsJson && model === MODEL_IDS.ultra && MODEL_IDS === FREE_MODEL_IDS) {
-    return [MODEL_IDS.super, MODEL_IDS.gemma, MODEL_IDS.ultra];
+  // Prefer structured-output capable models for JSON requests.
+  if (needsJson && MODEL_IDS === FREE_MODEL_IDS) {
+    if (model === MODEL_IDS.ultra || model === FAST_FREE_TEXT_MODEL) {
+      return [MODEL_IDS.gemma, MODEL_IDS.super];
+    }
   }
 
   return fallbackOrder;
@@ -298,7 +308,7 @@ function getAiClient() {
         if (gemini) {
           try {
             const response = await gemini.models.generateContent({
-              model: "mornai-ultra",
+              model: "gemini-2.0-flash",
               contents: options.contents as any,
               config: options.config as any,
             });
@@ -384,11 +394,40 @@ app.get("/api/fx-rates", async (_req, res) => {
       return res.json({ base: "USD", rates: fxCache.rates, fetchedAt: fxCache.fetchedAt });
     }
 
-    const response = await fetch("https://api.frankfurter.app/latest?from=USD");
-    if (!response.ok) throw new Error("FX provider returned an error");
+    const rates: Record<string, number> = { USD: 1 };
 
-    const payload = await response.json() as { rates?: Record<string, number> };
-    const rates = payload.rates || {};
+    // Frankfurter covers major ECB currencies well.
+    try {
+      const frankfurter = await fetch("https://api.frankfurter.app/latest?from=USD");
+      if (frankfurter.ok) {
+        const payload = await frankfurter.json() as { rates?: Record<string, number> };
+        Object.assign(rates, payload.rates || {});
+      }
+    } catch (error) {
+      console.warn("Frankfurter FX unavailable:", error);
+    }
+
+    // open.er-api covers a much wider set (INR, AED, etc.).
+    try {
+      const openEr = await fetch("https://open.er-api.com/v6/latest/USD");
+      if (openEr.ok) {
+        const payload = await openEr.json() as { result?: string; rates?: Record<string, number> };
+        if (payload.result === "success" && payload.rates) {
+          for (const [code, value] of Object.entries(payload.rates)) {
+            if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+              rates[code.toUpperCase()] = value;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("open.er-api FX unavailable:", error);
+    }
+
+    if (Object.keys(rates).length <= 1) {
+      throw new Error("No FX providers returned rates");
+    }
+
     fxCache = { fetchedAt: now, rates };
     return res.json({ base: "USD", rates, fetchedAt: now });
   } catch (error) {
@@ -441,10 +480,10 @@ Give practical, specific coaching. Never pretend to guarantee a job. Help them t
 
 Response format:
 ### Answer
-Give the direct answer in 2-5 short paragraphs.
+Give the direct answer in 2-5 short paragraphs. Use a few relevant emojis (🎯 🚀 ✅ 💡 ⚠️) where they add clarity.
 
 ### Key points
-- Give 3-5 concrete points when useful.
+- Give 3-5 concrete points when useful. Wrap the most important phrases in **double asterisks** so they stand out.
 
 ### Next actions
 1. Give 1-3 specific actions the user can take now.
@@ -454,6 +493,8 @@ Rules:
 - Keep simple questions under 150 words.
 - Prioritize the highest-impact information first.
 - Use short sentences and bullets.
+- Highlight critical advice, metrics, deadlines, and decisions with **bold markers**.
+- Include 2-6 relevant emojis across the reply — never spam every line.
 - Do not invent experience, salary, job availability or qualifications.
 - Do not use tables unless the user specifically asks for one.`
       : `You are an elite AI Co-Founder and Chief Business Strategist for an ambitious startup named "${startup?.name || "Startup"}".
@@ -462,7 +503,7 @@ Startup Details:
 - Stage: ${startup?.stage || "Pre-Seed"}
 - Pitch: ${startup?.pitch || "Innovative platform"}
 - Tech Stack: ${(startup?.techStack || []).join(", ")}
-- Historical Memory & Key Milestones: ${JSON.stringify(startup?.historyLogs || [])}
+- Historical Memory & Key Milestones: ${JSON.stringify((startup?.historyLogs || []).slice(-8))}
 - Active Team Size: ${(startup?.members || []).length} contributors
 - Current Strategic Goals: ${startup?.currentGoals || "Scale MVP and onboard key talent"}
 
@@ -470,10 +511,10 @@ Tone: sharp, tactical, direct and practical. Do not repeat the user's question. 
 
 Response format:
 ### Answer
-Give the direct answer in 2-5 short paragraphs.
+Give the direct answer in 2-5 short paragraphs. Use a few relevant emojis (🎯 🚀 ✅ 💡 ⚠️ 🔥) where they add clarity.
 
 ### Key points
-- Give 3-5 concrete points when useful.
+- Give 3-5 concrete points when useful. Wrap the most important phrases in **double asterisks** so they stand out.
 
 ### Next actions
 1. Give 1-3 specific actions the user can take now.
@@ -483,6 +524,8 @@ Rules:
 - Keep simple questions under 150 words.
 - Prioritize the highest-impact information first.
 - Use short sentences and bullets.
+- Highlight critical advice, metrics, deadlines, and decisions with **bold markers**.
+- Include 2-6 relevant emojis across the reply — never spam every line.
 - Do not invent startup facts, metrics or people.
 - Do not use tables unless the user specifically asks for one.`;
 
@@ -620,10 +663,12 @@ Respond strictly in valid JSON without markdown wrapping or backticks. Format:
 }`;
 
     const response = await ai.models.generateContent({
-      model: FREE_MODEL_IDS.super,
+      model: MODEL_IDS.gemma,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        maxTokens: 900,
+        temperature: 0.2,
       },
     });
 
@@ -682,10 +727,12 @@ Return strictly JSON with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: FREE_MODEL_IDS.super,
+      model: MODEL_IDS.gemma,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        maxTokens: 700,
+        temperature: 0.2,
       },
     });
 
@@ -822,10 +869,12 @@ Return strictly JSON with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "mornai-ultra",
+      model: MODEL_IDS.gemma,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        maxTokens: 450,
+        temperature: 0.15,
       },
     });
 
@@ -1002,6 +1051,7 @@ app.post("/api/ai/startup-summary", async (req, res) => {
     res.json(parseAiJson(response.text) || fallback);
   } catch (error) {
     console.error("Startup summary error:", error);
+    const startup = req.body?.startup;
     res.status(200).json({ headline: "Startup overview", summary: startup?.pitch || startup?.tagline || "", nextSteps: ["Review roles", "Review team", "Ask MornAI"] });
   }
 });
@@ -1018,6 +1068,7 @@ app.post("/api/ai/profile-assist", async (req, res) => {
     res.json(parseAiJson(response.text) || fallback);
   } catch (error) {
     console.error("Profile assist error:", error);
+    const profile = req.body?.profile;
     res.status(200).json({ suggestedTitle: profile?.title || "Startup Contributor", suggestedBio: profile?.bio || "", suggestedSkills: profile?.skills || [], profileStrengths: ["Specific skills", "Role context", "Clear goals"] });
   }
 });
@@ -1033,43 +1084,75 @@ app.post("/api/ai/writing-assist", async (req, res) => {
 
   if (!source) return res.status(400).json({ error: "Enter some text before using AI." });
 
-  const fallback = { text: source };
+  const localPolish = (raw: string) => {
+    const sentences = raw
+      .replace(/\s+/g, " ")
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1));
+
+    if (sentences.length <= 1) {
+      return (
+        sentences[0] || raw
+      ) + (raw.length < 80
+        ? ` This ${fieldName.toLowerCase()} highlights what matters most and keeps the story clear, specific, and easy for others on MornAI to understand.`
+        : "");
+    }
+
+    if (sentences.length <= 3) {
+      return sentences.join(" ");
+    }
+
+    const lead = sentences.slice(0, 2).join(" ");
+    const rest = sentences.slice(2);
+    return lead + "\n\n" + rest.map((s) => "• " + s.replace(/^[•\-]\s*/, "")).join("\n");
+  };
 
   try {
     const ai = getAiClient();
-    if (!ai) return res.json(fallback);
+    if (!ai) {
+      return res.json({ text: localPolish(source), local: true });
+    }
 
     const prompt =
-      "Rewrite the supplied user text for the named field. Return JSON only with exactly one key: text. " +
-      "The text value must contain only the final rewritten content, never instructions, analysis, JSON, labels, or commentary. " +
-      "Use only facts present in the supplied text/context. Do not invent credentials, customers, revenue, metrics, achievements, employers, dates, features, or claims. " +
-      "Preserve useful details and expand them instead of summarizing them away. " +
-      "For profile/startup descriptive fields, make it deeper, clearer, more specific, professional, and well organized. " +
-      "Use short paragraphs and bullets only when genuinely useful. " +
-      "For short factual fields, keep it concise. " +
+      "You are MornAI writing assist. Expand and organize the user's draft for the named field.\n" +
+      "Return JSON only with exactly one key: text.\n" +
+      "Goals:\n" +
+      "- Make the writing more engaging, clearer, and better organized.\n" +
+      "- Expand short drafts into a richer but still truthful description (aim for roughly 1.5x-3x length when the draft is thin).\n" +
+      "- Use short paragraphs; use bullets only when they improve scanability.\n" +
+      "- Keep the user's meaning, voice, and facts. Do not invent credentials, customers, revenue, metrics, employers, dates, or achievements.\n" +
+      "- Never return the exact same text unless it is already excellent and complete.\n" +
+      "- Never include instructions, analysis, labels, or commentary in the text value.\n" +
       "User field: " + fieldName +
       "\nUser text: " + source +
       "\nContext: " + (contextText || "None");
 
-    // Reuse the exact model family/path already proven by Optimize with AI.
+    const softMax = source.length < 80
+      ? 420
+      : source.length < 220
+        ? 700
+        : 1100;
+
     let response;
     try {
       response = await ai.models.generateContent({
-        model: FREE_MODEL_IDS.gemma,
+        model: "mornai-gemma",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
-          maxTokens: source.length < 100 && /name|email|industry|role|title|skill/i.test(fieldName) ? 120 : 300,
-          temperature: 0.05,
+          maxTokens: softMax,
+          temperature: 0.35,
         },
       });
     } catch {
       response = await ai.models.generateContent({
-        model: FREE_MODEL_IDS.super,
-        contents: prompt,
+        model: FAST_FREE_TEXT_MODEL,
+        contents: prompt + "\nReturn only JSON like {\"text\":\"...\"}.",
         config: {
-          maxTokens: source.length < 100 && /name|email|industry|role|title|skill/i.test(fieldName) ? 100 : 260,
-          temperature: 0.05,
+          maxTokens: softMax,
+          temperature: 0.35,
         },
       });
     }
@@ -1085,12 +1168,23 @@ app.post("/api/ai/writing-assist", async (req, res) => {
     const leaked =
       /we need to rewrite|requirements:|user text:|context:|return json|return only|must preserve|do not invent|you are mornai|source text:/i.test(rewritten);
 
-    if (leaked || !rewritten) return res.json(fallback);
+    if (leaked || !rewritten) {
+      return res.json({ text: localPolish(source), local: true });
+    }
+
+    // If the model barely changed the draft, still polish locally so the button feels useful.
+    const normalize = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+    if (normalize(rewritten) === normalize(source) || rewritten.length < source.length * 1.05) {
+      const polished = localPolish(source);
+      if (normalize(polished) !== normalize(source)) {
+        return res.json({ text: polished.slice(0, 5000), local: true });
+      }
+    }
 
     return res.json({ text: rewritten.slice(0, 5000) });
   } catch (error) {
     console.error("Writing assist error:", error);
-    return res.status(200).json(fallback);
+    return res.status(200).json({ text: localPolish(source), local: true });
   }
 });
 
@@ -1106,6 +1200,7 @@ app.post("/api/ai/website-blueprint", async (req, res) => {
     res.json(parseAiJson(response.text) || fallback);
   } catch (error) {
     console.error("Website blueprint error:", error);
+    const startup = req.body?.startup;
     res.status(200).json({ title: startup?.name || "Startup website", tagline: startup?.tagline || startup?.pitch || "", pages: ["Home", "Product", "About", "Contact"], sections: ["Hero", "Value proposition", "CTA"], visualDirection: "Premium modern startup website." });
   }
 });

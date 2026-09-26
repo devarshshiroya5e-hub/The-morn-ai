@@ -1,5 +1,7 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useBodyScrollLock } from '../lib/useBodyScrollLock';
 
 interface LegalModalProps {
   isOpen: boolean;
@@ -7,10 +9,13 @@ interface LegalModalProps {
 }
 
 export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
+  useBodyScrollLock(isOpen);
 
-  return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/55 p-3 backdrop-blur-sm sm:p-4">
+  if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[110] overflow-y-auto bg-black/55 p-3 backdrop-blur-sm sm:p-4">
       <div className="mx-auto mt-2 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-900 text-white shadow-2xl sm:mt-0 sm:max-h-[calc(100dvh-2rem)]">
         <div className="shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
           <h2 className="text-2xl font-bold">Legal Information</h2>
@@ -33,6 +38,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose }) => {
           </section>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

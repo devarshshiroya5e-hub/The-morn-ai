@@ -48,7 +48,7 @@ interface MarketplacePageProps {
   onSelectStartup: (startup: Startup) => void;
   onBookAppointment: (startup: Startup, role?: RolePost) => void;
   onOpenPrivateChat: (user: User, connectionId?: string) => void;
-  onStartVideoCall: (user: User, connectionId?: string, mode?: 'video' | 'audio') => void;
+  onStartVideoCall: (user: User | User[], connectionId?: string, mode?: 'video' | 'audio') => void;
   initialTab?: MarketplaceTab;
 }
 
@@ -189,12 +189,12 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   ];
 
   return (
-    <div className="mornai-marketplace-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 space-y-6">
+    <div className="mornai-marketplace-page mx-auto max-w-7xl space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <span className="mornai-section-kicker"><NetworkDot /> Network</span>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Find the people and work that move startups forward.</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">MornAI ranks the network around your context, not just a keyword. See why something matches before you spend time on it.</p>
+          <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:mt-3 sm:text-4xl">Find the people and work that move startups forward.</h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500 sm:mt-2">MornAI ranks the network around your context, not just a keyword.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="mornai-market-stat"><span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> {startups.length} startups</span>
@@ -203,14 +203,14 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
         </div>
       </div>
 
-      <div className="mornai-market-hero rounded-[28px] p-5 sm:p-6">
-        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="mornai-market-hero rounded-[22px] p-4 sm:rounded-[28px] sm:p-6">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center sm:gap-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-200">MornAI Match Engine</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+            <h2 className="mt-1.5 text-xl font-black tracking-tight text-white sm:mt-2 sm:text-3xl">
               {currentUser.role === 'founder' ? 'Stop searching. Start with the people most likely to fit.' : 'Stop scrolling. Start with people and startups that actually fit you.'}
             </h2>
-            <p className="mt-2 max-w-2xl text-xs leading-6 text-violet-100/75">Recommendations are explained with skills, startup stage, activity, and available work so you can make a faster decision.</p>
+            <p className="mt-1.5 hidden max-w-2xl text-xs leading-6 text-violet-100/75 sm:mt-2 sm:block">Recommendations are explained with skills, startup stage, activity, and available work so you can make a faster decision.</p>
           </div>
           <div className="rounded-[22px] border border-white/10 bg-white/[.07] px-4 py-3 backdrop-blur-xl">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.15em] text-violet-200"><Zap className="h-3.5 w-3.5 text-amber-300" /> Live matching</div>
@@ -540,8 +540,56 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
               <div>
                 <span className="mornai-section-kicker">Accepted connections</span>
                 <h2 className="mt-3 text-lg font-black text-slate-950">Your live people network</h2>
-                <p className="mt-1 text-[11px] leading-5 text-slate-500">Every accepted connection is ready for a private message or an in-app voice call.</p>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">Every accepted connection is ready for a private message, voice/video call, or a group call.</p>
               </div>
+              {acceptedConnections.length > 1 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const people = acceptedConnections.slice(0, 5).map((connection) => {
+                        const isSender = connection.fromUserId === currentUser.id;
+                        return {
+                          id: isSender ? connection.toUserId : connection.fromUserId,
+                          name: isSender ? connection.toName : connection.fromName,
+                          email: '',
+                          role: 'employee' as const,
+                          avatar: isSender ? connection.toAvatar || '' : connection.fromAvatar || '',
+                          title: connection.roleTitle || 'MornAI connection',
+                          bio: '',
+                          skills: [] as string[],
+                        };
+                      });
+                      onStartVideoCall(people, undefined, 'video');
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[10px] font-black text-violet-700"
+                  >
+                    <Video className="h-3.5 w-3.5" /> Group video call
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const people = acceptedConnections.slice(0, 5).map((connection) => {
+                        const isSender = connection.fromUserId === currentUser.id;
+                        return {
+                          id: isSender ? connection.toUserId : connection.fromUserId,
+                          name: isSender ? connection.toName : connection.fromName,
+                          email: '',
+                          role: 'employee' as const,
+                          avatar: isSender ? connection.toAvatar || '' : connection.fromAvatar || '',
+                          title: connection.roleTitle || 'MornAI connection',
+                          bio: '',
+                          skills: [] as string[],
+                        };
+                      });
+                      onStartVideoCall(people, undefined, 'audio');
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[10px] font-black text-sky-700"
+                  >
+                    <PhoneCall className="h-3.5 w-3.5" /> Group voice call
+                  </button>
+                </div>
+              )}
               <div className="mt-4 space-y-2">
                 {acceptedConnections.map((connection) => {
                   const isSender = connection.fromUserId === currentUser.id;
@@ -565,12 +613,15 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
                         </div>
                         <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700">Accepted</span>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="mt-3 grid grid-cols-3 gap-2">
                         <button type="button" onClick={() => onOpenPrivateChat(person, connection.id)} className="mornai-market-secondary justify-center">
                           <MessageCircle className="h-3.5 w-3.5" /> Message
                         </button>
                         <button type="button" onClick={() => onStartVideoCall(person, connection.id, 'audio')} className="mornai-market-primary justify-center">
-                          <PhoneCall className="h-3.5 w-3.5" /> Voice call
+                          <PhoneCall className="h-3.5 w-3.5" /> Voice
+                        </button>
+                        <button type="button" onClick={() => onStartVideoCall(person, connection.id, 'video')} className="inline-flex items-center justify-center gap-1 rounded-xl border border-violet-200 bg-violet-50 px-2 py-2 text-[10px] font-black text-violet-700">
+                          <Video className="h-3.5 w-3.5" /> Video
                         </button>
                       </div>
                     </div>

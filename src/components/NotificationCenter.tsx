@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { BellRing, BriefcaseBusiness, Check, Clock3, Rocket, Sparkles, X } from 'lucide-react';
 import { Appointment, ConnectionRequest, Startup, User } from '../types';
 import { buildMornaiNotifications, formatRelativeDate, MornaiNotification } from './mornaiSignals';
+import { useBodyScrollLock } from '../lib/useBodyScrollLock';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -36,6 +38,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const notifications = useMemo(() => buildMornaiNotifications(currentUser, startups, appointments, connections, followedStartupIds), [appointments, connections, currentUser, followedStartupIds, startups]);
   const unread = notifications.filter((item) => !readNotificationIds.includes(item.id));
 
+  useBodyScrollLock(isOpen);
+
   if (!isOpen) return null;
 
   const handleOpen = (item: MornaiNotification) => {
@@ -45,14 +49,16 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     onClose();
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-40 bg-slate-950/10 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-0 z-[90] bg-slate-950/10 backdrop-blur-[2px]" onClick={onClose} />
       <motion.aside
         initial={{ opacity: 0, x: 24, scale: .985 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         exit={{ opacity: 0, x: 24, scale: .985 }}
-        className="mornai-notification-drawer fixed right-3 top-20 z-50 w-[min(94vw,390px)] overflow-hidden rounded-[28px]"
+        className="mornai-notification-drawer fixed right-3 top-20 z-[91] w-[min(94vw,390px)] overflow-hidden rounded-[28px]"
       >
         <div className="border-b border-slate-200/70 px-4 py-4">
           <div className="flex items-center justify-between gap-3">
@@ -92,6 +98,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           )}
         </div>
       </motion.aside>
-    </>
+    </>,
+    document.body,
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { postMornAI } from '../lib/mornaiAi';
 import { Startup, User, TaskItem, StartupHistoryLog, RolePost, Appointment, PredictiveInsights, PartnershipMode } from '../types';
 import { 
@@ -28,9 +29,12 @@ import {
   Smartphone,
   X
 } from 'lucide-react';
+import { useBodyScrollLock } from '../lib/useBodyScrollLock';
 
 interface FounderWorkspaceProps {
   startup: Startup;
+  ownedStartups?: Startup[];
+  onSwitchStartup?: (startupId: string) => void;
   currentUser: User;
   allTalents: User[];
   appointments: Appointment[];
@@ -41,6 +45,8 @@ interface FounderWorkspaceProps {
 
 export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   startup,
+  ownedStartups = [],
+  onSwitchStartup,
   currentUser,
   allTalents,
   appointments,
@@ -92,6 +98,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   const [newLogDesc, setNewLogDesc] = useState('');
   const [newLogImpact, setNewLogImpact] = useState('');
   const [showAddLogModal, setShowAddLogModal] = useState(false);
+  useBodyScrollLock(showAddLogModal);
 
   // AI Role Maker state
   const [targetRoleInput, setTargetRoleInput] = useState('');
@@ -342,9 +349,33 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                 <span className="text-xs text-slate-400">•</span>
                 <span className="text-xs font-semibold text-slate-600">{startup.stage} Stage</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 font-['Outfit'] mt-1">
-                {startup.name}
-              </h1>
+              {ownedStartups.length > 1 && onSwitchStartup ? (
+                <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:items-center">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Active startup
+                  </label>
+                  <select
+                    value={startup.id}
+                    onChange={(event) => onSwitchStartup(event.target.value)}
+                    className="max-w-full rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm font-bold text-slate-900 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  >
+                    {ownedStartups.map((owned) => (
+                      <option key={owned.id} value={owned.id}>
+                        {owned.name} ({owned.stage})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 font-['Outfit'] mt-1">
+                  {startup.name}
+                </h1>
+              )}
+              {ownedStartups.length > 1 && (
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 font-['Outfit'] mt-1">
+                  {startup.name}
+                </h1>
+              )}
               <p className="text-xs text-slate-500 line-clamp-1">{startup.tagline}</p>
             </div>
           </div>
@@ -1338,15 +1369,20 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
         </div>
       )}
 
-      {/* MODAL: ADD STARTUP MEMORY LOG */}
-      {showAddLogModal && (
-        <div className="mornai-memory-log-overlay fixed inset-0 z-50 overflow-y-auto p-3 sm:p-4">
-          <div className="mornai-memory-log-modal mx-auto my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-[28px] sm:my-0 sm:max-h-[calc(100dvh-2rem)]">
+      {/* MODAL: ADD STARTUP MEMORY LOG — portaled so it stays fixed to the viewport */}
+      {showAddLogModal && typeof document !== 'undefined' && createPortal(
+        <div className="mornai-memory-log-overlay fixed inset-0 z-[120] overflow-y-auto overscroll-contain p-3 sm:p-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowAddLogModal(false)}
+            aria-hidden="true"
+          />
+          <div className="mornai-memory-log-modal relative z-10 mx-auto my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-[28px] sm:my-4 sm:max-h-[calc(100dvh-2rem)]">
             <div className="shrink-0 px-6 pt-5 sm:px-7 sm:pt-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 font-['Outfit']">
-              Add New Memory Log into Startup Vault
+                  <h3 className="font-['Outfit'] text-lg font-bold text-slate-900">
+                    Add New Memory Log into Startup Vault
                   </h3>
                 </div>
                 <button
@@ -1361,79 +1397,80 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
             </div>
             <div className="mornai-modal-scroll px-6 pb-6 sm:px-7 sm:pb-7">
               <p className="text-xs text-slate-500">
-              This log is permanently remembered by the AI Co-Founder to guide future roadmaps and task delegation.
-            </p>
+                This log is permanently remembered by the AI Co-Founder to guide future roadmaps and task delegation.
+              </p>
 
-            <form onSubmit={handleAddMemoryLog} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Event / Pivot Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Pivoted pricing from per-seat to usage-based telemetry"
-                  value={newLogTitle}
-                  onChange={(e) => setNewLogTitle(e.target.value)}
-                  className="mornai-memory-log-field px-3.5 py-3 text-sm"
-                />
-              </div>
+              <form onSubmit={handleAddMemoryLog} className="mt-4 space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">Event / Pivot Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Pivoted pricing from per-seat to usage-based telemetry"
+                    value={newLogTitle}
+                    onChange={(e) => setNewLogTitle(e.target.value)}
+                    className="mornai-memory-log-field px-3.5 py-3 text-sm"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Log Type</label>
-                <select
-                  value={newLogType}
-                  onChange={(e) => setNewLogType(e.target.value as any)}
-                  className="mornai-memory-log-field px-3.5 py-3 text-sm"
-                >
-                  <option value="milestone">Milestone Achieved</option>
-                  <option value="pivot">Strategic Pivot</option>
-                  <option value="bottleneck">Current Bottleneck / Challenge</option>
-                  <option value="traction">Customer Traction / Pilot</option>
-                  <option value="tech_choice">Architecture / Tech Choice</option>
-                </select>
-              </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">Log Type</label>
+                  <select
+                    value={newLogType}
+                    onChange={(e) => setNewLogType(e.target.value as any)}
+                    className="mornai-memory-log-field px-3.5 py-3 text-sm"
+                  >
+                    <option value="milestone">Milestone Achieved</option>
+                    <option value="pivot">Strategic Pivot</option>
+                    <option value="bottleneck">Current Bottleneck / Challenge</option>
+                    <option value="traction">Customer Traction / Pilot</option>
+                    <option value="tech_choice">Architecture / Tech Choice</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Context & Details</label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Explain what happened, key metrics, and why this decision was made..."
-                  value={newLogDesc}
-                  onChange={(e) => setNewLogDesc(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">Context & Details</label>
+                  <textarea
+                    required
+                    rows={3}
+                    placeholder="Explain what happened, key metrics, and why this decision was made..."
+                    value={newLogDesc}
+                    onChange={(e) => setNewLogDesc(e.target.value)}
+                    className="mornai-memory-log-field px-3.5 py-3 text-sm"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Strategic Impact on Startup</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Shortened sales cycle by 40%, unblocked Phase 2 roadmap"
-                  value={newLogImpact}
-                  onChange={(e) => setNewLogImpact(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">Strategic Impact on Startup</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Shortened sales cycle by 40%, unblocked Phase 2 roadmap"
+                    value={newLogImpact}
+                    onChange={(e) => setNewLogImpact(e.target.value)}
+                    className="mornai-memory-log-field px-3.5 py-3 text-sm"
+                  />
+                </div>
 
-              <div className="flex items-center justify-end gap-2 border-t border-slate-200/70 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddLogModal(false)}
-                  className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100/80"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,.24)] transition hover:shadow-[0_14px_30px_rgba(99,102,241,.32)]"
-                >
-                  Save into Memory
-                </button>
-              </div>
-            </form>
+                <div className="flex items-center justify-end gap-2 border-t border-slate-200/70 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddLogModal(false)}
+                    className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100/80"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,.24)] transition hover:shadow-[0_14px_30px_rgba(99,102,241,.32)]"
+                  >
+                    Save into Memory
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
     </div>

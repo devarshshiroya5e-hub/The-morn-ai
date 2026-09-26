@@ -1,1 +1,2 @@
-// Navigation scroll is intentionally left to the browser and each page.\n// MornAI must never force the document back to the top during route changes.\nexport const installMornaiNavigationPolish = () => {};\n
+// Full-page navigations scroll to the top from App.tsx.
+export const installMornaiNavigationPolish = () => {};
