@@ -276,11 +276,10 @@ function modelFallbacks(model: string, needsJson = false) {
             ? [MODEL_IDS.gemma, FAST_FREE_TEXT_MODEL]
             : [model];
 
-  // Prefer structured-output capable models for JSON requests.
-  if (needsJson && MODEL_IDS === FREE_MODEL_IDS) {
-    if (model === MODEL_IDS.ultra || model === FAST_FREE_TEXT_MODEL) {
-      return [MODEL_IDS.gemma, MODEL_IDS.super];
-    }
+  // Space Bunny Alpha currently supports response_format/json output, so it can
+  // also be the first free model for structured AI features.
+  if (needsJson && MODEL_IDS === FREE_MODEL_IDS && model === FAST_FREE_TEXT_MODEL) {
+    return [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma];
   }
 
   return fallbackOrder;
@@ -556,7 +555,7 @@ Rules:
       model: chatModel,
       contents: contents as any,
       config: {
-        maxTokens: 700,
+        maxTokens: 500,
         temperature: 0.12,
       },
     });
@@ -999,7 +998,11 @@ app.post("/api/ai/daily-briefing", async (req, res) => {
     };
     if (!ai) return res.json(fallback);
     const prompt = "You are MornAI daily operating assistant. Return JSON only with headline, summary, and exactly 3 actions. Do not invent facts.\nUser: " + JSON.stringify(currentUser || {}) + "\nStartups: " + JSON.stringify((startups || []).slice(0, 10)) + "\nAppointments: " + JSON.stringify((appointments || []).slice(0, 10)) + "\nConnections: " + JSON.stringify((connections || []).slice(0, 10));
-    const response = await ai.models.generateContent({ model: MODEL_IDS.gemma, contents: prompt, config: { responseMimeType: "application/json" } });
+    const response = await ai.models.generateContent({
+      model: FAST_FREE_TEXT_MODEL,
+      contents: prompt,
+      config: { responseMimeType: "application/json", maxTokens: 260, temperature: 0.1 },
+    });
     const parsed = parseAiJson(response.text) || {};
     const safeActions = Array.isArray(parsed.actions)
       ? parsed.actions
