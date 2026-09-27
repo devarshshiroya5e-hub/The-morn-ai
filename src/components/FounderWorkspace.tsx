@@ -536,6 +536,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
           </span>
         </div>
       </div>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0 sm:pr-1">
 
@@ -1493,6 +1494,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
         document.body,
       )}
 
+    </div>
     </div>
   );
 };
