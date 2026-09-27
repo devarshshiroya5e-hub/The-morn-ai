@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
+import { checkMornAIConnection } from './lib/mornaiAi';
 import { Navbar } from './components/Navbar';
 import { StartupDetailModal } from './components/StartupDetailModal';
 import { FounderWorkspace } from './components/FounderWorkspace';
@@ -198,7 +199,7 @@ export default function App() {
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
 
-  useEffect(() => {
+  // Warm the Render AI service early so the first Co-Founder/daily briefing request does not pay the cold-start cost.\n  useEffect(() => {\n    void checkMornAIConnection();\n  }, []);\n\n  useEffect(() => {
     let cancelled = false;
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
