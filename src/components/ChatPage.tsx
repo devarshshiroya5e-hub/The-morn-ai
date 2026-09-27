@@ -914,13 +914,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                               )}
 
                               <div
-                                className={`rounded-[22px] px-5 py-3.5 shadow-sm transition-shadow ${
+                                className={`rounded-[22px] px-5 py-4 shadow-sm transition-shadow ${
                                   mine
                                     ? 'rounded-br-md bg-[linear-gradient(135deg,#5b21b6_0%,#7c3aed_65%,#9333ea_100%)] text-white shadow-[0_10px_28px_rgba(124,58,237,.18)]'
                                     : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'
                                 } ${message.status === 'failed' ? 'ring-2 ring-rose-200 ring-offset-2' : ''}`}
                               >
-                                <p className="whitespace-pre-wrap break-words text-sm leading-7 sm:text-[15px] sm:leading-7">{message.text}</p>
+                                <p className="whitespace-pre-wrap break-words text-[15px] leading-7 sm:text-[16px] sm:leading-7.5">{message.text}</p>
                                 <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-semibold ${
                                   mine ? 'text-violet-100' : 'text-slate-400'
                                 }`}>
@@ -982,9 +982,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                         void sendMessage();
                       }
                     }}
-                    rows={3}
+                    rows={4}
                     placeholder={activeRoom?.kind === 'world' ? 'Message everyone…' : 'Write a message…'}
-                    className="min-h-16 max-h-48 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
+                    className="min-h-24 max-h-56 w-full resize-none border-0 bg-transparent px-2 py-2 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400"
                     aria-label="Message"
                   />
                   <button
