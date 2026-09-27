@@ -101,7 +101,8 @@ const MODEL_IDS =
     ? PAID_MODEL_IDS
     : FREE_MODEL_IDS;
 const FAST_FREE_TEXT_MODEL = "stealth/space-bunny-alpha";
-const AI_PROVIDER_TIMEOUT_MS = 7_500;
+const FREE_ROUTER_MODEL = "openrouter/free";
+const AI_PROVIDER_TIMEOUT_MS = 12_000;
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
 type AiGenerateOptions = {
   model: string;
@@ -265,25 +266,18 @@ function resolveModel(requested: string) {
 }
 
 function modelFallbacks(model: string, needsJson = false) {
-  // Keep fallback chains short so failed free-model queues do not burn 30s+.
   const fallbackOrder =
     model === FAST_FREE_TEXT_MODEL
-      ? [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma]
+      ? [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma, FREE_ROUTER_MODEL]
       : model === MODEL_IDS.ultra
-        ? [MODEL_IDS.ultra, MODEL_IDS.gemma]
+        ? [MODEL_IDS.ultra, MODEL_IDS.gemma, FREE_ROUTER_MODEL]
         : model === MODEL_IDS.super
-          ? [MODEL_IDS.super, MODEL_IDS.gemma]
+          ? [MODEL_IDS.super, MODEL_IDS.gemma, FREE_ROUTER_MODEL]
           : model === MODEL_IDS.gemma
-            ? [MODEL_IDS.gemma, FAST_FREE_TEXT_MODEL]
-            : [model];
+            ? [MODEL_IDS.gemma, FAST_FREE_TEXT_MODEL, FREE_ROUTER_MODEL]
+            : [model, FREE_ROUTER_MODEL];
 
-  // Space Bunny Alpha currently supports response_format/json output, so it can
-  // also be the first free model for structured AI features.
-  if (needsJson && MODEL_IDS === FREE_MODEL_IDS && model === FAST_FREE_TEXT_MODEL) {
-    return [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma];
-  }
-
-  return fallbackOrder;
+  return Array.from(new Set(fallbackOrder));
 }
 function getAiClient() {
   const hasOpenRouter = hasAnyOpenRouterKey();
@@ -1022,8 +1016,8 @@ app.post("/api/ai/daily-briefing", async (req, res) => {
       actions: safeActions.length === 3 ? safeActions : fallback.actions,
     });
   } catch (error) {
-    console.error("Daily briefing error:", error);
-    res.status(200).json({ headline: "Your next useful move", summary: "MornAI could not refresh the briefing right now.", actions: ["Open your workspace", "Review network matches", "Ask MornAI directly"] });
+    console.warn("Daily briefing provider unavailable; using deterministic fallback.");
+    res.status(200).json(fallback);
   }
 });
 
