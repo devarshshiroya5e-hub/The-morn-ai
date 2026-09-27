@@ -47,7 +47,7 @@ const getApiBases = () => {
   );
 };
 
-const requestJson = async (url: string, body: unknown, timeoutMs = 18_000) => {
+const requestJson = async (url: string, body: unknown, timeoutMs = 22_000) => {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
@@ -76,7 +76,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
     const url = base + "/api/ai/" + endpoint;
     // Render is the production AI service. Keep the browser deadline below the
     // backend provider/fallback budget so the UI never hangs for half a minute.
-    const timeoutMs = base === RENDER_MORNAI_API || base === pinnedApiBase ? 16_000 : 6_000;
+    const timeoutMs = base === RENDER_MORNAI_API || base === pinnedApiBase ? 22_000 : 6_000;
 
     try {
       const response = await requestJson(url, body, timeoutMs);
