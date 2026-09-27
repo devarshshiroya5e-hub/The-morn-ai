@@ -89,7 +89,7 @@ export const TalentWorkspace: React.FC<TalentWorkspaceProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="mornai-page-scroll max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Talent Profile Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
