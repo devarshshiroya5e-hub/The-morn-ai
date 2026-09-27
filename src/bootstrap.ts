@@ -69,4 +69,9 @@ const loadFirebaseConfig = async () => {
 
 loadFirebaseConfig()
   .catch(() => undefined)
-  .finally(() => import('./main.tsx'));
+  .finally(() => {
+    void import('./lib/mornaiAi').then(({ wakeMornAI }) => {
+      void wakeMornAI();
+    });
+    void import('./main.tsx');
+  });

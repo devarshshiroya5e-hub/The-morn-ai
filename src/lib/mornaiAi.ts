@@ -22,10 +22,26 @@ const configuredApiBase = String(
 ).replace(/\/$/, "");
 
 let pinnedApiBase: string | null = null;
+let wakePromise: Promise<string | null> | null = null;
+
+const isStaticFrontendHost = (base: string) => {
+  try {
+    const host = new URL(base).hostname.toLowerCase();
+    return (
+      host.endsWith(".web.app") ||
+      host.endsWith(".firebaseapp.com") ||
+      host.endsWith(".github.io") ||
+      host.includes("pages.dev")
+    );
+  } catch {
+    return false;
+  }
+};
 
 const getApiBases = () => {
   const origin =
     typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "";
+<<<<<<< HEAD
   const localOrigin =
     /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i.test(origin);
 
@@ -37,6 +53,18 @@ const getApiBases = () => {
     pinnedApiBase,
     localOrigin ? origin : "",
   ];
+=======
+  const originLooksLikeApi = origin && !isStaticFrontendHost(origin);
+
+  const bases = [
+    pinnedApiBase || "",
+    configuredApiBase,
+    RENDER_MORNAI_API,
+    originLooksLikeApi ? origin : "",
+  ]
+    .map((value) => String(value || "").replace(/\/$/, ""))
+    .filter(Boolean);
+>>>>>>> 5ec4c54 (Update MornAI)
 
   return Array.from(
     new Set(
@@ -47,39 +75,103 @@ const getApiBases = () => {
   );
 };
 
+<<<<<<< HEAD
 const requestJson = async (url: string, body: unknown, timeoutMs = 24_000) => {
+=======
+const timeoutMsFor = (endpoint: MornAIEndpoint, isRemote: boolean) => {
+  if (endpoint === "co-founder-chat") return isRemote ? 55_000 : 45_000;
+  if (endpoint === "daily-briefing" || endpoint === "writing-assist") return isRemote ? 40_000 : 28_000;
+  return isRemote ? 45_000 : 32_000;
+};
+
+const requestWithTimeout = async (url: string, init: RequestInit, timeoutMs: number) => {
+>>>>>>> 5ec4c54 (Update MornAI)
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    return await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(body),
-      mode: "cors",
-      credentials: "omit",
-      signal: controller.signal,
-    });
+    return await fetch(url, { ...init, signal: controller.signal });
   } finally {
     window.clearTimeout(timeout);
   }
 };
 
+const probeHealth = async (base: string, timeoutMs: number) => {
+  try {
+    const response = await requestWithTimeout(
+      base + "/api/health",
+      { method: "GET", mode: "cors", credentials: "omit", cache: "no-store" },
+      timeoutMs,
+    );
+    if (!response.ok) return false;
+    const contentType = response.headers.get("content-type") || "";
+    return contentType.includes("application/json");
+  } catch {
+    return false;
+  }
+};
+
+/** Wake the Render API on app load so the first chat/briefing is not a cold-start timeout. */
+export const wakeMornAI = async (): Promise<string | null> => {
+  if (pinnedApiBase) return pinnedApiBase;
+  if (wakePromise) return wakePromise;
+
+  wakePromise = (async () => {
+    for (const base of getApiBases()) {
+      const remote = base === RENDER_MORNAI_API || (configuredApiBase && base === configuredApiBase);
+      if (await probeHealth(base, remote ? 25_000 : 4_000)) {
+        pinnedApiBase = base;
+        return base;
+      }
+    }
+    return null;
+  })().finally(() => {
+    wakePromise = null;
+  });
+
+  return wakePromise;
+};
+
 export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknown): Promise<T> {
+  await wakeMornAI();
+
   const bases = getApiBases();
   let lastError: Error | null = null;
 
   for (const base of bases) {
     const url = base + "/api/ai/" + endpoint;
+<<<<<<< HEAD
     // Render is the production AI service. Keep the browser deadline below the
     // backend provider/fallback budget so the UI never hangs for half a minute.
     const timeoutMs = base === RENDER_MORNAI_API || base === pinnedApiBase ? 24_000 : 6_000;
+=======
+    const isRemote = base === RENDER_MORNAI_API || (configuredApiBase && base === configuredApiBase);
+    const timeoutMs = timeoutMsFor(endpoint, Boolean(isRemote) || base === pinnedApiBase);
+
+    if (base !== pinnedApiBase) {
+      const healthy = await probeHealth(base, isRemote ? 20_000 : 3_500);
+      if (!healthy) {
+        lastError = new Error("MornAI API is not reachable at " + base);
+        continue;
+      }
+      pinnedApiBase = base;
+    }
+>>>>>>> 5ec4c54 (Update MornAI)
 
     try {
-      const response = await requestJson(url, body, timeoutMs);
+      const response = await requestWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(body),
+          mode: "cors",
+          credentials: "omit",
+        },
+        timeoutMs,
+      );
       const contentType = response.headers.get("content-type") || "";
       const raw = await response.text();
 
@@ -91,11 +183,12 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
             message = payload?.error || message;
           } catch {}
         } else if (raw.startsWith("<!doctype") || raw.startsWith("<html")) {
-          message = base === RENDER_MORNAI_API
+          message = isRemote
             ? "Render returned the frontend page instead of the AI API."
             : "This frontend host does not expose the MornAI API.";
         }
         lastError = new Error(message);
+        if (base === pinnedApiBase) pinnedApiBase = null;
         continue;
       }
 
@@ -105,6 +198,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
             ? "AI endpoint returned HTML instead of JSON."
             : "MornAI AI server returned a non-JSON response.",
         );
+        if (base === pinnedApiBase) pinnedApiBase = null;
         continue;
       }
 
@@ -121,6 +215,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
           ? new Error("MornAI AI request timed out.")
           : error
         : new Error("MornAI AI server could not be reached.");
+      if (base === pinnedApiBase) pinnedApiBase = null;
     }
   }
 
@@ -130,24 +225,8 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
 }
 
 export async function checkMornAIConnection(): Promise<{ ok: boolean; base: string; error?: string }> {
-  for (const base of getApiBases()) {
-    try {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 5_000);
-      const response = await fetch(base + "/api/health", {
-        method: "GET",
-        mode: "cors",
-        credentials: "omit",
-        cache: "no-store",
-        signal: controller.signal,
-      });
-      window.clearTimeout(timeout);
-      if (response.ok) {
-        pinnedApiBase = base;
-        return { ok: true, base };
-      }
-    } catch {}
-  }
+  const base = await wakeMornAI();
+  if (base) return { ok: true, base };
 
   return {
     ok: false,

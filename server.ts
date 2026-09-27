@@ -19,7 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: "64kb" }));
+app.use(express.json({ limit: "256kb" }));
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -188,6 +188,7 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
 
         if (
           options.config?.responseMimeType === "application/json" &&
+          model !== FAST_FREE_TEXT_MODEL &&
           !(MODEL_IDS === FREE_MODEL_IDS && model === FREE_MODEL_IDS.ultra)
         ) {
           body.response_format = { type: "json_object" };
@@ -204,7 +205,11 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         }
 
         const controller = new AbortController();
+<<<<<<< HEAD
         const timeout = setTimeout(() => controller.abort(), AI_PROVIDER_TIMEOUT_MS);
+=======
+        const timeout = setTimeout(() => controller.abort(), 18_000);
+>>>>>>> 5ec4c54 (Update MornAI)
 
         let response: Response;
         try {
@@ -266,6 +271,7 @@ function resolveModel(requested: string) {
 }
 
 function modelFallbacks(model: string, needsJson = false) {
+<<<<<<< HEAD
   const fallbackOrder =
     model === FAST_FREE_TEXT_MODEL
       ? [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma, FREE_ROUTER_MODEL]
@@ -278,6 +284,18 @@ function modelFallbacks(model: string, needsJson = false) {
             : [model, FREE_ROUTER_MODEL];
 
   return Array.from(new Set(fallbackOrder));
+=======
+  // One fast model, then one fallback. Long chains exceed the browser timeout.
+  if (needsJson) {
+    return [MODEL_IDS.gemma, FAST_FREE_TEXT_MODEL];
+  }
+
+  if (model === FAST_FREE_TEXT_MODEL) return [FAST_FREE_TEXT_MODEL, MODEL_IDS.gemma];
+  if (model === MODEL_IDS.ultra) return [MODEL_IDS.ultra, MODEL_IDS.gemma];
+  if (model === MODEL_IDS.super) return [MODEL_IDS.super, MODEL_IDS.gemma];
+  if (model === MODEL_IDS.gemma) return [MODEL_IDS.gemma, FAST_FREE_TEXT_MODEL];
+  return [model];
+>>>>>>> 5ec4c54 (Update MornAI)
 }
 function getAiClient() {
   const hasOpenRouter = hasAnyOpenRouterKey();
@@ -530,10 +548,10 @@ Rules:
           text: "System Context: " + systemPrompt +
             "\n\nRecent Chat:\n" + JSON.stringify(
               (chatHistory || [])
-                .slice(-4)
+                .slice(-3)
                 .map((entry: any) => ({
                   sender: entry?.sender,
-                  text: String(entry?.text || "").slice(-900),
+                  text: String(entry?.text || "").slice(-400),
                 })),
             ) +
             "\n\nUser Query: " + message,
@@ -550,8 +568,13 @@ Rules:
       model: chatModel,
       contents: contents as any,
       config: {
+<<<<<<< HEAD
         maxTokens: 360,
         temperature: 0.1,
+=======
+        maxTokens: 420,
+        temperature: 0.12,
+>>>>>>> 5ec4c54 (Update MornAI)
       },
     });
 
@@ -992,11 +1015,40 @@ app.post("/api/ai/daily-briefing", async (req, res) => {
       actions: currentUser?.role === "founder" ? ["Review the highest-priority roadmap item", "Check open roles and pending syncs", "Ask MornAI to pressure-test your next decision"] : ["Review your strongest startup matches", "Refresh one proof point on your profile", "Start one focused founder conversation"],
     };
     if (!ai) return res.json(fallback);
+<<<<<<< HEAD
     const prompt = "You are MornAI daily operating assistant. Return JSON only with headline, summary, and exactly 3 actions. Do not invent facts.\nUser: " + JSON.stringify(currentUser || {}) + "\nStartups: " + JSON.stringify((startups || []).slice(0, 10)) + "\nAppointments: " + JSON.stringify((appointments || []).slice(0, 10)) + "\nConnections: " + JSON.stringify((connections || []).slice(0, 10));
     const response = await ai.models.generateContent({
       model: FAST_FREE_TEXT_MODEL,
       contents: prompt,
       config: { responseMimeType: "application/json", maxTokens: 260, temperature: 0.1 },
+=======
+    const slimUser = {
+      id: currentUser?.id,
+      name: currentUser?.name,
+      role: currentUser?.role,
+      title: currentUser?.title,
+      skills: (currentUser?.skills || []).slice(0, 8),
+      goal: currentUser?.onboarding?.goal || "",
+    };
+    const slimStartups = (startups || []).slice(0, 4).map((startup: any) => ({
+      name: startup?.name,
+      stage: startup?.stage,
+      industry: startup?.industry,
+    }));
+    const prompt =
+      "You are MornAI daily operating assistant. Return JSON only with headline, summary, and exactly 3 short actions. Do not invent facts.\nUser: " +
+      JSON.stringify(slimUser) +
+      "\nStartups: " +
+      JSON.stringify(slimStartups) +
+      "\nAppointments: " +
+      (Array.isArray(appointments) ? appointments.length : 0) +
+      "\nConnections: " +
+      (Array.isArray(connections) ? connections.length : 0);
+    const response = await ai.models.generateContent({
+      model: FAST_FREE_TEXT_MODEL,
+      contents: prompt,
+      config: { responseMimeType: "application/json", maxTokens: 280, temperature: 0.2 },
+>>>>>>> 5ec4c54 (Update MornAI)
     });
     const parsed = parseAiJson(response.text) || {};
     const safeActions = Array.isArray(parsed.actions)

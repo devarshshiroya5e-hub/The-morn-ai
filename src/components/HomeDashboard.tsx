@@ -72,10 +72,21 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
     setIsLoadingAiBriefing(true);
     try {
       const data = await postMornAI<any>('daily-briefing', {
-        currentUser,
-        startups: startups.slice(0, 8),
-        appointments: appointments.slice(0, 8),
-        connections: connections.slice(0, 12),
+        currentUser: {
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role,
+          title: currentUser.title,
+          skills: (currentUser.skills || []).slice(0, 8),
+          onboarding: { goal: currentUser.onboarding?.goal || '' },
+        },
+        startups: startups.slice(0, 4).map((startup) => ({
+          name: startup.name,
+          stage: startup.stage,
+          industry: startup.industry,
+        })),
+        appointments: appointments.slice(0, 6).map((item) => ({ status: item.status, date: item.date })),
+        connections: connections.slice(0, 8).map((item) => ({ status: item.status })),
       });
       const safeActions = Array.isArray(data?.actions)
         ? data.actions
@@ -95,6 +106,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       });
     } catch (error) {
       console.error('AI daily briefing failed:', error);
+      setAiBriefing({
+        headline: currentUser.role === 'founder' ? 'Protect the next milestone.' : 'Turn your strongest skill into your next conversation.',
+        summary: 'The AI briefing is warming up. You can keep working — retry in a few seconds if this stays empty.',
+        actions: currentUser.role === 'founder'
+          ? ['Review the highest-priority roadmap item', 'Check open roles and pending syncs', 'Ask MornAI to pressure-test your next decision']
+          : ['Review your strongest startup matches', 'Refresh one proof point on your profile', 'Start one focused founder conversation'],
+      });
     } finally {
       setIsLoadingAiBriefing(false);
     }

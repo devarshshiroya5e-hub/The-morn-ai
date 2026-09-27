@@ -239,12 +239,40 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
 
     try {
       const data = await postMornAI<{ reply?: string }>('co-founder-chat', {
-        startup: currentUser.role === 'founder' ? activeStartup : null,
+        startup: currentUser.role === 'founder' && activeStartup
+          ? {
+              name: activeStartup.name,
+              industry: activeStartup.industry,
+              stage: activeStartup.stage,
+              pitch: String(activeStartup.pitch || '').slice(0, 400),
+              techStack: (activeStartup.techStack || []).slice(0, 8),
+              currentGoals: (activeStartup as any).currentGoals || '',
+              members: (activeStartup.members || []).slice(0, 6),
+              historyLogs: (activeStartup.historyLogs || []).slice(-4),
+            }
+          : null,
         message: textToSend,
         userPrompt: textToSend,
         userRole: currentUser.role,
-        userProfile: currentUser,
-        chatHistory: messages.slice(-8),
+        userProfile: {
+          name: currentUser.name,
+          role: currentUser.role,
+          title: currentUser.title,
+          bio: String(currentUser.bio || '').slice(0, 400),
+          skills: (currentUser.skills || []).slice(0, 10),
+          onboarding: {
+            desiredRole: currentUser.onboarding?.desiredRole,
+            focusAreas: currentUser.onboarding?.focusAreas,
+            achievements: String(currentUser.onboarding?.achievements || '').slice(0, 240),
+            availability: currentUser.onboarding?.availability,
+            workStyle: currentUser.onboarding?.workStyle,
+            goal: currentUser.onboarding?.goal,
+          },
+        },
+        chatHistory: messages.slice(-4).map((entry) => ({
+          sender: entry.sender,
+          text: String(entry.text || '').slice(0, 400),
+        })),
       });
 
       const aiReply: ChatMessage = {
@@ -275,7 +303,9 @@ export const AiCoFounderDrawer: React.FC<AiCoFounderDrawerProps> = ({
         {
           id: `ai-err-${Date.now()}`,
           sender: 'ai',
-          text: "⚠️ I hit a network glitch. Please ask again in a moment — your question is still important.",
+          text: err instanceof Error && /timed out/i.test(err.message)
+            ? "The AI service is still waking up. Send the message once more — the next reply is usually much faster."
+            : "I hit a network glitch. Please ask again in a moment — your question is still important.",
           timestamp: 'Just now',
           animate: true,
         },
