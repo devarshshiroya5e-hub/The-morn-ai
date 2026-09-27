@@ -101,6 +101,7 @@ const MODEL_IDS =
     ? PAID_MODEL_IDS
     : FREE_MODEL_IDS;
 const FAST_FREE_TEXT_MODEL = "stealth/space-bunny-alpha";
+const AI_PROVIDER_TIMEOUT_MS = 7_500;
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
 type AiGenerateOptions = {
   model: string;
