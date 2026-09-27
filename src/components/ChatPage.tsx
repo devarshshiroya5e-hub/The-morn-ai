@@ -667,26 +667,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
   return (
     <div className="mornai-chat-page mx-auto w-full max-w-7xl">
       <div className="mornai-chat-shell mornai-discover-box rounded-[22px] border border-white/90 bg-white/80 shadow-[0_24px_70px_rgba(15,23,42,.08)] sm:rounded-[28px]">
-        <div className="mornai-chat-hero border-b border-white/50 px-4 py-3 text-white sm:px-6 sm:py-4">
-          <div className="flex flex-col gap-1.5 sm:gap-2 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/20 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[.16em] text-white">
-                <MessageCircle className="h-3 w-3" /> Talk to the community
-              </span>
-              <h1 className="mt-1.5 text-xl font-extrabold tracking-tight sm:text-2xl">Talk to the network.</h1>
-              <p className="mt-1 hidden max-w-2xl text-sm leading-5 text-violet-50/95 sm:block">
-                World Chat is open to everyone on THE MORN AI. Private rooms appear after a founder selects you.
-              </p>
-            </div>
-            <div className="hidden items-center gap-3 sm:flex">
-              <div className="rounded-2xl border border-white/20 bg-white/20 px-3.5 py-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-50"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" /> Live global room</div>
-                <div className="mt-0.5 text-[10px] text-white/80">All authenticated members</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {chatError && (
           <div className="mx-3 mt-2 flex shrink-0 items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-800 sm:mx-6">
             <div className="min-w-0 flex-1">
@@ -868,7 +848,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               )}
 
               {!isLoadingMessages && messages.length > 0 && (
-                <div className="mx-auto w-full max-w-5xl">
+                <div className="mx-auto w-full max-w-6xl">
                   {messages.map((message, index) => {
                     const previous = index > 0 ? messages[index - 1] : undefined;
                     const mine = message.senderId === currentUser.id;
@@ -914,7 +894,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                             mine ? 'justify-end' : 'justify-start'
                           } ${grouped ? 'mt-1' : 'mt-3'}`}
                         >
-                          <div className={`flex max-w-[96%] items-end gap-2 sm:max-w-[86%] lg:max-w-[88%] ${mine ? 'flex-row-reverse' : ''}`}>
+                          <div className={`flex max-w-[96%] items-end gap-2 sm:max-w-[86%] lg:max-w-[92%] ${mine ? 'flex-row-reverse' : ''}`}>
                             <div className="w-8 shrink-0">
                               {!grouped && !mine && (
                                 <InitialAvatar
@@ -934,13 +914,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                               )}
 
                               <div
-                                className={`rounded-[22px] px-4 py-3 shadow-sm transition-shadow ${
+                                className={`rounded-[22px] px-5 py-3.5 shadow-sm transition-shadow ${
                                   mine
                                     ? 'rounded-br-md bg-[linear-gradient(135deg,#5b21b6_0%,#7c3aed_65%,#9333ea_100%)] text-white shadow-[0_10px_28px_rgba(124,58,237,.18)]'
                                     : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'
                                 } ${message.status === 'failed' ? 'ring-2 ring-rose-200 ring-offset-2' : ''}`}
                               >
-                                <p className="whitespace-pre-wrap break-words text-xs leading-6">{message.text}</p>
+                                <p className="whitespace-pre-wrap break-words text-sm leading-7 sm:text-[15px] sm:leading-7">{message.text}</p>
                                 <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-semibold ${
                                   mine ? 'text-violet-100' : 'text-slate-400'
                                 }`}>
@@ -990,7 +970,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                 )}
               </AnimatePresence>
             </div>
-            <div className="mornai-chat-composer px-2 pt-2 sm:px-4 sm:pt-2.5">
+            <div className="mornai-chat-composer px-2 pt-2 sm:px-5 sm:pt-3">
               <div className="mx-auto w-full max-w-5xl">
                 <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50/95 px-2 py-1.5 shadow-sm transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_10px_28px_rgba(124,58,237,.08)]">
                   <textarea
@@ -1002,9 +982,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                         void sendMessage();
                       }
                     }}
-                    rows={2}
+                    rows={3}
                     placeholder={activeRoom?.kind === 'world' ? 'Message everyone…' : 'Write a message…'}
-                    className="min-h-12 max-h-40 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
+                    className="min-h-16 max-h-48 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
                     aria-label="Message"
                   />
                   <button
