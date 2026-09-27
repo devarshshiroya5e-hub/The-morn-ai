@@ -155,7 +155,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
   const founder = currentUser.role === 'founder';
 
   return (
-    <div className="relative mx-auto max-w-6xl p-5 sm:p-8">
+    <div className="mornai-page-scroll relative mx-auto max-w-6xl p-5 sm:p-8">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,rgba(124,58,237,.08),transparent_30%),radial-gradient(circle_at_90%_30%,rgba(37,99,235,.07),transparent_30%),#fff]" />
 
       <div className="mb-7">
