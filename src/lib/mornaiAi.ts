@@ -27,7 +27,7 @@ const getApiBases = () => {
   const origin =
     typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "";
   const localOrigin =
-    /^https?:\/\/(localhost|127\\.0\\.0\\.1)(?::\\d+)?$/i.test(origin);
+    /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i.test(origin);
 
   // Production frontend must use the Render API directly. Firebase Hosting
   // rewrites /api/* to index.html and therefore cannot serve the AI API.
@@ -76,7 +76,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
     const url = base + "/api/ai/" + endpoint;
     // Render is the production AI service. Keep the browser deadline below the
     // backend provider/fallback budget so the UI never hangs for half a minute.
-    const timeoutMs = base === RENDER_MORNAI_API || base === pinnedApiBase ? 14_000 : 6_000;
+    const timeoutMs = base === RENDER_MORNAI_API || base === pinnedApiBase ? 16_000 : 6_000;
 
     try {
       const response = await requestJson(url, body, timeoutMs);
