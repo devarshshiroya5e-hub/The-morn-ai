@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "themorn-ai",
+    "dist": "themorn-ai"
+  },
+  "targets": {},
+  "etags": {}
+}

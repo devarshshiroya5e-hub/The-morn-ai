@@ -1,0 +1,1038 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: auto;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body {
+    background-color: #ffffff;
+    color: #0f172a;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  #root {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* Custom crisp light theme scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* MornAI animated ambient gradient + morphing glass UI */
+.mornai-ambient{overflow:hidden;background:radial-gradient(circle at 10% 8%,rgba(124,58,237,.16),transparent 31%),radial-gradient(circle at 90% 18%,rgba(59,130,246,.14),transparent 33%),radial-gradient(circle at 45% 92%,rgba(14,165,233,.08),transparent 28%),linear-gradient(135deg,#fff 0%,#fbfdff 46%,#fff 100%);}
+.mornai-orb{position:absolute;width:30rem;height:30rem;border-radius:9999px;filter:blur(72px);opacity:.52;will-change:transform;animation:mornaiOrbFloat 12s ease-in-out infinite;transform:translateZ(0);}
+.mornai-orb-one{left:-9rem;top:4rem;background:rgba(124,58,237,.22);}
+.mornai-orb-two{right:-10rem;top:24rem;background:rgba(37,99,235,.17);animation-duration:14s;animation-delay:-4s;}
+.mornai-orb-three{left:36%;bottom:-18rem;background:rgba(14,165,233,.10);animation-duration:16s;animation-delay:-7s;}
+@keyframes mornaiOrbFloat{0%,100%{transform:translate3d(0,0,0) scale(1)}35%{transform:translate3d(35px,-25px,0) scale(1.04)}70%{transform:translate3d(-25px,30px,0) scale(.96)}}
+.mornai-glass-nav,.mornai-glass-panel,.mornai-glass-card,.mornai-glass-button,.mornai-glass-pill,.mornai-auth-nav{background:linear-gradient(135deg,rgba(255,255,255,.64),rgba(255,255,255,.34));border:1px solid rgba(255,255,255,.92);box-shadow:inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(99,102,241,.06),0 22px 70px rgba(15,23,42,.08);backdrop-filter:blur(20px) saturate(165%) contrast(108%);-webkit-backdrop-filter:blur(20px) saturate(165%) contrast(108%);}
+.mornai-glass-nav{position:relative;}
+.mornai-glass-nav::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.42),transparent 42%,rgba(99,102,241,.07) 70%,rgba(255,255,255,.28));}
+.mornai-glass-nav>*{position:relative;z-index:1;}
+.mornai-glass-button{transition:transform .22s cubic-bezier(.22,1,.36,1),background .18s ease,border-color .18s ease,box-shadow .22s cubic-bezier(.22,1,.36,1),color .18s ease;}
+.mornai-glass-button:hover{background:rgba(255,255,255,.70);border-color:rgba(129,140,248,.35);box-shadow:0 18px 42px rgba(79,70,229,.11);transform:translateY(-2px);}
+.mornai-glass-button:active{transform:translateY(0) scale(.985);}
+.mornai-auth-scroll{overflow-y:auto;overflow-x:hidden;scroll-behavior:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scroll-padding-block:12px;overflow-anchor:none;touch-action:pan-y;-webkit-overflow-scrolling:touch;}
+.mornai-auth-ambient{background:radial-gradient(circle at 12% 10%,rgba(124,58,237,.20),transparent 28%),radial-gradient(circle at 88% 18%,rgba(59,130,246,.18),transparent 30%),radial-gradient(circle at 52% 88%,rgba(14,165,233,.11),transparent 25%);background-size:135% 135%;animation:mornaiAuthGradient 10s ease-in-out infinite;will-change:background-position;}
+@keyframes mornaiAuthGradient{0%,100%{background-position:0% 0%;}50%{background-position:100% 65%;}}
+.mornai-auth-surface{box-shadow:inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(99,102,241,.08),0 28px 80px rgba(15,23,42,.12);backdrop-filter:blur(24px) saturate(175%) contrast(110%);-webkit-backdrop-filter:blur(24px) saturate(175%) contrast(110%);}
+.mornai-auth-glass-side{background:linear-gradient(135deg,rgba(255,255,255,.58),rgba(255,255,255,.30) 55%,rgba(238,242,255,.34));box-shadow:inset 0 1px 0 rgba(255,255,255,.94),inset -1px 0 0 rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(175%) contrast(110%);-webkit-backdrop-filter:blur(22px) saturate(175%) contrast(110%);}
+.mornai-auth-content{backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);}
+.mornai-auth-card{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.58),rgba(255,255,255,.30));border:1px solid rgba(255,255,255,.88);box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 16px 36px rgba(15,23,42,.07);backdrop-filter:blur(18px) saturate(170%) contrast(108%);-webkit-backdrop-filter:blur(18px) saturate(170%) contrast(108%);}
+.mornai-auth-card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.35),transparent 36%,rgba(129,140,248,.08) 68%,transparent 86%);opacity:.75;transform:none;}
+.mornai-auth-feature:nth-child(1){animation:mornaiFeatureFloat 4s ease-in-out infinite;}
+.mornai-auth-feature:nth-child(2){animation:mornaiFeatureFloat 4.6s ease-in-out -1.2s infinite;}
+.mornai-auth-feature:nth-child(3){animation:mornaiFeatureFloat 5.2s ease-in-out -2.4s infinite;}
+@keyframes mornaiFeatureFloat{0%,100%{transform:translate3d(0,0,0);}50%{transform:translate3d(0,-4px,0);}}
+.mornai-auth-role-card{min-height:210px;}
+.mornai-signup-field{border:1px solid rgba(129,140,248,.34);background:rgba(255,255,255,.52);box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 0 0 1px rgba(99,102,241,.06),0 0 18px rgba(99,102,241,.09);}
+.mornai-signup-field:hover{border-color:rgba(99,102,241,.48);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 0 0 1px rgba(99,102,241,.10),0 0 24px rgba(99,102,241,.13);}
+.mornai-signup-field:focus,.mornai-signup-field.is-typing{border-color:rgba(79,70,229,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 0 0 2px rgba(99,102,241,.10),0 0 30px rgba(99,102,241,.18);}
+.mornai-auth-field{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 24px rgba(15,23,42,.035);transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s cubic-bezier(.22,1,.36,1),background .16s ease,border-color .16s ease;}
+.mornai-auth-field:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 18px 42px rgba(79,70,229,.07);}
+.mornai-auth-field:focus{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 20px 48px rgba(79,70,229,.10);}
+
+.mornai-glass-nav-link{display:inline-flex;align-items:center;border-radius:9999px;padding:.55rem .72rem;color:#64748b;transition:transform .18s cubic-bezier(.22,1,.36,1),background .15s ease,color .15s ease,box-shadow .18s ease;}
+.mornai-glass-nav-link:hover{transform:translateY(-1px);color:#0f172a;background:rgba(255,255,255,.42);box-shadow:0 8px 22px rgba(79,70,229,.08);}
+.mornai-auth-nav{position:relative;z-index:20;margin:.85rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;border-radius:9999px;padding:.55rem .65rem .55rem .8rem;background:rgba(255,255,255,.52);}
+.mornai-nav-close{display:inline-flex;align-items:center;justify-content:center;width:2.2rem;height:2.2rem;border-radius:9999px;color:#64748b;transition:transform .18s cubic-bezier(.22,1,.36,1),background .15s ease,color .15s ease;}
+.mornai-nav-close:hover{transform:rotate(90deg);background:rgba(255,255,255,.62);color:#0f172a;}
+@media (prefers-reduced-motion: reduce){
+  .mornai-orb,.mornai-auth-ambient,.mornai-auth-feature{animation:none!important;}
+  .mornai-auth-scroll{scroll-behavior:auto;}
+}
+
+/* MornAI logged-in product shell — locked viewport; only .mornai-main scrolls */
+.mornai-app-shell{
+  position:relative;
+  isolation:isolate;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  height:100dvh;
+  max-height:100dvh;
+  overflow:hidden;
+  background:
+  radial-gradient(circle at 7% 4%,rgba(168,85,247,.22),transparent 30%),
+  radial-gradient(circle at 93% 12%,rgba(56,189,248,.18),transparent 32%),
+  radial-gradient(circle at 52% 86%,rgba(167,139,250,.12),transparent 28%),
+  linear-gradient(180deg,#faf5ff 0%,#f8fafc 48%,#ffffff 100%);
+}
+.mornai-app-shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
+  radial-gradient(circle at 16% 24%,rgba(168,85,247,.14),transparent 26%),
+  radial-gradient(circle at 82% 64%,rgba(56,189,248,.12),transparent 28%),
+  radial-gradient(circle at 50% 10%,rgba(255,255,255,.9),transparent 34%);}
+.mornai-app-shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
+  linear-gradient(115deg,transparent 0%,rgba(255,255,255,.28) 42%,transparent 68%);
+  mix-blend-mode:screen;}
+.mornai-public-scroll{
+  height:100%;
+  height:100dvh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.mornai-app-nav-wrap{pointer-events:none;flex-shrink:0;z-index:40;}
+.mornai-app-nav-wrap>*{pointer-events:auto;}
+.mornai-app-nav{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.96);box-shadow:0 18px 55px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(99,102,241,.05);backdrop-filter:blur(28px) saturate(175%) contrast(108%);-webkit-backdrop-filter:blur(28px) saturate(175%) contrast(108%);}
+.mornai-app-nav-pills{background:rgba(248,250,252,.72);border:1px solid rgba(226,232,240,.7);}
+.mornai-app-nav-item-active{color:#312e81;background:rgba(255,255,255,.92);box-shadow:0 8px 24px rgba(79,70,229,.10),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-app-ghost-btn,.mornai-user-trigger{border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.62);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);}
+.mornai-app-ghost-btn:hover,.mornai-user-trigger:hover{border-color:rgba(129,140,248,.34);background:rgba(255,255,255,.86);box-shadow:0 10px 24px rgba(79,70,229,.08),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-ai-btn{background:linear-gradient(135deg,#111827 0%,#4338ca 70%,#6366f1 100%);box-shadow:0 14px 34px rgba(79,70,229,.24);transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;}
+.mornai-ai-btn:hover{transform:translateY(-1px);box-shadow:0 18px 40px rgba(79,70,229,.30);filter:saturate(1.06);}
+.mornai-user-menu{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.78);box-shadow:0 28px 70px rgba(15,23,42,.14),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);}
+.mornai-menu-item{display:flex;width:100%;align-items:center;gap:.6rem;border-radius:.8rem;padding:.7rem .75rem;text-align:left;font-size:.72rem;font-weight:700;color:#475569;transition:background .16s ease,color .16s ease,transform .16s ease;}
+.mornai-menu-item:hover{background:rgba(238,242,255,.82);color:#0f172a;transform:translateX(2px);}
+.mornai-mobile-nav{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:45;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  gap:.15rem;
+  padding:.45rem .55rem calc(.45rem + env(safe-area-inset-bottom,0px));
+  border-top:1px solid rgba(255,255,255,.92);
+  border-left:0;
+  border-right:0;
+  border-bottom:0;
+  border-radius:22px 22px 0 0;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 -12px 40px rgba(15,23,42,.08);
+  backdrop-filter:blur(20px) saturate(170%);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);
+  pointer-events:auto;
+}
+.mornai-mobile-nav-active{background:rgba(79,70,229,.10);color:#4338ca;box-shadow:inset 0 1px 0 rgba(255,255,255,.95);}
+.mornai-page-transition{
+  will-change:opacity,transform,filter;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+}
+.mornai-modal-scroll{
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  -webkit-overflow-scrolling:touch;
+}
+.mornai-main{
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:auto;
+  touch-action:pan-y;
+  padding-bottom:calc(4.75rem + env(safe-area-inset-bottom,0px));
+}
+@media (min-width:768px){
+  .mornai-main{padding-bottom:1.25rem;}
+  .mornai-mobile-nav{display:none;}
+}
+.mornai-main.is-fill-view{overflow:hidden;display:flex;flex-direction:column;padding-bottom:0;}
+.mornai-main.is-fill-view>.mornai-page-transition{flex:1;min-height:0;display:flex;flex-direction:column;}
+.mornai-chat-page{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  height:100%;
+  width:100%;
+  padding:.35rem .5rem calc(4.85rem + env(safe-area-inset-bottom,0px));
+}
+@media (min-width:768px){
+  .mornai-chat-page{padding:.4rem 1rem .5rem;}
+}
+.mornai-chat-shell{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+}
+.mornai-chat-hero{
+  flex-shrink:0;
+  background:linear-gradient(135deg,#111827 0%,#25133f 48%,#6d28d9 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+.mornai-chat-body{
+  display:flex;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+}
+@media (min-width:1024px){
+  .mornai-chat-body{display:grid;grid-template-columns:270px 1fr;}
+}
+.mornai-chat-thread{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+  min-width:0;
+  overflow:hidden;
+}
+.mornai-chat-messages{
+  flex:1;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
+.mornai-chat-composer{
+  flex-shrink:0;
+  position:sticky;
+  bottom:0;
+  z-index:5;
+  background:rgba(255,255,255,.96);
+  border-top:1px solid rgba(226,232,240,.85);
+  padding-bottom:max(.35rem, env(safe-area-inset-bottom,0px));
+}
+.mornai-app-footer{flex-shrink:0;}
+@media (max-width:767px){
+  .mornai-app-footer{display:none;}
+}
+.mornai-main>.max-w-7xl,.mornai-main>.mornai-discover-page{position:relative;}
+.mornai-main .bg-white.rounded-2xl.border.border-slate-200{background:rgba(255,255,255,.72)!important;border-color:rgba(255,255,255,.92)!important;box-shadow:0 18px 48px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.96);}
+.mornai-main .bg-white.rounded-2xl.border.border-slate-200:hover{border-color:rgba(129,140,248,.28)!important;}
+.mornai-section-kicker{display:inline-flex;align-items:center;gap:.45rem;border-radius:9999px;background:rgba(238,242,255,.92);padding:.45rem .7rem;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#4f46e5;}
+.mornai-inline-stat{display:inline-flex;align-items:center;gap:.5rem;width:max-content;border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.66);padding:.6rem .8rem;border-radius:9999px;font-size:.7rem;font-weight:800;color:#475569;box-shadow:0 10px 24px rgba(15,23,42,.06);backdrop-filter:blur(14px);}
+.mornai-discover-hero{background:linear-gradient(135deg,#111827 0%,#1e1b4b 46%,#312e81 100%);}
+.mornai-discover-hero::after{content:"";position:absolute;inset:auto -7rem -10rem auto;width:24rem;height:24rem;border-radius:9999px;background:radial-gradient(circle,rgba(99,102,241,.42),transparent 68%);filter:blur(12px);pointer-events:none;}
+.mornai-filter-bar{box-shadow:0 18px 48px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.96);}
+.mornai-startup-card{box-shadow:0 16px 42px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.92);}
+.mornai-startup-card:hover{transform:translateY(-4px);}
+.mornai-secondary-action{background:rgba(241,245,249,.84);color:#334155;}
+.mornai-secondary-action:hover{background:rgba(226,232,240,.95);transform:translateY(-1px);}
+.mornai-primary-action{background:linear-gradient(135deg,#312e81,#4f46e5);box-shadow:0 10px 24px rgba(79,70,229,.22);}
+.mornai-primary-action:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(79,70,229,.28);}
+@media (max-width:767px){
+  .mornai-app-nav{border-radius:18px;}
+  .mornai-discover-hero{border-radius:24px;}
+  .mornai-main .bg-white.rounded-2xl.border.border-slate-200{box-shadow:0 12px 32px rgba(15,23,42,.05);}
+  .mornai-app-shell button:hover{transform:none;}
+  .mornai-person-card:hover,
+  .mornai-startup-network-card:hover,
+  .mornai-role-card:hover,
+  .mornai-startup-card:hover{transform:none;}
+  .mornai-orb{display:none;}
+}
+
+.mornai-discover-box{position:relative;border-color:rgba(196,181,253,.34)!important;box-shadow:0 0 0 1px rgba(124,58,237,.09),0 0 22px rgba(124,58,237,.10),0 14px 40px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.94)!important;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;}
+.mornai-discover-box:hover{border-color:rgba(168,85,247,.48)!important;box-shadow:0 0 0 1px rgba(168,85,247,.12),0 0 30px rgba(168,85,247,.16),0 18px 48px rgba(124,58,237,.08),inset 0 1px 0 rgba(255,255,255,.98)!important;}
+.mornai-discover-page .mornai-discovery-stat,
+.mornai-discover-page .mornai-startup-card,
+.mornai-discover-page .mornai-job-card,
+.mornai-discover-page .mornai-discovery-signal{border-color:rgba(196,181,253,.30)!important;box-shadow:0 0 0 1px rgba(124,58,237,.07),0 0 18px rgba(124,58,237,.08),0 14px 34px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.95);}
+.mornai-discover-page .mornai-startup-card:hover,
+.mornai-discover-page .mornai-job-card:hover,
+.mornai-discover-page .mornai-discovery-stat:hover{border-color:rgba(168,85,247,.46)!important;box-shadow:0 0 0 1px rgba(168,85,247,.10),0 0 26px rgba(168,85,247,.14),0 20px 44px rgba(124,58,237,.10),inset 0 1px 0 rgba(255,255,255,.98);}
+.mornai-discovery-hero-button{transition:transform .2s ease,background .2s ease,box-shadow .2s ease;}
+.mornai-discovery-signal{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 18px 42px rgba(2,6,23,.18);}
+.mornai-discovery-stat{display:flex;min-width:0;align-items:center;gap:.75rem;border:1px solid rgba(255,255,255,.94);border-radius:18px;padding:.75rem .8rem;background:rgba(255,255,255,.72);box-shadow:0 12px 30px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.mornai-discovery-stat:hover{transform:translateY(-2px);border-color:rgba(129,140,248,.35);box-shadow:0 18px 38px rgba(79,70,229,.08);}
+.mornai-discovery-stat-indigo svg{color:#6366f1;}
+.mornai-discovery-stat-violet svg{color:#8b5cf6;}
+.mornai-discovery-stat-emerald svg{color:#10b981;}
+.mornai-discovery-stat-sky svg{color:#0ea5e9;}
+.mornai-discovery-search{border:1px solid rgba(226,232,240,.9);background:rgba(248,250,252,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 18px rgba(15,23,42,.03);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-discovery-search:focus{border-color:rgba(99,102,241,.45);background:rgba(255,255,255,.96);box-shadow:0 0 0 4px rgba(99,102,241,.08),0 14px 28px rgba(79,70,229,.06);}
+.mornai-startup-card{position:relative;box-shadow:0 16px 42px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.92);transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s ease,border-color .2s ease;}
+.mornai-startup-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,.34),transparent 35%,rgba(99,102,241,.035) 72%,transparent 100%);opacity:.8;}
+.mornai-startup-card:hover{transform:translateY(-5px);}
+@media (max-width:767px){.mornai-discovery-stat{padding:.7rem;}.mornai-discovery-signal{order:-1;}.mornai-discovery-stat span:last-child{font-size:.58rem;}}
+
+
+/* MornAI violet visual accent + luminous controls */
+.mornai-app-shell .text-indigo-50{color:#f5f3ff!important;}
+.mornai-app-shell .text-indigo-100{color:#ede9fe!important;}
+.mornai-app-shell .text-indigo-200{color:#ddd6fe!important;}
+.mornai-app-shell .text-indigo-300{color:#c4b5fd!important;}
+.mornai-app-shell .text-indigo-400{color:#a78bfa!important;}
+.mornai-app-shell .text-indigo-500{color:#8b5cf6!important;}
+.mornai-app-shell .text-indigo-600{color:#7c3aed!important;}
+.mornai-app-shell .text-indigo-700{color:#6d28d9!important;}
+.mornai-app-shell .text-indigo-800{color:#5b21b6!important;}
+.mornai-app-shell .text-indigo-900{color:#4c1d95!important;}
+.mornai-app-shell .bg-indigo-50{background-color:rgba(139,92,246,.08)!important;}
+.mornai-app-shell .bg-indigo-100{background-color:rgba(139,92,246,.14)!important;}
+.mornai-app-shell .bg-indigo-200{background-color:rgba(139,92,246,.20)!important;}
+.mornai-app-shell .bg-indigo-500{background-color:#8b5cf6!important;}
+.mornai-app-shell .bg-indigo-600{background-color:#7c3aed!important;}
+.mornai-app-shell .bg-indigo-700{background-color:#6d28d9!important;}
+.mornai-app-shell .border-indigo-100{border-color:rgba(139,92,246,.16)!important;}
+.mornai-app-shell .border-indigo-200{border-color:rgba(139,92,246,.24)!important;}
+.mornai-app-shell .border-indigo-300{border-color:rgba(139,92,246,.36)!important;}
+.mornai-app-shell .from-indigo-500{--tw-gradient-from:#8b5cf6 var(--tw-gradient-from-position);--tw-gradient-to:rgb(255 255 255 / 0) var(--tw-gradient-to-position)!important;}
+.mornai-app-shell .from-indigo-600{--tw-gradient-from:#7c3aed var(--tw-gradient-from-position);--tw-gradient-to:rgb(255 255 255 / 0) var(--tw-gradient-to-position)!important;}
+.mornai-app-shell .via-indigo-700{--tw-gradient-stops:var(--tw-gradient-from),#6d28d9 var(--tw-gradient-via-position),var(--tw-gradient-to)!important;}
+.mornai-app-shell .to-indigo-700{--tw-gradient-to:#6d28d9 var(--tw-gradient-to-position)!important;}
+.mornai-app-shell button{transition:transform .18s ease,background .18s ease,color .18s ease,opacity .18s ease;}
+.mornai-app-shell button:hover{transform:translateY(-1px);}
+.mornai-app-nav{border-color:rgba(124,58,237,.24);box-shadow:0 18px 55px rgba(15,23,42,.10),0 0 28px rgba(124,58,237,.08),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(124,58,237,.07);}
+.mornai-app-nav-pills{border-color:rgba(124,58,237,.13);box-shadow:0 0 16px rgba(124,58,237,.05);}
+.mornai-app-nav-item-active{color:#6d28d9;background:rgba(255,255,255,.96);box-shadow:0 0 0 1px rgba(124,58,237,.16),0 0 18px rgba(124,58,237,.12),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-ai-btn{background:linear-gradient(135deg,#312e81 0%,#7c3aed 55%,#c084fc 100%);box-shadow:0 0 0 1px rgba(196,181,253,.45),0 12px 34px rgba(124,58,237,.28),0 0 30px rgba(168,85,247,.22);}
+.mornai-ai-btn:hover{box-shadow:0 0 0 1px rgba(221,214,254,.6),0 16px 42px rgba(124,58,237,.34),0 0 38px rgba(168,85,247,.28);}
+.mornai-discover-hero{background:linear-gradient(135deg,#111827 0%,#24113f 45%,#4c1d95 100%);}
+.mornai-discover-hero::after{background:radial-gradient(circle,rgba(168,85,247,.42),transparent 68%);}
+.mornai-primary-action{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.30),0 10px 24px rgba(124,58,237,.22),0 0 18px rgba(168,85,247,.16);}
+.mornai-primary-action:hover{box-shadow:0 0 0 1px rgba(196,181,253,.44),0 14px 30px rgba(124,58,237,.28),0 0 24px rgba(168,85,247,.20);}
+.mornai-home-hero{background:linear-gradient(135deg,#111827 0%,#261342 42%,#6d28d9 100%);box-shadow:0 30px 90px rgba(76,29,149,.18),inset 0 1px 0 rgba(255,255,255,.16);}
+.mornai-market-hero{background:linear-gradient(135deg,#111827 0%,#24113f 46%,#4c1d95 100%);box-shadow:0 28px 80px rgba(76,29,149,.16),inset 0 1px 0 rgba(255,255,255,.13);}
+.mornai-booking-hero{background:linear-gradient(135deg,#111827 0%,#27153f 48%,#6d28d9 100%);}
+.mornai-job-cta{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.28),0 7px 16px rgba(124,58,237,.20);}
+.mornai-price-badge{background:linear-gradient(135deg,#6d28d9,#a855f7);}
+.mornai-price-primary{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 12px 24px rgba(124,58,237,.18);}
+.mornai-workspace-ai-primary{background:linear-gradient(135deg,#6d28d9,#4f46e5);}
+.mornai-app-shell{
+  background:
+  radial-gradient(circle at 7% 4%,rgba(168,85,247,.22),transparent 30%),
+  radial-gradient(circle at 93% 12%,rgba(56,189,248,.18),transparent 32%),
+  radial-gradient(circle at 52% 86%,rgba(167,139,250,.12),transparent 28%),
+  linear-gradient(180deg,#faf5ff 0%,#f8fafc 48%,#ffffff 100%);
+}
+.mornai-app-shell::before{background:
+  radial-gradient(circle at 16% 24%,rgba(168,85,247,.14),transparent 26%),
+  radial-gradient(circle at 82% 64%,rgba(56,189,248,.12),transparent 28%),
+  radial-gradient(circle at 50% 10%,rgba(255,255,255,.9),transparent 34%);}
+.mornai-ambient{background:radial-gradient(circle at 10% 8%,rgba(168,85,247,.24),transparent 31%),radial-gradient(circle at 90% 18%,rgba(56,189,248,.2),transparent 33%),radial-gradient(circle at 45% 92%,rgba(129,140,248,.14),transparent 28%),linear-gradient(135deg,#fff 0%,#faf5ff 46%,#fff 100%);}
+.mornai-home-page::before,.mornai-marketplace-page::before{background:rgba(168,85,247,.09);}
+
+
+.mornai-book-sync-page{position:relative;overflow:hidden;background:
+  radial-gradient(circle at 8% 4%,rgba(124,58,237,.09),transparent 28%),
+  radial-gradient(circle at 92% 10%,rgba(168,85,247,.08),transparent 30%),
+  linear-gradient(180deg,#fbfcff 0%,#f7f8fc 100%);}
+.mornai-book-sync-page::before{content:"";position:absolute;left:16%;top:6rem;width:22rem;height:22rem;border-radius:9999px;background:rgba(124,58,237,.07);filter:blur(70px);pointer-events:none;}
+.mornai-book-sync-page>*{position:relative;z-index:1;}
+.mornai-book-sync-topbar{display:flex;align-items:center;justify-content:space-between;gap:.8rem;}
+.mornai-book-sync-brand{display:flex;align-items:center;gap:.65rem;border:1px solid rgba(226,232,240,.9);border-radius:16px;padding:.45rem .7rem;background:rgba(255,255,255,.72);box-shadow:0 10px 28px rgba(15,23,42,.05);}
+.mornai-book-sync-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;border:1px solid rgba(255,255,255,.95);border-radius:24px;padding:1.2rem 1.3rem;background:rgba(255,255,255,.68);box-shadow:0 16px 42px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+.mornai-book-sync-steps{display:flex;align-items:center;gap:.45rem;white-space:nowrap;}
+.mornai-book-sync-steps span{display:inline-flex;align-items:center;gap:.35rem;font-size:.62rem;font-weight:800;color:#94a3b8;}
+.mornai-book-sync-steps span b{display:grid;place-items:center;width:1.55rem;height:1.55rem;border-radius:9999px;background:#f1f5f9;color:#64748b;font-size:.62rem;}
+.mornai-book-sync-steps span.is-active{color:#6d28d9;}
+.mornai-book-sync-steps span.is-active b{background:#ede9fe;color:#6d28d9;box-shadow:0 0 0 1px rgba(124,58,237,.12),0 0 12px rgba(124,58,237,.12);}
+.mornai-book-sync-section-label{display:flex;align-items:flex-start;gap:.7rem;}
+.mornai-book-sync-section-label>span{display:grid;place-items:center;min-width:1.85rem;height:1.85rem;border-radius:.65rem;background:#f5f3ff;color:#7c3aed;font-size:.62rem;font-weight:900;}
+.mornai-book-sync-section-label p{font-size:.61rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#8b5cf6;}
+.mornai-book-sync-section-label h2{margin-top:.15rem;font-size:.9rem;font-weight:800;color:#0f172a;}
+@media (max-width:767px){
+  .mornai-book-sync-topbar{align-items:flex-start;}
+  .mornai-book-sync-brand{display:none;}
+  .mornai-book-sync-intro{align-items:flex-start;flex-direction:column;}
+  .mornai-book-sync-steps{width:100%;justify-content:flex-start;overflow-x:auto;padding-bottom:.15rem;}
+}
+
+.mornai-page-panel{background:rgba(255,255,255,.74);border:1px solid rgba(255,255,255,.94);box-shadow:0 24px 70px rgba(15,23,42,.07),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);}
+.mornai-booking-hero{background:linear-gradient(135deg,#111827 0%,#27153f 48%,#6d28d9 100%);}
+.mornai-booking-summary{background:linear-gradient(135deg,rgba(245,243,255,.92),rgba(255,255,255,.72));border:1px solid rgba(196,181,253,.35);}
+.mornai-booking-side{background:linear-gradient(135deg,rgba(250,245,255,.84),rgba(255,255,255,.62));border:1px solid rgba(196,181,253,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.96);}
+.mornai-booking-field{border:1px solid rgba(124,58,237,.24);background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 0 0 1px rgba(124,58,237,.04),0 0 16px rgba(124,58,237,.055);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-booking-field:focus{border-color:rgba(124,58,237,.48);background:rgba(255,255,255,.96);box-shadow:0 0 0 4px rgba(124,58,237,.07),0 0 22px rgba(124,58,237,.12);}
+.mornai-back-action{border:1px solid rgba(124,58,237,.18);background:rgba(255,255,255,.66);color:#6d28d9;}
+.mornai-back-action:hover{background:rgba(245,243,255,.95);transform:translateX(-2px);}
+.mornai-job-list{box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 10px 28px rgba(124,58,237,.04);}
+.mornai-job-card{box-shadow:0 8px 20px rgba(15,23,42,.045),inset 0 1px 0 rgba(255,255,255,.96);}
+.mornai-job-card:hover{border-color:rgba(167,139,250,.36);box-shadow:0 14px 28px rgba(124,58,237,.08);}
+.mornai-job-cta{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 0 0 1px rgba(168,85,247,.28),0 7px 16px rgba(124,58,237,.20);}
+
+
+/* MornAI retention + marketplace layer */
+.mornai-home-page,.mornai-marketplace-page{position:relative;}
+.mornai-home-page::before,.mornai-marketplace-page::before{content:"";position:fixed;inset:9% 8% auto auto;width:26rem;height:26rem;border-radius:9999px;background:rgba(139,92,246,.045);filter:blur(80px);pointer-events:none;z-index:-1;}
+.mornai-home-hero{background:linear-gradient(135deg,#111827 0%,#261342 42%,#6d28d9 100%);box-shadow:0 30px 90px rgba(76,29,149,.18),inset 0 1px 0 rgba(255,255,255,.16);}
+.mornai-home-panel{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.94);box-shadow:0 22px 64px rgba(15,23,42,.065),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px) saturate(165%);-webkit-backdrop-filter:blur(18px) saturate(165%);}
+.mornai-home-icon-btn{display:grid;place-items:center;width:2.7rem;height:2.7rem;border:1px solid rgba(226,232,240,.88);border-radius:16px;background:rgba(255,255,255,.76);color:#64748b;box-shadow:0 10px 26px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.98);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);transition:transform .18s ease,box-shadow .18s ease,color .18s ease,border-color .18s ease;}
+.mornai-home-icon-btn:hover{transform:translateY(-2px);color:#6d28d9;border-color:rgba(124,58,237,.26);box-shadow:0 16px 34px rgba(124,58,237,.09),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-primary,.mornai-home-secondary{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border-radius:14px;padding:.68rem .9rem;font-size:.68rem;font-weight:900;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-home-primary{border:1px solid rgba(255,255,255,.92);background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(238,242,255,.72));color:#312e81;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 12px 26px rgba(2,6,23,.13);backdrop-filter:blur(16px) saturate(170%);-webkit-backdrop-filter:blur(16px) saturate(170%);}
+.mornai-home-primary:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(2,6,23,.20);}
+.mornai-home-secondary{border:1px solid rgba(255,255,255,.26);background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.06));color:white;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 12px 30px rgba(2,6,23,.12);backdrop-filter:blur(16px) saturate(155%);-webkit-backdrop-filter:blur(16px) saturate(155%);}
+.mornai-home-secondary:hover{transform:translateY(-2px);background:rgba(255,255,255,.12);}
+.mornai-home-stat{display:flex;min-width:0;align-items:center;gap:.75rem;padding:.9rem;border:1px solid rgba(255,255,255,.96);border-radius:18px;background:rgba(255,255,255,.72);box-shadow:0 14px 34px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.mornai-home-stat:hover{transform:translateY(-2px);border-color:rgba(124,58,237,.22);box-shadow:0 18px 40px rgba(79,70,229,.08),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-stat-violet svg{color:#7c3aed}.mornai-home-stat-amber svg{color:#f59e0b}.mornai-home-stat-emerald svg{color:#059669}.mornai-home-stat-sky svg{color:#0284c7}
+.mornai-home-match-card{display:flex;align-items:center;gap:.75rem;width:100%;padding:.8rem;border:1px solid rgba(226,232,240,.84);border-radius:20px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 10px 24px rgba(15,23,42,.035);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-home-match-card:hover{transform:translateY(-2px);border-color:rgba(124,58,237,.20);background:rgba(255,255,255,.92);box-shadow:0 16px 34px rgba(79,70,229,.07),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-chip{display:inline-flex;align-items:center;border:1px solid rgba(226,232,240,.92);border-radius:9999px;padding:.3rem .48rem;background:rgba(248,250,252,.86);font-size:.57rem;font-weight:800;color:#64748b;}
+.mornai-home-text-link{display:inline-flex;align-items:center;gap:.15rem;color:#6d28d9;font-size:.66rem;font-weight:900;transition:transform .16s ease,color .16s ease;}
+.mornai-home-text-link:hover{transform:translateX(2px);color:#4c1d95;}
+.mornai-home-action{display:flex;align-items:center;gap:.65rem;width:100%;padding:.72rem .8rem;border:1px solid rgba(226,232,240,.82);border-radius:16px;background:rgba(255,255,255,.68);font-size:.68rem;font-weight:800;color:#334155;box-shadow:inset 0 1px 0 rgba(255,255,255,.98);transition:transform .17s ease,background .17s ease,border-color .17s ease;}
+.mornai-home-action:hover{transform:translateX(2px);background:rgba(255,255,255,.94);border-color:rgba(124,58,237,.18);}
+.mornai-home-pro-cta{display:inline-flex;align-items:center;gap:.4rem;border-radius:14px;padding:.65rem .8rem;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid rgba(196,181,253,.48);color:#6d28d9;font-size:.65rem;font-weight:900;box-shadow:0 10px 26px rgba(124,58,237,.08);transition:transform .18s ease,box-shadow .18s ease;}
+.mornai-home-pro-cta:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(124,58,237,.12);}
+.mornai-home-value-card{border:1px solid rgba(226,232,240,.78);border-radius:22px;padding:1rem;background:rgba(255,255,255,.56);box-shadow:inset 0 1px 0 rgba(255,255,255,.99);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.mornai-home-value-card:hover{transform:translateY(-2px);border-color:rgba(124,58,237,.18);box-shadow:0 14px 30px rgba(79,70,229,.06),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-home-value-icon{display:grid;place-items:center;width:2rem;height:2rem;border-radius:12px;background:white;box-shadow:0 8px 18px rgba(15,23,42,.06);}
+.mornai-tone-violet{color:#7c3aed}.mornai-tone-sky{color:#0284c7}.mornai-tone-amber{color:#d97706}
+
+.mornai-marketplace-page{padding-bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));}
+@media (max-width:767px){
+  .mornai-marketplace-page{padding-bottom:1rem;}
+  .mornai-marketplace-page .mornai-person-card,
+  .mornai-marketplace-page .mornai-role-card,
+  .mornai-marketplace-page .mornai-startup-network-card{transform:none;}
+}
+.mornai-market-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#111827 0%,#24113f 46%,#4c1d95 100%);box-shadow:0 28px 80px rgba(76,29,149,.16),inset 0 1px 0 rgba(255,255,255,.13);}
+.mornai-market-hero::after{content:"";position:absolute;right:-9rem;bottom:-10rem;width:28rem;height:28rem;border-radius:9999px;background:radial-gradient(circle,rgba(168,85,247,.35),transparent 68%);filter:blur(12px);pointer-events:none;}
+.mornai-market-toolbar{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.72);box-shadow:0 18px 46px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.mornai-market-search{display:flex;align-items:center;gap:.6rem;border:1px solid rgba(226,232,240,.9);border-radius:17px;padding:.75rem .85rem;background:rgba(248,250,252,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.96);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.mornai-market-search:focus-within{border-color:rgba(124,58,237,.34);background:rgba(255,255,255,.96);box-shadow:0 0 0 4px rgba(124,58,237,.065),0 14px 28px rgba(79,70,229,.055);}
+.mornai-market-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;font-size:.72rem;font-weight:700;color:#0f172a;}
+.mornai-market-search input::placeholder{color:#94a3b8;}
+.mornai-market-filter-btn,.mornai-market-tab,.mornai-market-chip{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border:1px solid rgba(226,232,240,.88);border-radius:14px;padding:.62rem .76rem;background:rgba(255,255,255,.68);color:#64748b;font-size:.65rem;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.98);transition:transform .17s ease,background .17s ease,border-color .17s ease,color .17s ease;}
+.mornai-market-filter-btn:hover,.mornai-market-tab:hover,.mornai-market-chip:hover{transform:translateY(-1px);border-color:rgba(124,58,237,.22);color:#6d28d9;}
+.mornai-market-filter-btn.is-active,.mornai-market-chip.is-active{background:#f5f3ff;border-color:rgba(124,58,237,.22);color:#6d28d9;}
+.mornai-market-tab.is-active{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-color:rgba(124,58,237,.25);color:#6d28d9;box-shadow:0 8px 20px rgba(124,58,237,.07);}
+.mornai-market-tab span{display:grid;min-width:1.2rem;height:1.2rem;place-items:center;padding:0 .25rem;border-radius:9999px;background:rgba(241,245,249,.92);font-size:.53rem;color:#64748b;}
+.mornai-market-select{display:block;width:100%;border:1px solid rgba(226,232,240,.9);border-radius:14px;padding:.55rem .65rem;background:white;color:#334155;outline:none;font-size:.68rem;font-weight:800;}
+.mornai-market-stat{display:inline-flex;align-items:center;gap:.35rem;border:1px solid rgba(255,255,255,.9);border-radius:9999px;background:rgba(255,255,255,.72);padding:.52rem .7rem;font-size:.62rem;font-weight:900;color:#475569;box-shadow:0 8px 20px rgba(15,23,42,.045);backdrop-filter:blur(12px);}
+.mornai-person-card,.mornai-startup-network-card,.mornai-role-card{border:1px solid rgba(255,255,255,.94);background:rgba(255,255,255,.72);box-shadow:0 18px 48px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.99);backdrop-filter:blur(18px) saturate(155%);-webkit-backdrop-filter:blur(18px) saturate(155%);transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s ease,border-color .18s ease;}
+.mornai-person-card{border-radius:26px;padding:1rem;}
+.mornai-startup-network-card{overflow:hidden;border-radius:26px;}
+.mornai-role-card{display:flex;align-items:flex-start;gap:.8rem;border-radius:24px;padding:1rem;}
+.mornai-person-card:hover,.mornai-startup-network-card:hover,.mornai-role-card:hover{transform:translateY(-3px);border-color:rgba(124,58,237,.18);box-shadow:0 24px 56px rgba(79,70,229,.075),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-market-skill{display:inline-flex;align-items:center;border:1px solid rgba(226,232,240,.9);border-radius:9999px;padding:.3rem .5rem;background:rgba(248,250,252,.82);font-size:.55rem;font-weight:800;color:#64748b;}
+.mornai-market-skill.is-match{background:#f5f3ff;border-color:rgba(124,58,237,.20);color:#6d28d9;}
+.mornai-save-btn{display:grid;place-items:center;width:2rem;height:2rem;border:1px solid rgba(226,232,240,.86);border-radius:12px;background:rgba(255,255,255,.76);color:#94a3b8;transition:transform .17s ease,background .17s ease,color .17s ease,border-color .17s ease,box-shadow .17s ease;}
+.mornai-save-btn:hover{transform:translateY(-1px);color:#6d28d9;border-color:rgba(124,58,237,.22);box-shadow:0 8px 18px rgba(124,58,237,.07);}
+.mornai-save-btn.is-saved{background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.18);}
+.mornai-market-primary,.mornai-market-secondary{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border-radius:14px;padding:.62rem .75rem;font-size:.63rem;font-weight:900;transition:transform .17s ease,box-shadow .17s ease,background .17s ease;}
+.mornai-market-primary{border:1px solid rgba(255,255,255,.88);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(245,243,255,.68));color:#5b21b6;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 14px 30px rgba(79,70,229,.11);backdrop-filter:blur(16px) saturate(170%);-webkit-backdrop-filter:blur(16px) saturate(170%);}
+.mornai-market-primary:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(124,58,237,.24);}
+.mornai-market-secondary{border:1px solid rgba(226,232,240,.9);background:rgba(255,255,255,.72);color:#475569;box-shadow:inset 0 1px 0 rgba(255,255,255,.98);}
+.mornai-market-secondary:hover{transform:translateY(-1px);background:white;color:#0f172a;}
+.mornai-talent-modal,.mornai-pricing-modal,.mornai-notification-drawer{border:1px solid rgba(255,255,255,.96);background:rgba(255,255,255,.82);box-shadow:0 30px 90px rgba(15,23,42,.18),inset 0 1px 0 rgba(255,255,255,1);backdrop-filter:blur(26px) saturate(175%);-webkit-backdrop-filter:blur(26px) saturate(175%);}
+.mornai-close-btn{display:grid;place-items:center;width:2.15rem;height:2.15rem;border:1px solid rgba(226,232,240,.88);border-radius:12px;background:rgba(255,255,255,.72);color:#64748b;transition:transform .17s ease,color .17s ease,background .17s ease;}
+.mornai-close-btn:hover{transform:rotate(90deg);background:white;color:#6d28d9;}
+.mornai-modal-label{font-size:.58rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:#94a3b8;}
+.mornai-notification-trigger{border:1px solid rgba(226,232,240,.84);background:rgba(255,255,255,.68);box-shadow:0 10px 24px rgba(15,23,42,.045),inset 0 1px 0 rgba(255,255,255,1);transition:transform .17s ease,color .17s ease,border-color .17s ease,box-shadow .17s ease;}
+.mornai-notification-trigger:hover{transform:translateY(-2px);color:#6d28d9;border-color:rgba(124,58,237,.22);box-shadow:0 14px 28px rgba(124,58,237,.08);}
+.mornai-notification-action{display:inline-flex;align-items:center;gap:.35rem;border:1px solid rgba(226,232,240,.88);border-radius:10px;padding:.45rem .55rem;background:rgba(255,255,255,.72);font-size:.55rem;font-weight:900;color:#64748b;}
+.mornai-notification-row{display:flex;align-items:flex-start;gap:.7rem;width:100%;padding:.75rem;border-radius:18px;text-align:left;transition:background .16s ease,transform .16s ease;}
+.mornai-notification-row:hover{background:rgba(248,250,252,.82);transform:translateX(2px);}
+.mornai-notification-row.is-unread{background:linear-gradient(135deg,rgba(245,243,255,.86),rgba(239,246,255,.62));}
+.mornai-billing-toggle{display:flex;gap:.15rem;border:1px solid rgba(226,232,240,.9);border-radius:9999px;padding:.2rem;background:white;}
+.mornai-billing-toggle span{padding:.38rem .58rem;border-radius:9999px;font-size:.55rem;font-weight:900;color:#94a3b8;}
+.mornai-billing-toggle span.is-on{background:#f5f3ff;color:#6d28d9;box-shadow:0 5px 14px rgba(124,58,237,.08);}
+.mornai-price-card{position:relative;border:1px solid rgba(226,232,240,.88);border-radius:24px;padding:1.1rem;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 14px 34px rgba(15,23,42,.045);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;}
+.mornai-price-card:hover{transform:translateY(-3px);box-shadow:0 22px 46px rgba(79,70,229,.07),inset 0 1px 0 rgba(255,255,255,1);border-color:rgba(124,58,237,.18);}
+.mornai-price-card.is-featured{border-color:rgba(124,58,237,.24);background:linear-gradient(145deg,rgba(250,245,255,.95),rgba(255,255,255,.78));box-shadow:0 18px 44px rgba(124,58,237,.10),inset 0 1px 0 rgba(255,255,255,1);}
+.mornai-price-badge{position:absolute;right:1rem;top:-.55rem;border-radius:9999px;padding:.35rem .55rem;background:linear-gradient(135deg,#6d28d9,#a855f7);color:white;font-size:.52rem;font-weight:900;box-shadow:0 8px 18px rgba(124,58,237,.22);}
+.mornai-price-primary{background:linear-gradient(135deg,#6d28d9,#a855f7);box-shadow:0 12px 24px rgba(124,58,237,.18);}
+.mornai-price-secondary{border:1px solid rgba(226,232,240,.9);background:rgba(255,255,255,.78);}
+@media (max-width:767px){
+  .mornai-role-card{flex-direction:column;}
+  .mornai-role-card>div:last-child{width:100%;}
+}
+
+.mornai-daily-loop{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid rgba(255,255,255,.94);border-radius:24px;padding:.95rem 1rem;background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(245,243,255,.58));box-shadow:0 16px 38px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+@media (max-width:640px){.mornai-daily-loop{align-items:flex-start;flex-direction:column;}.mornai-daily-loop>div:last-child{width:100%;justify-content:space-between;}}
+
+/* Startup Vault memory-log composer */
+.mornai-memory-log-overlay{
+  background:rgba(15,23,42,.34);
+  backdrop-filter:blur(14px) saturate(135%);
+  -webkit-backdrop-filter:blur(14px) saturate(135%);
+}
+.mornai-memory-log-modal{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.92);
+  background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(255,255,255,.80));
+  box-shadow:
+    0 35px 100px rgba(15,23,42,.20),
+    0 0 0 1px rgba(124,58,237,.05),
+    0 0 40px rgba(124,58,237,.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+  backdrop-filter:blur(30px) saturate(170%);
+  -webkit-backdrop-filter:blur(30px) saturate(170%);
+}
+.mornai-memory-log-modal::before{
+  content:"";
+  position:absolute;
+  inset:-35% -10% auto;
+  height:16rem;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 25% 35%,rgba(167,139,250,.22),transparent 38%),
+    radial-gradient(circle at 78% 25%,rgba(56,189,248,.16),transparent 34%);
+  filter:blur(18px);
+}
+.mornai-memory-log-field{
+  width:100%;
+  border:1px solid rgba(148,163,184,.38);
+  border-radius:15px;
+  background:rgba(255,255,255,.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 6px 18px rgba(15,23,42,.035),
+    0 0 0 1px rgba(124,58,237,.025);
+  color:#0f172a;
+  outline:none;
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background .2s ease,
+    transform .2s ease;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.mornai-memory-log-field:focus{
+  border-color:rgba(124,58,237,.48);
+  background:rgba(255,255,255,.90);
+  box-shadow:
+    0 0 0 3px rgba(124,58,237,.08),
+    0 0 24px rgba(124,58,237,.16),
+    0 0 46px rgba(56,189,248,.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+}
+.mornai-memory-log-field:hover{
+  border-color:rgba(99,102,241,.34);
+  box-shadow:
+    0 0 18px rgba(124,58,237,.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+}
+.mornai-memory-log-field::placeholder{color:#94a3b8;}
+select.mornai-memory-log-field{appearance:auto;cursor:pointer;}
+
+/* Founder Workspace AI surfaces */
+.mornai-workspace-glass-action{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  min-height:3rem;
+  padding:.75rem 1rem;
+  border:1px solid rgba(255,255,255,.92);
+  border-radius:15px;
+  background:rgba(255,255,255,.64);
+  color:#334155;
+  font-size:.72rem;
+  font-weight:900;
+  box-shadow:
+    0 14px 32px rgba(15,23,42,.055),
+    0 0 24px rgba(124,58,237,.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+  backdrop-filter:blur(20px) saturate(165%);
+  -webkit-backdrop-filter:blur(20px) saturate(165%);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.mornai-workspace-glass-action:hover{
+  transform:translateY(-2px);
+  background:rgba(255,255,255,.84);
+  border-color:rgba(124,58,237,.22);
+  box-shadow:
+    0 18px 38px rgba(15,23,42,.07),
+    0 0 30px rgba(124,58,237,.14),
+    inset 0 1px 0 rgba(255,255,255,1);
+}
+.mornai-workspace-ai-panel{
+  display:flex;
+  gap:1rem;
+  padding:1rem;
+  border:1px solid rgba(255,255,255,.9);
+  border-radius:24px;
+  background:linear-gradient(135deg,rgba(255,255,255,.88),rgba(248,250,252,.7));
+  box-shadow:
+    0 18px 50px rgba(15,23,42,.05),
+    0 0 34px rgba(124,58,237,.06),
+    inset 0 1px 0 rgba(255,255,255,1);
+  backdrop-filter:blur(22px) saturate(165%);
+  -webkit-backdrop-filter:blur(22px) saturate(165%);
+}
+.mornai-workspace-ai-kicker{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:.35rem .6rem;
+  background:rgba(245,243,255,.9);
+  color:#6d28d9;
+  font-size:.54rem;
+  font-weight:900;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  box-shadow:0 0 18px rgba(124,58,237,.08);
+}
+.mornai-workspace-ai-field{
+  width:100%;
+  min-height:3.25rem;
+  resize:vertical;
+  border:1px solid rgba(148,163,184,.38);
+  border-radius:16px;
+  padding:.8rem .9rem;
+  background:rgba(255,255,255,.72);
+  color:#0f172a;
+  font-size:.72rem;
+  line-height:1.55;
+  outline:none;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 6px 18px rgba(15,23,42,.03),
+    0 0 0 1px rgba(124,58,237,.02);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;
+}
+.mornai-workspace-ai-field:focus{
+  border-color:rgba(124,58,237,.48);
+  background:rgba(255,255,255,.92);
+  box-shadow:
+    0 0 0 3px rgba(124,58,237,.07),
+    0 0 28px rgba(124,58,237,.14),
+    0 0 50px rgba(56,189,248,.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+}
+.mornai-workspace-ai-field::placeholder{color:#94a3b8;}
+.mornai-workspace-ai-primary{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  min-height:2.8rem;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:15px;
+  padding:.7rem 1rem;
+  background:linear-gradient(135deg,#6d28d9,#4f46e5);
+  color:white;
+  font-size:.68rem;
+  font-weight:900;
+  box-shadow:0 12px 28px rgba(79,70,229,.2),0 0 24px rgba(124,58,237,.12);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.mornai-workspace-ai-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 16px 34px rgba(79,70,229,.28),0 0 32px rgba(124,58,237,.18);
+}
+.mornai-website-overlay{
+  background:rgba(15,23,42,.42);
+  backdrop-filter:blur(16px) saturate(135%);
+  -webkit-backdrop-filter:blur(16px) saturate(135%);
+}
+.mornai-website-studio{
+  border:1px solid rgba(255,255,255,.88);
+  background:rgba(248,250,252,.76);
+  box-shadow:0 40px 120px rgba(15,23,42,.24),0 0 70px rgba(124,58,237,.09),inset 0 1px 0 rgba(255,255,255,1);
+  backdrop-filter:blur(28px) saturate(165%);
+  -webkit-backdrop-filter:blur(28px) saturate(165%);
+}
+.mornai-website-upload{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  cursor:pointer;
+  border:1px solid rgba(148,163,184,.3);
+  border-radius:18px;
+  padding:.75rem;
+  background:rgba(255,255,255,.66);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 8px 20px rgba(15,23,42,.03);
+  transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.mornai-website-upload:hover{
+  transform:translateY(-1px);
+  border-color:rgba(124,58,237,.24);
+  box-shadow:0 0 24px rgba(124,58,237,.09),inset 0 1px 0 rgba(255,255,255,1);
+}
+.mornai-preview-switch{
+  display:flex;
+  gap:.25rem;
+  padding:.25rem;
+  border:1px solid rgba(255,255,255,.9);
+  border-radius:14px;
+  background:rgba(255,255,255,.64);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 8px 20px rgba(15,23,42,.035);
+  backdrop-filter:blur(16px);
+}
+.mornai-preview-switch button{
+  display:inline-flex;
+  align-items:center;
+  gap:.35rem;
+  border-radius:10px;
+  padding:.45rem .6rem;
+  color:#64748b;
+  font-size:.58rem;
+  font-weight:900;
+}
+.mornai-preview-switch button.is-active{
+  background:white;
+  color:#6d28d9;
+  box-shadow:0 7px 16px rgba(124,58,237,.1);
+}
+.mornai-website-preview{
+  width:min(100%,980px);
+  min-height:420px;
+  overflow:hidden;
+  border-radius:24px;
+  background:white;
+  border:1px solid rgba(226,232,240,.92);
+  box-shadow:0 26px 70px rgba(15,23,42,.14),0 0 34px rgba(124,58,237,.06);
+}
+.mornai-website-preview.is-mobile{
+  width:360px;
+  max-width:92%;
+}
+.mornai-website-preview-topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  padding:.85rem 1.1rem;
+  border-bottom:1px solid #eef2ff;
+  color:#0f172a;
+  font-size:.68rem;
+  font-weight:900;
+}
+.mornai-website-preview-topbar>div span{color:#64748b;font-size:.56rem;font-weight:700;}
+.mornai-website-preview-hero{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:1rem;
+  padding:1.35rem;
+  background:linear-gradient(135deg,#ffffff 0%,#f5f3ff 58%,#eff6ff 100%);
+}
+.mornai-website-preview.is-mobile .mornai-website-preview-hero{grid-template-columns:1fr;}
+.mornai-website-preview-badge{
+  display:inline-flex;
+  border-radius:999px;
+  padding:.35rem .55rem;
+  background:#f5f3ff;
+  color:#6d28d9;
+  font-size:.5rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+}
+.mornai-website-preview-hero h3{margin-top:.7rem;font-size:1.65rem;font-weight:900;color:#0f172a;letter-spacing:-.03em;}
+.mornai-website-preview-hero p{margin-top:.55rem;max-width:34rem;font-size:.68rem;line-height:1.7;color:#64748b;}
+.mornai-website-preview-hero button{margin-top:.9rem;border:0;border-radius:12px;padding:.62rem .9rem;background:#111827;color:white;font-size:.58rem;font-weight:900;}
+.mornai-website-preview-media{
+  min-height:210px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.9);
+  background:linear-gradient(135deg,#e9d5ff,#e0f2fe);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,1);
+}
+.mornai-website-preview-media img{width:100%;height:100%;min-height:210px;object-fit:cover;}
+.mornai-website-placeholder{display:grid;place-items:center;gap:.4rem;color:#7c3aed;font-size:.58rem;font-weight:900;}
+.mornai-website-preview-cards{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:.7rem;
+  padding:1rem 1.35rem 1.35rem;
+}
+.mornai-website-preview-cards>div{
+  border:1px solid #eef2f7;
+  border-radius:17px;
+  padding:.85rem;
+  background:#fff;
+}
+.mornai-website-preview-cards span{font-size:.48rem;font-weight:900;color:#8b5cf6;}
+.mornai-website-preview-cards strong{display:block;margin-top:.3rem;font-size:.65rem;color:#0f172a;}
+.mornai-website-preview-cards p{margin-top:.25rem;font-size:.54rem;line-height:1.55;color:#94a3b8;}
+.mornai-website-preview.is-mobile .mornai-website-preview-cards{grid-template-columns:1fr;}
+@media (max-width:760px){
+  .mornai-workspace-ai-panel{flex-direction:column;}
+  .mornai-website-preview-hero{grid-template-columns:1fr;}
+}
+
+
+
+/* Butter-smooth MornAI motion surfaces */
+.mornai-auth-scroll,
+.mornai-auth-surface,
+.mornai-main {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.mornai-auth-surface {
+  transform-origin: 50% 50%;
+  will-change: transform, opacity, filter;
+}
+.mornai-main {
+  isolation: isolate;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mornai-auth-card,
+  .mornai-auth-feature,
+  .mornai-glass-button,
+  .mornai-glass-nav-link,
+  .mornai-nav-close {
+    transition-timing-function: cubic-bezier(.16,1,.3,1);
+  }
+}
+
+
+/* Auth performance hardening: keep glass appearance without scroll-blocking backdrop filters. */
+.mornai-auth-scroll,
+.mornai-auth-surface,
+.mornai-auth-glass-side,
+.mornai-auth-content,
+.mornai-auth-card,
+.mornai-auth-nav,
+.mornai-glass-nav,
+.mornai-glass-panel,
+.mornai-glass-card,
+.mornai-glass-pill {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Keep interactive glass controls genuinely frosted without applying live blur to every surface. */
+.mornai-glass-button,
+.mornai-glass-nav-link,
+.mornai-app-ghost-btn,
+.mornai-user-trigger,
+.mornai-close-btn,
+.mornai-notification-action,
+.mornai-market-secondary,
+.mornai-workspace-glass-action,
+.mornai-price-secondary,
+.mornai-preview-switch button {
+  backdrop-filter: blur(12px) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(155%) !important;
+  background-color: rgba(255,255,255,.56);
+  box-shadow:
+    0 10px 24px rgba(15,23,42,.055),
+    inset 0 1px 0 rgba(255,255,255,.96);
+}
+
+.mornai-glass-button:hover,
+.mornai-glass-nav-link:hover,
+.mornai-app-ghost-btn:hover,
+.mornai-user-trigger:hover,
+.mornai-close-btn:hover,
+.mornai-notification-action:hover,
+.mornai-market-secondary:hover,
+.mornai-workspace-glass-action:hover,
+.mornai-price-secondary:hover,
+.mornai-preview-switch button:hover {
+  background-color: rgba(255,255,255,.72);
+}
+.mornai-auth-scroll {
+  contain: layout paint style;
+  will-change: auto;
+  transform: none;
+  -webkit-overflow-scrolling: touch;
+}
+.mornai-auth-ambient {
+  animation: none !important;
+  background-size: 100% 100%;
+  will-change: auto;
+}
+.mornai-orb {
+  filter: blur(38px) !important;
+  animation: none !important;
+  will-change: auto !important;
+  transform: translateZ(0) !important;
+}
+.mornai-auth-feature,
+.mornai-auth-card {
+  animation: none !important;
+}
+.mornai-auth-surface {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.98), inset 0 -1px 0 rgba(99,102,241,.08), 0 24px 64px rgba(15,23,42,.10);
+}
+
+
+/* Scroll-performance layer: static glass cards do not need live backdrop sampling while scrolling. */
+.mornai-app-nav,
+.mornai-user-menu,
+.mornai-mobile-nav,
+.mornai-inline-stat,
+.mornai-discovery-stat,
+.mornai-book-sync-intro,
+.mornai-page-panel,
+.mornai-home-panel,
+.mornai-home-icon-btn,
+.mornai-home-secondary,
+.mornai-home-stat,
+.mornai-home-match-card,
+.mornai-market-toolbar,
+.mornai-market-stat,
+.mornai-person-card,
+.mornai-startup-network-card,
+.mornai-role-card,
+.mornai-daily-loop,
+.mornai-workspace-glass-action,
+.mornai-workspace-ai-panel,
+.mornai-workspace-ai-field,
+.mornai-preview-switch {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html {
+  scroll-behavior: auto;
+}
+body {
+  overscroll-behavior-y: none;
+}
+.mornai-app-shell {
+  contain: none !important;
+}
+.mornai-main {
+  /* Do not create a containing block for viewport-fixed drawers/modals. */
+  contain: none;
+  transform: none;
+}
+.mornai-auth-scroll {
+  contain: layout style;
+  overscroll-behavior: none;
+  scroll-behavior: auto !important;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* AI drawer: one self-contained viewport, one scroll owner. */
+.mornai-ai-drawer {
+  position: fixed !important;
+  inset-block: 0;
+  right: 0;
+  isolation: isolate;
+  contain: layout paint style;
+  overscroll-behavior: none;
+  max-height: 100dvh;
+}
+.mornai-ai-chat {
+  min-height: 0;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+
+
+/* Auth navigation: keep the top bar and text links clean, with no button-like rectangles. */
+.mornai-auth-nav{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.mornai-auth-nav::before,
+.mornai-auth-nav::after{
+  display:none !important;
+}
+.mornai-auth-nav .mornai-glass-nav-link{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:.55rem .72rem;
+}
+.mornai-auth-nav .mornai-glass-nav-link:hover,
+.mornai-auth-nav .mornai-glass-nav-link:focus-visible{
+  background:transparent !important;
+  box-shadow:none !important;
+  border-color:transparent !important;
+  color:#0f172a;
+}
+
+
+/* Smooth interaction layer */
+html {
+  scroll-behavior: auto;
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  transition-timing-function: cubic-bezier(.22,1,.36,1);
+}
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+.mornai-page-transition,
+.mornai-startup-explorer,
+.mornai-person-card,
+.mornai-startup-network-card,
+.mornai-role-card,
+.mornai-market-panel,
+.mornai-market-secondary,
+.mornai-market-primary,
+.mornai-close-btn {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+.mornai-pull-refresh {
+  transform: translateZ(0);
+  animation: mornai-pull-pop .22s cubic-bezier(.22,1,.36,1);
+}
+@keyframes mornai-pull-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

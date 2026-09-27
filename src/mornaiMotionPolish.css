@@ -1,0 +1,35 @@
+/* Lightweight motion layer: transforms/opacity only, no layout animation. */
+.mornai-page-transition {
+  transform-origin: 50% 0;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.mornai-discover-page,
+.mornai-marketplace-page,
+.mornai-book-sync-page {
+  min-height: 100%;
+}
+
+/* Startup explorer is one natural scroll surface. */
+.mornai-startup-explorer-scroll {
+  height: auto;
+  max-height: none;
+  overflow-y: visible;
+  overscroll-behavior-y: auto;
+}
+
+/* Keep role plus icons mathematically centered even when font metrics differ. */
+.mornai-role-plus,
+.mornai-role-plus > span {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mornai-page-transition {
+    transition: none !important;
+  }
+}
