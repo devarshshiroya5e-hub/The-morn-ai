@@ -868,7 +868,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               )}
 
               {!isLoadingMessages && messages.length > 0 && (
-                <div className="mx-auto max-w-3xl">
+                <div className="mx-auto w-full max-w-5xl">
                   {messages.map((message, index) => {
                     const previous = index > 0 ? messages[index - 1] : undefined;
                     const mine = message.senderId === currentUser.id;
@@ -914,7 +914,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                             mine ? 'justify-end' : 'justify-start'
                           } ${grouped ? 'mt-1' : 'mt-3'}`}
                         >
-                          <div className={`flex max-w-[88%] items-end gap-2 sm:max-w-[76%] ${mine ? 'flex-row-reverse' : ''}`}>
+                          <div className={`flex max-w-[96%] items-end gap-2 sm:max-w-[86%] lg:max-w-[88%] ${mine ? 'flex-row-reverse' : ''}`}>
                             <div className="w-8 shrink-0">
                               {!grouped && !mine && (
                                 <InitialAvatar
@@ -1002,9 +1002,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                         void sendMessage();
                       }
                     }}
-                    rows={1}
+                    rows={2}
                     placeholder={activeRoom?.kind === 'world' ? 'Message everyone…' : 'Write a message…'}
-                    className="min-h-9 max-h-24 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
+                    className="min-h-12 max-h-40 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
                     aria-label="Message"
                   />
                   <button
