@@ -556,8 +556,8 @@ Rules:
       model: chatModel,
       contents: contents as any,
       config: {
-        maxTokens: 500,
-        temperature: 0.12,
+        maxTokens: 360,
+        temperature: 0.1,
       },
     });
 
