@@ -19,7 +19,6 @@ import { VideoCallPage } from './components/VideoCallPage';
 import { IncomingCallOverlay, IncomingCallInfo } from './components/IncomingCallOverlay';
 import { LandingPage } from './components/LandingPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
-import { HomeDashboard } from './components/HomeDashboard';
 import { MarketplacePage } from './components/MarketplacePage';
 import { NotificationCenter } from './components/NotificationCenter';
 import { PricingModal } from './components/PricingModal';
@@ -1358,32 +1357,34 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 1: DAILY HOME / RETENTION HUB */}
+        {/* VIEW 1: DASHBOARD — restored to the original Workspace experience */}
         {activeView === 'home' && (
-          <HomeDashboard
-            currentUser={currentUser}
-            startups={startups}
-            appointments={appointments}
-            allTalents={talentUsers}
-            previousVisitAt={previousVisitAt}
-            unreadNotificationCount={unreadNotificationCount}
-            connections={connections}
-            followedStartupIds={preferences.followedStartupIds || []}
-            dailyStreak={preferences.dailyStreak || 0}
-            dailyActionsCompleted={preferences.dailyActionsCompleted || 0}
-            onOpenNetwork={(tab) => {
-              completeDailyAction();
-              setActiveView('network');
-              if (tab) window.sessionStorage.setItem('mornai-network-tab', tab);
-            }}
-            onOpenWorkspace={() => { completeDailyAction(); setActiveView('workspace'); }}
-            onOpenMessages={() => { completeDailyAction(); setActiveView('messages'); }}
-            onOpenNotifications={() => setIsNotificationCenterOpen(true)}
-            onOpenAiDrawer={() => { completeDailyAction(); handleOpenAiDrawer(); }}
-            onOpenPricing={() => setIsPricingOpen(true)}
-            onSelectStartup={handleSelectStartup}
-            onBookAppointment={handleOpenBookingModal}
-          />
+          currentUser.role === 'founder' ? (
+            activeStartupContext ? (
+              <FounderWorkspace
+                startup={activeStartupContext}
+                ownedStartups={ownedStartups}
+                onSwitchStartup={(startupId) => { void selectOwnedStartup(startupId); }}
+                currentUser={currentUser}
+                allTalents={talentUsers}
+                appointments={appointments}
+                onUpdateStartup={handleUpdateStartup}
+                onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+                onOpenAiDrawer={handleOpenAiDrawer}
+              />
+            ) : (
+              <div className="mx-auto max-w-3xl p-10 text-center text-sm text-slate-500">Loading your startup workspace…</div>
+            )
+          ) : (
+            <TalentWorkspace
+              currentUser={currentUser}
+              startups={startups}
+              appointments={appointments}
+              onBookAppointment={handleOpenBookingModal}
+              onUpdateTaskStatus={handleUpdateTaskStatus}
+              onOpenAiDrawer={handleOpenAiDrawer}
+            />
+          )
         )}
 
         {/* VIEW 2: TWO-SIDED STARTUP NETWORK */}
