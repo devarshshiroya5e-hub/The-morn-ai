@@ -189,7 +189,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({
   ];
 
   return (
-    <div className="mornai-marketplace-page mx-auto max-w-7xl space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mornai-page-scroll mornai-marketplace-page mx-auto max-w-7xl space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <span className="mornai-section-kicker"><NetworkDot /> Network</span>
