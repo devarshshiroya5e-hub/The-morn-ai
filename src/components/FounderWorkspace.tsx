@@ -329,7 +329,8 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+      <div className="sticky top-0 z-30 -mx-4 bg-white/90 px-4 pb-4 pt-1 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
       
       {/* Founder Workspace Hero Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -519,7 +520,24 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
             Predictive Insights
           </button>
         </div>
+
+        <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-3">
+          <button
+            id="tab-website-btn"
+            type="button"
+            onClick={() => setShowWebsiteStudio(true)}
+            className="mornai-workspace-glass-action shrink-0"
+          >
+            <Globe2 className="h-3.5 w-3.5 text-violet-600" />
+            <span>Website Studio</span>
+          </button>
+          <span className="hidden text-[10px] font-semibold text-slate-400 sm:inline">
+            Roadmap • Memory • Delegation • Roles • Talent Syncs • Predictive • Website
+          </span>
+        </div>
       </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0 sm:pr-1">
 
       {/* TAB 1: AI ROADMAP & STRATEGY */}
       {activeTab === 'strategy' && (
@@ -1236,6 +1254,8 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
 
         </div>
       )}
+
+      </div>
 
       {/* DESIGN MODAL: AI WEBSITE STUDIO */}
       {showWebsiteStudio && (
