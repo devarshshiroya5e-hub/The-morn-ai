@@ -1495,6 +1495,5 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
       )}
 
     </div>
-    </div>
   );
 };
