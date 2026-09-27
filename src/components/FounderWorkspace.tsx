@@ -1268,7 +1268,7 @@ export const FounderWorkspace: React.FC<FounderWorkspaceProps> = ({
                   <span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-black text-violet-700">Design mode</span>
                 </div>
                 <h2 className="mt-1 text-lg font-black text-slate-950">Build the website for {startup.name}</h2>
-                <p className="mt-1 text-[11px] text-slate-500">Describe the startup or upload a product image. AI generation will connect later.</p>
+                <p className="mt-1 text-[11px] text-slate-500">Describe the startup or upload a product image. MornAI will generate the website direction and preview from your startup context.</p>
               </div>
               <button
                 type="button"
