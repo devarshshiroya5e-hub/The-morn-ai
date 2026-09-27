@@ -193,7 +193,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       ];
 
   return (
-    <div className="mornai-home-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 space-y-6">
+    <div className="mornai-page-scroll mornai-home-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <span className="mornai-section-kicker"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Today</span>
