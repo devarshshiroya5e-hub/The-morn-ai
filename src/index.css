@@ -169,8 +169,7 @@
   min-width:0;
   min-height:0;
   height:auto;
-  overflow-x:hidden;
-  overflow-y:auto;
+  overflow:hidden;
   overscroll-behavior:contain;
   scrollbar-gutter:stable;
   -webkit-overflow-scrolling:touch;
