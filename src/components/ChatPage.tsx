@@ -991,7 +991,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
               </AnimatePresence>
             </div>
             <div className="mornai-chat-composer px-2 pt-2 sm:px-4 sm:pt-2.5">
-              <div className="mx-auto max-w-3xl">
+              <div className="mx-auto w-full max-w-5xl">
                 <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50/95 px-2 py-1.5 shadow-sm transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_10px_28px_rgba(124,58,237,.08)]">
                   <textarea
                     value={draft}
