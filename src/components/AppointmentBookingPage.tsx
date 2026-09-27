@@ -111,7 +111,7 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   if (!startup) {
     return (
-      <div className="mornai-book-sync-page min-h-0 px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mornai-page-scroll mornai-book-sync-page min-h-0 px-5 py-8 sm:px-8 sm:py-10">
         <div className="mx-auto max-w-2xl pt-10 text-center">
           <div className="mornai-page-panel mx-auto max-w-xl rounded-[28px] p-10">
             <Calendar className="mx-auto h-10 w-10 text-violet-500" />
