@@ -203,7 +203,7 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         }
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12_000);
+        const timeout = setTimeout(() => controller.abort(), AI_PROVIDER_TIMEOUT_MS);
 
         let response: Response;
         try {
