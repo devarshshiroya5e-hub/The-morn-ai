@@ -199,7 +199,12 @@ export default function App() {
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
 
-  // Warm the Render AI service early so the first Co-Founder/daily briefing request does not pay the cold-start cost.\n  useEffect(() => {\n    void checkMornAIConnection();\n  }, []);\n\n  useEffect(() => {
+  // Warm the Render AI service early so the first Co-Founder/daily briefing request does not pay the cold-start cost.
+  useEffect(() => {
+    void checkMornAIConnection();
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
