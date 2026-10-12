@@ -79,7 +79,7 @@ export function validateWebsiteSpec(input: unknown): WebsiteSpec {
     });
     return {
       type, title: sectionTitle, subtitle: cleanText(section.subtitle, 240),
-      layout: pick(section.layout, LAYOUTS, type === "faq" ? "accordion" : type === "steps" || type === "process" ? "steps" : "grid"),
+      layout: pick(section.layout, LAYOUTS, type === "faq" ? "accordion" : type === "steps" || type === "process" ? "steps" : "grid") as WebsiteSpec["sections"][number]["layout"],
       items,
     };
   });
@@ -91,12 +91,12 @@ export function validateWebsiteSpec(input: unknown): WebsiteSpec {
         text: safeColor(paletteInput.text, defaults.text), muted: safeColor(paletteInput.muted, defaults.muted),
         primary: safeColor(paletteInput.primary, defaults.primary), accent: safeColor(paletteInput.accent, defaults.accent),
       },
-      headingFont: pick(themeInput.headingFont, FONTS, style === "editorial" || style === "luxury" ? "serif" : "sans"),
-      bodyFont: pick(themeInput.bodyFont, FONTS, "sans"),
-      spacing: pick(themeInput.spacing, SPACING, style === "luxury" || style === "editorial" ? "airy" : "balanced"),
-      corners: pick(themeInput.corners, CORNERS, style === "brutalist" ? "square" : "soft"),
+      headingFont: pick(themeInput.headingFont, FONTS, style === "editorial" || style === "luxury" ? "serif" : "sans") as WebsiteSpec["theme"]["headingFont"],
+      bodyFont: pick(themeInput.bodyFont, FONTS, "sans") as WebsiteSpec["theme"]["bodyFont"],
+      spacing: pick(themeInput.spacing, SPACING, style === "luxury" || style === "editorial" ? "airy" : "balanced") as WebsiteSpec["theme"]["spacing"],
+      corners: pick(themeInput.corners, CORNERS, style === "brutalist" ? "square" : "soft") as WebsiteSpec["theme"]["corners"],
     },
-    hero: { layout: pick(heroInput.layout, HERO_LAYOUTS, "split"), eyebrow: cleanText(heroInput.eyebrow, 120), headline, subheadline, primaryCta: cleanText(heroInput.primaryCta, 60) || "Get in touch", secondaryCta: cleanText(heroInput.secondaryCta, 60) },
+    hero: { layout: pick(heroInput.layout, HERO_LAYOUTS, "split") as WebsiteSpec["hero"]["layout"], eyebrow: cleanText(heroInput.eyebrow, 120), headline, subheadline, primaryCta: cleanText(heroInput.primaryCta, 60) || "Get in touch", secondaryCta: cleanText(heroInput.secondaryCta, 60) },
     sections,
   };
 }
