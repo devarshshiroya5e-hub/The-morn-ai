@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { Startup } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
-import { composeWebsiteFiles } from '../lib/websiteComposer';
+import { composeWebsiteFiles, type WebsiteSpec } from '../lib/websiteComposer';
 import { createZipBlob } from '../lib/zipBuilder';
 
 export interface WebsiteProject {
@@ -129,6 +129,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
   const [productPhoto, setProductPhoto] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState('');
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [progressStep, setProgressStep] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState(false);
@@ -231,171 +232,62 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   };
 
   const handleGenerateWebsite = async (overridePrompt?: string) => {
-    const activePrompt = (overridePrompt || promptText).trim() || startup.tagline || startup.pitch || `Modern intelligent platform for ${startup.name}`;
+    const activePrompt = (overridePrompt || promptText).trim() || startup.tagline || startup.pitch || "";
+    if (!activePrompt) {
+      setGenerationError("Describe the website you want before generating it.");
+      return;
+    }
+    setGenerationError("");
     setIsGenerating(true);
     setProgressPercent(15);
-    setProgressStep('Analyzing startup vision & target audience…');
+    setProgressStep("Designing a unique page structure and visual system…");
 
     try {
-      const t1 = setTimeout(() => {
-        setProgressPercent(40);
-        setProgressStep('Structuring multi-file project & UI components…');
-      }, 700);
-
-      const t2 = setTimeout(() => {
-        setProgressPercent(70);
-        setProgressStep('Writing responsive HTML5, styles.css & main.js…');
-      }, 1600);
-
-      const t3 = setTimeout(() => {
-        setProgressPercent(90);
-        setProgressStep('Compiling interactive scripts & live preview…');
-      }, 2500);
-
-      // AI blueprint call
-      const data = await postMornAI<{
-        title?: string;
-        tagline?: string;
-        heroHeadline?: string;
-        heroSubheadline?: string;
-        features?: Array<{ title: string; description: string; icon?: string }>;
-        pricingTiers?: Array<{ name: string; priceMonthly: string; priceAnnual: string; description: string; features?: string[] }>;
-        faq?: Array<{ question: string; answer: string }>;
-        ctaHeadline?: string;
-        pages?: string[];
-        sections?: string[];
-        visualDirection?: string;
-      }>('website-blueprint', {
-        startup,
+      setProgressPercent(35);
+      const data = await postMornAI<WebsiteSpec>("website-blueprint", {
+        startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
         imageProvided: Boolean(productPhoto),
       });
-
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-
-      setProgressPercent(100);
-      setProgressStep('Complete! Website live in preview.');
-
-      const newTitle = data?.title || `${startup.name} Website`;
-      const newTagline = data?.tagline || activePrompt || startup.tagline || '';
-
-      const files = buildProjectFiles({
+      setProgressPercent(75);
+      setProgressStep("Rendering the validated design into HTML and CSS…");
+      const files = composeWebsiteFiles(data, {
         startupName: startup.name,
-        tagline: newTagline,
-        prompt: activePrompt,
-        industry: startup.industry,
-        sections: data?.sections,
-        visualDirection: data?.visualDirection,
         imageUrl: productPhoto || activeProject?.imagePreview,
-        heroHeadline: data?.heroHeadline,
-        heroSubheadline: data?.heroSubheadline,
-        features: data?.features,
-        pricingTiers: data?.pricingTiers,
-        faq: data?.faq,
-        ctaHeadline: data?.ctaHeadline,
-      });
-
-      if (activeProject) {
-        // Update existing project
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === activeProject.id
-              ? {
-                  ...p,
-                  title: newTitle,
-                  tagline: newTagline,
-                  prompt: activePrompt,
-                  imagePreview: productPhoto || p.imagePreview,
-                  code: files.indexHtml,
-                  stylesCss: files.stylesCss,
-                  mainJs: files.mainJs,
-                  packageJson: files.packageJson,
-                  readmeMd: files.readmeMd,
-                  updatedAt: Date.now(),
-                }
-              : p
-          )
-        );
-      } else {
-        // Create initial project for their business
-        const newProj: WebsiteProject = {
-          id: `proj-${Date.now()}`,
-          title: newTitle,
-          tagline: newTagline,
-          prompt: activePrompt,
-          imagePreview: productPhoto,
-          code: files.indexHtml,
-          stylesCss: files.stylesCss,
-          mainJs: files.mainJs,
-          packageJson: files.packageJson,
-          readmeMd: files.readmeMd,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        setProjects([newProj]);
-        setActiveProjectId(newProj.id);
-      }
-
-      setTimeout(() => {
-        setIsGenerating(false);
-        setProgressPercent(0);
-        setProgressStep('');
-      }, 700);
-    } catch (err) {
-      console.warn('Fallback website build applied:', err);
-      setProgressPercent(100);
-      setProgressStep('Ready! Applied responsive design blueprint.');
-
-      const files = buildProjectFiles({
-        startupName: startup.name,
-        tagline: activePrompt || startup.tagline || '',
         prompt: activePrompt,
-        industry: startup.industry,
-        imageUrl: productPhoto,
       });
+      const newTitle = data.title || (startup.name + " Website");
+      const newTagline = data.tagline || activePrompt;
+      const now = Date.now();
 
       if (activeProject) {
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === activeProject.id
-              ? {
-                  ...p,
-                  code: files.indexHtml,
-                  stylesCss: files.stylesCss,
-                  mainJs: files.mainJs,
-                  packageJson: files.packageJson,
-                  readmeMd: files.readmeMd,
-                  updatedAt: Date.now(),
-                }
-              : p
-          )
-        );
+        setProjects((prev) => prev.map((p) => p.id === activeProject.id ? {
+          ...p, title: newTitle, tagline: newTagline, prompt: activePrompt,
+          imagePreview: productPhoto || p.imagePreview,
+          code: files.indexHtml, stylesCss: files.stylesCss, mainJs: files.mainJs,
+          packageJson: files.packageJson, readmeMd: files.readmeMd, updatedAt: now,
+        } : p));
       } else {
-        const newProj: WebsiteProject = {
-          id: `proj-${Date.now()}`,
-          title: `${startup.name} Website`,
-          tagline: startup.tagline || '',
-          prompt: activePrompt,
-          imagePreview: productPhoto,
-          code: files.indexHtml,
-          stylesCss: files.stylesCss,
-          mainJs: files.mainJs,
-          packageJson: files.packageJson,
-          readmeMd: files.readmeMd,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+        const project: WebsiteProject = {
+          id: "proj-" + now, title: newTitle, tagline: newTagline, prompt: activePrompt,
+          imagePreview: productPhoto, code: files.indexHtml, stylesCss: files.stylesCss,
+          mainJs: files.mainJs, packageJson: files.packageJson, readmeMd: files.readmeMd,
+          createdAt: now, updatedAt: now,
         };
-        setProjects([newProj]);
-        setActiveProjectId(newProj.id);
+        setProjects((prev) => [project, ...prev]);
+        setActiveProjectId(project.id);
       }
-
-      setTimeout(() => {
-        setIsGenerating(false);
-        setProgressPercent(0);
-        setProgressStep('');
-      }, 700);
+      setViewMode("preview");
+      setProgressPercent(100);
+      setProgressStep("Website generated successfully.");
+      window.setTimeout(() => { setIsGenerating(false); setProgressPercent(0); setProgressStep(""); }, 700);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Website generation failed. Please try again.";
+      console.error("Website generation failed:", error);
+      setGenerationError(message);
+      setProgressPercent(0);
+      setProgressStep("Generation failed — your existing project was not replaced.");
+      setIsGenerating(false);
     }
   };
 
@@ -470,24 +362,23 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     }
   };
 
-  // Preview Document that inlines CSS & JS for 100% accurate standalone live preview
+  // Preview only executes inside the sandboxed iframe, never in the MornAI app context.
   const livePreviewHtml = useMemo(() => {
     if (!activeProject?.code) return '';
     let html = activeProject.code;
     if (activeProject.stylesCss) {
-      html = html.replace(
-        '<link rel="stylesheet" href="./src/styles.css">',
-        `<style>\n${activeProject.stylesCss}\n</style>`
-      );
+      html = html.replace(/<link\b[^>]*href=["']\.\/src\/styles\.css["'][^>]*>/i,
+        '<style>\n' + activeProject.stylesCss + '\n</style>');
     }
     if (activeProject.mainJs) {
-      html = html.replace(
-        '<script src="./src/main.js"></script>',
-        `<script>\n${activeProject.mainJs}\n</script>`
-      );
+      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.js["'][^>]*><\/script>/i,
+        '<script>\n' + activeProject.mainJs + '\n</script>');
     }
+    const csp = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data:; style-src \'unsafe-inline\' https:; script-src \'unsafe-inline\'; font-src https: data:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'; object-src \'none\'">';
+    if (/<head[^>]*>/i.test(html)) html = html.replace(/<head[^>]*>/i, (head) => head + csp);
+    else html = '<head>' + csp + '</head>' + html;
     return html;
-  }, [activeProject]);
+  }, [activeProject?.code, activeProject?.stylesCss, activeProject?.mainJs, activeProject?.updatedAt]);
 
   const suggestionPills = [
     '⚡ Add pricing table with monthly & annual toggle',
@@ -775,7 +666,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     title="Live Website Preview"
                     srcDoc={livePreviewHtml}
                     className="w-full flex-1 border-0 bg-white"
-                    sandbox="allow-scripts allow-modals allow-forms"
+                    sandbox="allow-scripts"
                   />
                 </div>
               ) : (
@@ -976,6 +867,12 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                 </button>
               ))}
             </div>
+
+            {generationError && (
+              <div role="alert" className="mb-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                Website generation failed: {generationError} Your existing saved website has been kept.
+              </div>
+            )}
 
             {/* Selected Product Picture Thumbnail with Red/Slate Cross Button */}
             {productPhoto && (
