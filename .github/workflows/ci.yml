@@ -2,7 +2,7 @@ name: MornAI CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'fix/**']
   workflow_dispatch:
 
 jobs:
@@ -14,5 +14,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - run: npm test
       - run: npm run lint
       - run: npm run build
