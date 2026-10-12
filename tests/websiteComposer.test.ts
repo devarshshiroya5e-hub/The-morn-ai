@@ -55,7 +55,7 @@ test("distinct industry specifications produce different theme, hero, and sectio
 });
 
 test("rejects incomplete or unsupported specifications", () => {
-  assert.throws(() => validateWebsiteSpec({ title: "Missing" }), /missing its title/);
+  assert.throws(() => validateWebsiteSpec({ title: "Missing" }), /missing a title, tagline/);
   const invalid = fixture("dental") as any;
   invalid.sections[0].type = "run-script";
   assert.throws(() => validateWebsiteSpec(invalid), /Unsupported website section/);
