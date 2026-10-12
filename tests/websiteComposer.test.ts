@@ -58,7 +58,7 @@ test("rejects incomplete or unsupported specifications", () => {
   assert.throws(() => validateWebsiteSpec({ title: "Missing" }), /missing its title/);
   const invalid = fixture("dental") as any;
   invalid.sections[0].type = "run-script";
-  assert.throws(() => validateWebsiteSpec(invalid), /unsupported type/);
+  assert.throws(() => validateWebsiteSpec(invalid), /Unsupported website section/);
 });
 
 test("escapes hostile copy and grounds unsupported prices, metrics, and testimonials", () => {
