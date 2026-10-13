@@ -248,14 +248,14 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
     try {
       setProgressPercent(35);
-      setProgressStep("Writing custom HTML, CSS, and interactions. This can take up to two minutes…");
+      setProgressStep("Building custom HTML, CSS, and TypeScript interactions. This can take up to two minutes…");
       const data = await postMornAI<GeneratedWebsite>("website-generate", {
         startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
         imageProvided: Boolean(productPhoto || activeProject?.imagePreview),
       });
       setProgressPercent(75);
-      setProgressStep(data.degraded ? "The AI model is unavailable. Preparing an editable starter design…" : "Rendering the validated design into HTML and CSS…");
+      setProgressStep(data.degraded ? "The AI model is unavailable. Preparing an editable starter design…" : "Rendering the validated HTML, CSS, and TypeScript design…");
       const files = composeGeneratedWebsiteFiles(data, {
         startupName: startup.name,
         imageUrl: productPhoto || activeProject?.imagePreview,
