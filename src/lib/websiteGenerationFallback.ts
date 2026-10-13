@@ -13,7 +13,7 @@ type WebsiteFallbackInput = {
  * generated the source.
  */
 export function createWebsiteGenerationFallback(input: WebsiteFallbackInput): GeneratedWebsite & { degraded: true } {
-  const startup = input.startup && typeof input.startup === "object" ? input.startup : {};
+  const startup: NonNullable<WebsiteFallbackInput["startup"]> = input.startup && typeof input.startup === "object" ? input.startup : {};
   const name = clean(startup.name, 100) || "Your Business";
   const industry = clean(startup.industry, 120);
   const tagline = clean(startup.tagline, 240) || clean(startup.pitch, 240) || clean(input.prompt, 240) || "A clear, thoughtful experience for your customers.";
