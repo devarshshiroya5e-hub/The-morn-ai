@@ -40,10 +40,23 @@ export function hydrateWebsiteImage(html: string, imageValue: string): string {
     .replace(/__MORNAI_PRODUCT_IMAGE__/g, "");
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^$()|[\]\\]/g, "\\/** Validate model-generated source before it is saved or previewed. */");
+function removeVerbatimText(input: string, privateText: string): string {
+  const needle = privateText.trim();
+  if (needle.length < 12 || !input) return input;
+  const foldedNeedle = needle.toLowerCase();
+  let result = "";
+  let cursor = 0;
+  const foldedInput = input.toLowerCase();
+  while (cursor < input.length) {
+    const index = foldedInput.indexOf(foldedNeedle, cursor);
+    if (index < 0) break;
+    result += input.slice(cursor, index);
+    cursor = index + needle.length;
+  }
+  return result + input.slice(cursor);
 }
 
+/** Validate model-generated source before it is saved or previewed. */
 function anchorSlug(value: string): string {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "top";
@@ -57,7 +70,7 @@ export function normalizeWebsiteNavigation(inputHtml: string, privatePrompt = ""
   let html = inputHtml;
   const prompt = privatePrompt.trim();
   if (prompt.length >= 12) {
-    html = html.replace(new RegExp(escapeRegExp(prompt), "gi"), "");
+    html = removeVerbatimText(html, prompt);
   }
   html = html.replace(/<body\b([^>]*)>/i, (match, attrs: string) =>
     /\bid\s*=/i.test(attrs) ? match : "<body" + attrs + ' id="top">'
@@ -136,9 +149,8 @@ export function validateGeneratedWebsite(input: unknown, options: { prompt?: str
   let tagline = cleanText(source.tagline, 240);
   const privatePrompt = (options.prompt || "").trim();
   if (privatePrompt.length >= 12) {
-    const promptPattern = new RegExp(escapeRegExp(privatePrompt), "gi");
-    title = title.replace(promptPattern, "").trim();
-    tagline = tagline.replace(promptPattern, "").trim();
+    title = removeVerbatimText(title, privatePrompt).trim();
+    tagline = removeVerbatimText(tagline, privatePrompt).trim();
   }
   let html = typeof source.html === "string" ? source.html.trim() : "";
   html = normalizeWebsiteNavigation(html, options.prompt || "");
