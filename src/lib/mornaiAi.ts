@@ -228,6 +228,9 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
             : `The configured API URL (${base}) returned a webpage instead of API JSON. Check VITE_MORNAI_API_URL.`;
         }
         lastError = new Error(message);
+        // A real JSON 5xx from the API means generation itself failed. Do not
+        // repeat an expensive code-generation request against another base URL.
+        if (requiresLiveMornAIResponse(endpoint) && response.status >= 500) break;
         continue;
       }
 
@@ -256,11 +259,16 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
         lastError = new Error("MornAI AI server returned malformed JSON.");
       }
     } catch (error) {
-      lastError = error instanceof Error
-        ? error.name === "AbortError"
-          ? new Error("MornAI AI request timed out.")
-          : error
-        : new Error("MornAI AI server could not be reached.");
+      const aborted = error instanceof Error && error.name === "AbortError";
+      lastError = aborted
+        ? new Error(endpoint === "website-generate"
+          ? "Website generation took too long. Your saved website is unchanged; retry when the free coding model is less busy."
+          : "MornAI AI request timed out.")
+        : error instanceof Error
+          ? error
+          : new Error("MornAI AI server could not be reached.");
+      // Do not launch duplicate long-running website generations on alternate API bases.
+      if (aborted && endpoint === "website-generate") break;
     }
   }
 
