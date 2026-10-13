@@ -132,8 +132,14 @@ export function normalizeWebsiteNavigation(inputHtml: string, privatePrompt = ""
 /** Validate model-generated source before it is saved or previewed. */
 export function validateGeneratedWebsite(input: unknown, options: { prompt?: string } = {}): GeneratedWebsite {
   const source = asRecord(input);
-  const title = cleanText(source.title, 100);
-  const tagline = cleanText(source.tagline, 240);
+  let title = cleanText(source.title, 100);
+  let tagline = cleanText(source.tagline, 240);
+  const privatePrompt = (options.prompt || "").trim();
+  if (privatePrompt.length >= 12) {
+    const promptPattern = new RegExp(escapeRegExp(privatePrompt), "gi");
+    title = title.replace(promptPattern, "").trim();
+    tagline = tagline.replace(promptPattern, "").trim();
+  }
   let html = typeof source.html === "string" ? source.html.trim() : "";
   html = normalizeWebsiteNavigation(html, options.prompt || "");
   let css = typeof source.css === "string" ? source.css.trim() : "";
@@ -198,7 +204,7 @@ export function composeGeneratedWebsiteFiles(
   input: unknown,
   options: { startupName?: string; imageUrl?: string; prompt?: string } = {},
 ): { indexHtml: string; stylesCss: string; mainJs: string; mainTs?: string; packageJson: string; readmeMd: string } {
-  const website = validateGeneratedWebsite(input);
+  const website = validateGeneratedWebsite(input, { prompt: options.prompt });
   const imageUrl = typeof options.imageUrl === "string" && options.imageUrl.length <= 12_000_000 ? options.imageUrl.trim() : "";
   let html = website.html;
 
