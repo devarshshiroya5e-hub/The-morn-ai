@@ -1,3 +1,4 @@
+import { WEBSITE_GENERATION_CLIENT_TIMEOUT_MS } from "./websiteGenerationPolicy";
 import { getMornAIApiBases, isGeneratedWebsitePayload, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "./mornaiAiRouting";
 
 export type MornAIEndpoint =
@@ -204,8 +205,10 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
 
   for (const base of bases) {
     const url = base + "/api/ai/" + endpoint;
-    // Render free services sleep on inactivity; allow 45s for cold start. Same-origin gets 25s.
-    const timeoutMs = base === RENDER_MORNAI_API ? (endpoint === "website-generate" ? 70_000 : 45_000) : (endpoint === "website-generate" ? 65_000 : 25_000);
+    // Website source generation has a bounded provider request; leave time for Render and JSON validation.
+    const timeoutMs = endpoint === "website-generate"
+      ? WEBSITE_GENERATION_CLIENT_TIMEOUT_MS
+      : base === RENDER_MORNAI_API ? 45_000 : 25_000;
 
     try {
       const response = await requestJson(url, body, timeoutMs);
@@ -225,6 +228,9 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
             : `The configured API URL (${base}) returned a webpage instead of API JSON. Check VITE_MORNAI_API_URL.`;
         }
         lastError = new Error(message);
+        // A real JSON 5xx from the API means generation itself failed. Do not
+        // repeat an expensive code-generation request against another base URL.
+        if (requiresLiveMornAIResponse(endpoint) && response.status >= 500) break;
         continue;
       }
 
@@ -253,11 +259,16 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
         lastError = new Error("MornAI AI server returned malformed JSON.");
       }
     } catch (error) {
-      lastError = error instanceof Error
-        ? error.name === "AbortError"
-          ? new Error("MornAI AI request timed out.")
-          : error
-        : new Error("MornAI AI server could not be reached.");
+      const aborted = error instanceof Error && error.name === "AbortError";
+      lastError = aborted
+        ? new Error(endpoint === "website-generate"
+          ? "Website generation took too long. Your saved website is unchanged; retry when the free coding model is less busy."
+          : "MornAI AI request timed out.")
+        : error instanceof Error
+          ? error
+          : new Error("MornAI AI server could not be reached.");
+      // Do not launch duplicate long-running website generations on alternate API bases.
+      if (aborted && endpoint === "website-generate") break;
     }
   }
 
