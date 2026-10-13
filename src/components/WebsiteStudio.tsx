@@ -29,8 +29,15 @@ import {
 import { Startup } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
 import { composeWebsiteFiles } from '../lib/websiteComposer';
-import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
+import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, normalizeWebsiteNavigation, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
 import { createZipBlob } from '../lib/zipBuilder';
+
+interface WebsiteChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: number;
+}
 
 export interface WebsiteProject {
   id: string;
@@ -87,6 +94,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   const storageKey = `mornai_websites_${startup.id}`;
   const activeIdKey = `mornai_active_website_id_${startup.id}`;
   const draftPromptKey = `mornai_website_prompt_${startup.id}`;
+  const chatStorageKey = `mornai_website_chat_${startup.id}`;
 
   // Body scroll lock so background workspace never scrolls or peeks through
   useEffect(() => {
@@ -106,6 +114,13 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       }
     } catch {}
     return [];
+  });
+
+  const [chatMessages, setChatMessages] = useState<WebsiteChatMessage[]>(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(chatStorageKey) || '[]');
+      return Array.isArray(parsed) ? parsed.filter((item) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string').slice(-40) : [];
+    } catch { return []; }
   });
 
   const [activeProjectId, setActiveProjectId] = useState<string>(() => {
@@ -142,6 +157,9 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   const [newProjectNameInput, setNewProjectNameInput] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptInputRef = useRef<HTMLTextAreaElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const progressTimerRef = useRef<number | null>(null);
 
   // Sync draft prompt text to localStorage
   useEffect(() => {
@@ -149,6 +167,19 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       localStorage.setItem(draftPromptKey, promptText);
     } catch {}
   }, [promptText, draftPromptKey]);
+
+  // Persist this startup's website chat so follow-up edits remain visible after reopening the Studio.
+  useEffect(() => {
+    try { localStorage.setItem(chatStorageKey, JSON.stringify(chatMessages.slice(-40))); } catch {}
+  }, [chatMessages, chatStorageKey]);
+
+  useEffect(() => {
+    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [chatMessages, isGenerating]);
+
+  useEffect(() => () => {
+    if (progressTimerRef.current !== null) window.clearInterval(progressTimerRef.current);
+  }, []);
 
   // Sync projects to localStorage
   useEffect(() => {
@@ -238,30 +269,68 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     const activePrompt = (overridePrompt || promptText).trim() || startup.tagline || startup.pitch || "";
     if (!activePrompt) {
       setGenerationError("Describe the website you want before generating it.");
+      promptInputRef.current?.focus();
       return;
     }
     setGenerationError("");
     setIsGenerating(true);
     setProgressPercent(15);
-    setProgressStep("Designing a unique page structure and visual system…");
+    setProgressStep("Preparing your website brief and project context…");
+    setChatMessages((prev) => [...prev, {
+      id: "user-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      role: "user",
+      content: activePrompt,
+      createdAt: Date.now(),
+    }].slice(-40));
 
     try {
+      setProgressPercent(28);
+      setProgressStep(activeProject ? "Preparing your existing website for edits…" : "Preparing a custom page structure and visual system…");
       setProgressPercent(35);
-      setProgressStep("Building custom HTML, CSS, and TypeScript interactions. This can take up to two minutes…");
+      setProgressStep("Generating custom HTML, CSS, and interactive TypeScript…");
+      let waitingTicks = 0;
+      if (progressTimerRef.current !== null) window.clearInterval(progressTimerRef.current);
+      progressTimerRef.current = window.setInterval(() => {
+        waitingTicks += 1;
+        setProgressPercent((current) => Math.min(65, current + 3));
+        setProgressStep(
+          waitingTicks < 2
+            ? "Designing the page and writing customer-facing copy…"
+            : waitingTicks < 4
+              ? "Writing responsive styles and interactive behavior…"
+              : "Finishing the code response before validation…"
+        );
+      }, 2600);
+
       const data = await postMornAI<GeneratedWebsite>("website-generate", {
         startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
         imageProvided: Boolean(productPhoto || activeProject?.imagePreview),
+        existingWebsite: activeProject ? {
+          title: activeProject.title,
+          tagline: activeProject.tagline,
+          html: (activeProject.code || "").slice(0, 16000),
+          css: (activeProject.stylesCss || "").slice(0, 14000),
+          typescript: (activeProject.mainTs || "").slice(0, 7000),
+          js: (activeProject.mainJs || "").slice(0, 7000),
+        } : null,
       });
-      setProgressPercent(75);
-      setProgressStep(data.degraded ? "The AI model is unavailable. Preparing an editable starter design…" : "Rendering the validated HTML, CSS, and TypeScript design…");
+      if (progressTimerRef.current !== null) {
+        window.clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+
+      setProgressPercent(72);
+      setProgressStep(data.degraded ? "Preparing an editable starter website…" : "AI response received. Validating the generated files…");
       const files = composeGeneratedWebsiteFiles(data, {
         startupName: startup.name,
         imageUrl: productPhoto || activeProject?.imagePreview,
         prompt: activePrompt,
       });
+      setProgressPercent(88);
+      setProgressStep("Saving HTML, CSS, and TypeScript and refreshing the preview…");
       const newTitle = data.title || (startup.name + " Website");
-      const newTagline = data.tagline || activePrompt;
+      const newTagline = data.tagline || ("Custom website for " + startup.name);
       const now = Date.now();
 
       if (activeProject) {
@@ -282,15 +351,34 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         setActiveProjectId(project.id);
       }
       setViewMode("preview");
+      setPromptText("");
       setProgressPercent(100);
-      setProgressStep(data.degraded ? "Starter website created. Review the placeholder details before publishing." : "Website generated successfully.");
-      window.setTimeout(() => { setIsGenerating(false); setProgressPercent(0); setProgressStep(""); }, data.degraded ? 2400 : 700);
+      setProgressStep(data.degraded ? "Starter website ready — review placeholders before publishing." : "Website ready — preview refreshed.");
+      setChatMessages((prev) => [...prev, {
+        id: "assistant-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        role: "assistant",
+        content: data.degraded
+          ? "I prepared an editable starter website. The coding model was unavailable, so review the content and placeholders before publishing."
+          : "Website updated. I generated the full HTML, responsive CSS, and interactive TypeScript for “" + newTitle + "”. Review the preview, then describe the next change here.",
+        createdAt: Date.now(),
+      }].slice(-40));
+      window.setTimeout(() => { setIsGenerating(false); setProgressPercent(0); setProgressStep(""); }, data.degraded ? 2600 : 1200);
     } catch (error) {
+      if (progressTimerRef.current !== null) {
+        window.clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
       const message = error instanceof Error ? error.message : "Website generation failed. Please try again.";
       console.error("Website generation failed:", error);
       setGenerationError(message);
       setProgressPercent(0);
       setProgressStep("Generation failed — your existing project was not replaced.");
+      setChatMessages((prev) => [...prev, {
+        id: "assistant-error-" + Date.now(),
+        role: "assistant",
+        content: "I could not finish this generation. Your saved website has been kept. Error: " + message,
+        createdAt: Date.now(),
+      }].slice(-40));
       setIsGenerating(false);
     }
   };
@@ -372,7 +460,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   // Preview only executes inside the sandboxed iframe, never in the MornAI app context.
   const livePreviewHtml = useMemo(() => {
     if (!activeProject?.code) return '';
-    let html = hydrateWebsiteImage(activeProject.code, activeProject.imagePreview || '');
+    let html = normalizeWebsiteNavigation(hydrateWebsiteImage(activeProject.code, activeProject.imagePreview || ''), activeProject.prompt || '');
     if (activeProject.stylesCss) {
       html = html.replace(/<link\b[^>]*href=["']\.\/src\/styles\.css["'][^>]*>/i,
         '<style>\n' + activeProject.stylesCss + '\n</style>');
@@ -385,7 +473,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     if (/<head[^>]*>/i.test(html)) html = html.replace(/<head[^>]*>/i, (head) => head + csp);
     else html = '<head>' + csp + '</head>' + html;
     return html;
-  }, [activeProject?.code, activeProject?.stylesCss, activeProject?.mainJs, activeProject?.updatedAt]);
+  }, [activeProject?.code, activeProject?.stylesCss, activeProject?.mainJs, activeProject?.prompt, activeProject?.updatedAt]);
 
   const suggestionPills = [
     '⚡ Add pricing table with monthly & annual toggle',
@@ -406,8 +494,8 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
             type="button"
             onClick={() => setIsSidebarOpen((prev) => !prev)}
             className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition shrink-0"
-            title={isSidebarOpen ? 'Hide Projects Sidebar' : 'Show Projects Sidebar'}
-            aria-label="Toggle projects sidebar"
+            title={isSidebarOpen ? 'Hide Chat Panel' : 'Show Chat Panel'}
+            aria-label="Toggle website chat panel"
           >
             {isSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
@@ -544,103 +632,170 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
           />
         )}
 
-        {/* Left Sidebar: Saved Projects (Mobile Overlay + Desktop Inline) */}
+        {/* Left Chat Panel: ongoing website conversation + prompt input */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 h-full border-r border-slate-200 bg-white flex flex-col transition-all duration-300 ease-in-out sm:static sm:z-auto ${
-            isSidebarOpen
-              ? 'translate-x-0 w-72 max-w-[85vw] shadow-2xl sm:shadow-none'
-              : '-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0'
-          }`}
+          className={'fixed top-14 bottom-0 left-0 z-50 w-[360px] max-w-[90vw] border-r border-slate-200 bg-white flex flex-col transition-all duration-300 ease-in-out sm:static sm:top-auto sm:bottom-auto sm:left-auto sm:z-auto sm:h-full ' +
+            (isSidebarOpen ? 'translate-x-0 shadow-2xl sm:shadow-none' : '-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0')}
         >
-          <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FolderKanban className="h-4 w-4 text-violet-600" />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                Your Projects
-              </span>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
-                {projects.length}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              {/* New Project Button */}
+          <div className="shrink-0 p-3 border-b border-slate-200 bg-white">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-violet-600" /> Website Chat
+                </h2>
+                <p className="mt-0.5 text-[10px] text-slate-500">Describe a site or refine the current one.</p>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  handleOpenNewProjectModal();
-                  if (typeof window !== 'undefined' && window.innerWidth < 640) setIsSidebarOpen(false);
-                }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-bold transition shadow-xs"
-                title="Create new website project"
+                onClick={handleOpenNewProjectModal}
+                className="shrink-0 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50"
+                title="Create a new website project"
               >
-                <Plus className="h-3 w-3" />
-                <span>New</span>
-              </button>
-
-              {/* Close Sidebar Button on Mobile */}
-              <button
-                type="button"
-                onClick={() => setIsSidebarOpen(false)}
-                className="sm:hidden p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-                aria-label="Close sidebar"
-              >
-                <X className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" /> New
               </button>
             </div>
+            {projects.length > 0 && (
+              <div className="mt-3 flex items-center gap-1.5">
+                <select
+                  value={activeProject?.id || ''}
+                  onChange={(e) => setActiveProjectId(e.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] font-semibold text-slate-700 outline-none focus:border-violet-400"
+                  aria-label="Switch saved website project"
+                >
+                  {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
+                </select>
+                {activeProject && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteProject(activeProject.id, e)}
+                    className="shrink-0 rounded-lg border border-slate-200 p-2 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                    title="Delete current project"
+                    aria-label="Delete current website project"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-2 overscroll-contain">
-            {projects.length === 0 ? (
-              <div className="p-5 text-center text-xs text-slate-400">
-                No saved websites yet. Enter a description below to build one!
+          <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-3 overscroll-contain bg-white">
+            {chatMessages.length === 0 ? (
+              <div className="pt-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                  <Rocket className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">What are we building?</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+                  Describe the audience, visual style, content, and what visitors should be able to do. Follow up here to make targeted edits.
+                </p>
+                <div className="mt-4 space-y-2">
+                  {suggestionPills.slice(0, 4).map((pill) => (
+                    <button
+                      key={pill}
+                      type="button"
+                      onClick={() => { setPromptText(pill); void handleGenerateWebsite(pill); }}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-semibold leading-relaxed text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
+                    >
+                      {pill}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
-              projects.map((proj) => {
-                const active = proj.id === activeProject?.id;
-                return (
-                  <div
-                    key={proj.id}
-                    onClick={() => {
-                      setActiveProjectId(proj.id);
-                      if (typeof window !== 'undefined' && window.innerWidth < 640) setIsSidebarOpen(false);
-                    }}
-                    className={`group relative p-3 rounded-xl border text-left cursor-pointer transition ${
-                      active
-                        ? 'border-violet-600 bg-violet-50/70 text-violet-950 shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-xs font-bold truncate ${active ? 'text-violet-900 font-extrabold' : 'text-slate-800'}`}>
-                          {proj.title}
-                        </p>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                          {proj.tagline || 'Startup Landing Page'}
-                        </p>
-                        <p className="text-[9px] text-slate-400 mt-1 font-mono">
-                          {new Date(proj.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteProject(proj.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                        title="Delete project"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+              chatMessages.map((message) => (
+                <div key={message.id} className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                  <div className={'max-w-[94%] min-w-0 rounded-2xl px-3 py-2.5 ' +
+                    (message.role === 'user' ? 'rounded-br-md bg-violet-600 text-white' : 'rounded-bl-md border border-slate-200 bg-slate-50 text-slate-800')}>
+                    <div className={'mb-1 text-[9px] font-extrabold uppercase tracking-wide ' +
+                      (message.role === 'user' ? 'text-violet-100' : 'text-slate-500')}>
+                      {message.role === 'user' ? 'You' : 'MornAI Builder'}
                     </div>
+                    <p className="whitespace-pre-wrap break-words text-xs leading-relaxed">{message.content}</p>
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
+            {isGenerating && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-violet-100 bg-violet-50 px-3 py-2.5 text-xs font-semibold text-violet-800">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Building the requested changes…
+                </div>
+              </div>
+            )}
+            {generationError && (
+              <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-relaxed text-rose-800">
+                Generation failed: {generationError} Your saved website has been kept.
+              </div>
+            )}
+          </div>
+
+          <div className="shrink-0 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {productPhoto && (
+              <div className="mb-2 flex items-center gap-2 rounded-xl border border-violet-100 bg-violet-50 p-2">
+                <img src={productPhoto} alt="Attached product preview" className="h-8 w-8 shrink-0 rounded-lg border border-violet-100 object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[10px] font-bold text-violet-950">Image attached</p>
+                  <p className="truncate text-[9px] text-violet-700">Available for the next generation</p>
+                </div>
+                <button type="button" onClick={handleRemoveImage} className="rounded-full p-1 text-rose-600 hover:bg-rose-100" title="Remove image" aria-label="Remove image">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+            <div className="mb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="website-photo-upload" />
+              <label
+                htmlFor="website-photo-upload"
+                className="shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+                title="Attach product photo"
+              >
+                <ImagePlus className="h-4 w-4" />
+              </label>
+              <span className="text-[10px] font-semibold text-slate-500">Quick ideas:</span>
+              {suggestionPills.slice(0, 3).map((pill) => (
+                <button
+                  key={pill}
+                  type="button"
+                  onClick={() => { setPromptText(pill); promptInputRef.current?.focus(); }}
+                  className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-700 hover:border-violet-300 hover:bg-violet-50"
+                >
+                  {pill}
+                </button>
+              ))}
+            </div>
+            <textarea
+              ref={promptInputRef}
+              id="website-studio-prompt-input"
+              name="website-prompt"
+              rows={3}
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!isGenerating) void handleGenerateWebsite();
+                }
+              }}
+              placeholder={activeProject ? "Describe a change to this website…" : "Describe the website you want…"}
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs leading-relaxed text-slate-900 shadow-xs outline-none placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            />
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="text-[9px] leading-relaxed text-slate-400">Enter to send · Shift+Enter for a new line</p>
+              <button
+                type="button"
+                onClick={() => void handleGenerateWebsite()}
+                disabled={isGenerating || !promptText.trim()}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGenerating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {isGenerating ? "Building…" : "Send"}
+              </button>
+            </div>
           </div>
         </aside>
 
-        {/* Central Display & Bottom Prompt Dock */}
+        {/* Live Preview / Code Workspace */}
         <main className="flex-1 min-h-0 flex flex-col relative bg-slate-100/60 overflow-hidden">
           {/* Top Canvas Viewport */}
           <div className="flex-1 min-h-0 relative flex items-center justify-center p-2 sm:p-5 overflow-auto">
@@ -663,7 +818,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                       </div>
                       <div className="flex-1 max-w-sm mx-auto rounded-lg bg-white px-3 py-1 text-[11px] font-mono text-slate-600 truncate text-center border border-slate-200 shadow-xs">
-                        https://{startup.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.mornai.app
+                        website-preview.local/{startup.name.toLowerCase().replace(/[^a-z0-9]/g, '')}
                       </div>
                     </div>
                   )}
@@ -686,7 +841,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     Build website with Morn AI
                   </h2>
                   <p className="text-slate-600 text-xs sm:text-sm mt-2 sm:mt-3 max-w-lg mx-auto leading-relaxed">
-                    Describe your startup concept, target audience, and key features below. Morn AI will design, write, and bundle a complete multi-file responsive website for <strong className="text-slate-900">{startup.name}</strong>.
+                    Describe your startup concept, target audience, and key features in the chat on the left. Morn AI will design, write, and bundle a complete multi-file responsive website for <strong className="text-slate-900">{startup.name}</strong>.
                   </p>
 
                   <div className="mt-4 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 text-left">
@@ -868,115 +1023,6 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
             )}
           </div>
 
-          {/* Bottom Docked Prompt Input Bar (Permanently Visible & Sticky on Mobile) */}
-          <div className="shrink-0 sticky bottom-0 z-40 border-t border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-3 shadow-xl pb-[max(0.6rem,env(safe-area-inset-bottom))]">
-            {/* Quick Ideas Chips with Top Padding Fix */}
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pt-0.5 pb-1.5 px-0.5 no-scrollbar text-[10px] sm:text-[11px]">
-              <span className="text-slate-500 font-bold shrink-0 flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-violet-600" /> Quick ideas:
-              </span>
-              {suggestionPills.map((pill) => (
-                <button
-                  key={pill}
-                  type="button"
-                  onClick={() => {
-                    setPromptText(pill);
-                    void handleGenerateWebsite(pill);
-                  }}
-                  className="shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-200 bg-slate-50 hover:border-violet-400 hover:bg-violet-50 text-slate-700 hover:text-violet-900 transition shadow-xs font-medium"
-                >
-                  {pill}
-                </button>
-              ))}
-            </div>
-
-            {generationError && (
-              <div role="alert" className="mb-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
-                Website generation failed: {generationError} Your existing saved website has been kept.
-              </div>
-            )}
-
-            {/* Selected Product Picture Thumbnail with Red/Slate Cross Button */}
-            {productPhoto && (
-              <div className="relative inline-flex items-center gap-2 mb-2 p-1.5 pr-2.5 rounded-xl border border-violet-200 bg-violet-50 max-w-full">
-                <img src={productPhoto} alt="Product preview" className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-cover border border-violet-200 shrink-0" />
-                <div className="min-w-0 text-left">
-                  <p className="text-[10px] sm:text-[11px] font-bold text-violet-950 truncate">Picture attached</p>
-                  <p className="text-[8px] sm:text-[9px] text-violet-600 truncate">Featured on hero section</p>
-                </div>
-                {/* Cross Button to remove picture */}
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="ml-1.5 p-1 rounded-full bg-rose-100 hover:bg-rose-500 text-rose-600 hover:text-white transition shrink-0"
-                  title="Remove selected picture"
-                  aria-label="Remove selected picture"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-
-            {/* Input & Action Row */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5">
-              {/* Photo Upload Attachment Button */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-                id="website-photo-upload"
-              />
-              <label
-                htmlFor="website-photo-upload"
-                className="cursor-pointer shrink-0 p-2 sm:p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-violet-300 text-slate-600 hover:text-violet-600 transition flex items-center justify-center shadow-xs"
-                title="Attach product picture"
-              >
-                <ImagePlus className="h-4 w-4" />
-              </label>
-
-              {/* Multiline Prompt Input */}
-              <div className="flex-1 min-w-0 relative">
-                <input
-                  id="website-studio-prompt-input"
-                  name="website-prompt"
-                  type="text"
-                  value={promptText}
-                  onChange={(e) => setPromptText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleGenerateWebsite();
-                    }
-                  }}
-                  placeholder="Describe your website or ask for changes..."
-                  className="w-full px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-100 font-medium shadow-xs select-text"
-                />
-              </div>
-
-              {/* Generate Website Button */}
-              <button
-                type="button"
-                onClick={() => void handleGenerateWebsite()}
-                disabled={isGenerating}
-                className="shrink-0 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold transition shadow-md shadow-violet-600/20 flex items-center gap-1.5 active:scale-95"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span className="hidden xs:inline">Building…</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    <span className="hidden xs:inline">{projects.length > 0 ? 'Update Website' : 'Generate Website'}</span>
-                    <span className="xs:hidden">{projects.length > 0 ? 'Update' : 'Generate'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
         </main>
       </div>
 
