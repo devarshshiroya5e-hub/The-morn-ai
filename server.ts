@@ -5,6 +5,11 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { validateGeneratedWebsite } from "./src/lib/websiteCodeGenerator";
+import {
+  WEBSITE_GENERATION_MAX_TOKENS,
+  WEBSITE_GENERATION_MODEL,
+  WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
+} from "./src/lib/websiteGenerationPolicy";
 
 dotenv.config();
 
@@ -110,6 +115,11 @@ type AiGenerateOptions = {
     responseMimeType?: string;
     maxTokens?: number;
     temperature?: number;
+    requestTimeoutMs?: number;
+    disableModelFallbacks?: boolean;
+    stopOnTimeout?: boolean;
+    suppressJsonMode?: boolean;
+    skipGeminiFallback?: boolean;
   };
 };
 let geminiClient: GoogleGenAI | null = null;
@@ -137,10 +147,16 @@ function keysForModel(model: string) {
         ? process.env.OPENROUTER_API_KEY_GEMMA
         : undefined;
 
+  const isKnownNvidiaOrGemmaModel = isUltra || isSuper || isGemma;
   return uniqueKeys([
     specific,
     process.env.OPENROUTER_API_KEY,
     process.env.OPENROUTER_API_KEY_1,
+    ...(isKnownNvidiaOrGemmaModel ? [] : [
+      process.env.OPENROUTER_API_KEY_GEMMA,
+      process.env.OPENROUTER_API_KEY_NEMOTRON_SUPER,
+      process.env.OPENROUTER_API_KEY_NEMOTRON_ULTRA,
+    ]),
   ]);
 }
 
@@ -169,10 +185,11 @@ function parseAiJson(text: string) {
 async function openRouterGenerateContent(options: AiGenerateOptions) {
   let lastError: unknown = null;
 
-  for (const model of modelFallbacks(
-    options.model,
-    options.config?.responseMimeType === "application/json",
-  )) {
+  const modelsToTry = options.config?.disableModelFallbacks
+    ? [options.model]
+    : modelFallbacks(options.model, options.config?.responseMimeType === "application/json");
+
+  for (const model of modelsToTry) {
     const keys = keysForModel(model);
     if (!keys.length) continue;
 
@@ -187,6 +204,7 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
 
         if (
           options.config?.responseMimeType === "application/json" &&
+          !options.config?.suppressJsonMode &&
           !(MODEL_IDS === FREE_MODEL_IDS && model === FREE_MODEL_IDS.ultra)
         ) {
           body.response_format = { type: "json_object" };
@@ -203,7 +221,9 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         }
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), (options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000);
+        const requestTimeoutMs = options.config?.requestTimeoutMs
+          ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000);
+        const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
 
         let response: Response;
         try {
@@ -241,13 +261,18 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
 
         return { text: String(text) };
       } catch (error) {
+        const timedOut = error instanceof Error && error.name === "AbortError";
         const message = error instanceof Error ? error.message : String(error);
         lastAiProviderFailure = {
           at: new Date().toISOString(),
           model,
-          message: message.slice(0, 500),
+          message: (timedOut ? "Provider request timed out after " + Math.round((options.config?.requestTimeoutMs ?? 28_000) / 1000) + "s: " : "") + message,
         };
         lastError = error;
+        // Repeating a full timeout against other keys/models only makes the browser time out too.
+        if (timedOut && options.config?.stopOnTimeout) {
+          throw new Error("Website code generation exceeded the provider time limit. Retry once; if it repeats, check the free model's availability.");
+        }
       }
     }
   }
@@ -284,10 +309,14 @@ function getAiClient() {
           try {
             return await openRouterGenerateContent({ ...options, model });
           } catch (error) {
-            console.error("OpenRouter AI request failed; trying Gemini fallback:", error);
+            console.error("OpenRouter AI request failed:", error);
+            if (options.config?.skipGeminiFallback) throw error;
           }
         }
 
+        if (options.config?.skipGeminiFallback) {
+          throw new Error("Website generation is configured for the free OpenRouter coding model. Check that an OpenRouter API key is set in Render.");
+        }
         const gemini = getGeminiClient();
         if (gemini) {
           try {
@@ -1220,14 +1249,23 @@ app.post("/api/ai/website-generate", async (req, res) => {
       ? "Use src=\"__MORNAI_PRODUCT_IMAGE__\" for the uploaded image in one prominent appropriate place. Do not replace it with a made-up URL."
       : "Do not use the image token or invent remote image URLs. Create an intentional visual using CSS and/or inline SVG.",
     "- Make mobile layout deliberate at 760px and below; add focus-visible states and respect prefers-reduced-motion.",
-    "- Keep output compact but complete: roughly 3,000-5,500 characters HTML, 4,000-8,000 characters CSS, and 500-2,000 characters JS. Escape JSON strings correctly. No markdown fences or explanatory prose."
+    "- Keep output compact and fast to generate: roughly 2,000-3,500 characters HTML, 2,500-4,000 characters CSS, and 200-700 characters JS. Avoid repeated filler and excessively long inline SVG. Escape JSON strings correctly. No markdown fences or explanatory prose."
   ].join("\n");
 
   try {
     const response = await ai.models.generateContent({
-      model: "mornai-ultra",
+      model: WEBSITE_GENERATION_MODEL,
       contents: prompt,
-      config: { responseMimeType: "application/json", maxTokens: 6500, temperature: 0.82 }
+      config: {
+        responseMimeType: "application/json",
+        maxTokens: WEBSITE_GENERATION_MAX_TOKENS,
+        temperature: 0.55,
+        requestTimeoutMs: WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
+        disableModelFallbacks: true,
+        stopOnTimeout: true,
+        suppressJsonMode: true,
+        skipGeminiFallback: true,
+      }
     });
     const parsed = parseAiJson(response.text || "");
     const website = validateGeneratedWebsite(parsed);
