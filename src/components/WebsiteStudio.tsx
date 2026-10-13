@@ -28,7 +28,8 @@ import {
 } from 'lucide-react';
 import { Startup } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
-import { composeWebsiteFiles, type WebsiteSpec } from '../lib/websiteComposer';
+import { composeWebsiteFiles } from '../lib/websiteComposer';
+import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
 import { createZipBlob } from '../lib/zipBuilder';
 
 export interface WebsiteProject {
@@ -244,14 +245,14 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
     try {
       setProgressPercent(35);
-      const data = await postMornAI<WebsiteSpec>("website-blueprint", {
+      const data = await postMornAI<GeneratedWebsite>("website-generate", {
         startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
-        imageProvided: Boolean(productPhoto),
+        imageProvided: Boolean(productPhoto || activeProject?.imagePreview),
       });
       setProgressPercent(75);
       setProgressStep("Rendering the validated design into HTML and CSS…");
-      const files = composeWebsiteFiles(data, {
+      const files = composeGeneratedWebsiteFiles(data, {
         startupName: startup.name,
         imageUrl: productPhoto || activeProject?.imagePreview,
         prompt: activePrompt,
@@ -304,7 +305,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     });
 
     const zipBlob = createZipBlob([
-      { name: 'index.html', content: activeProject.code || files.indexHtml },
+      { name: 'index.html', content: hydrateWebsiteImage(activeProject.code || files.indexHtml, activeProject.imagePreview || '') },
       { name: 'src/styles.css', content: activeProject.stylesCss || files.stylesCss },
       { name: 'src/main.js', content: activeProject.mainJs || files.mainJs },
       { name: 'package.json', content: activeProject.packageJson || files.packageJson },
@@ -365,7 +366,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   // Preview only executes inside the sandboxed iframe, never in the MornAI app context.
   const livePreviewHtml = useMemo(() => {
     if (!activeProject?.code) return '';
-    let html = activeProject.code;
+    let html = hydrateWebsiteImage(activeProject.code, activeProject.imagePreview || '');
     if (activeProject.stylesCss) {
       html = html.replace(/<link\b[^>]*href=["']\.\/src\/styles\.css["'][^>]*>/i,
         '<style>\n' + activeProject.stylesCss + '\n</style>');
@@ -374,7 +375,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.js["'][^>]*><\/script>/i,
         '<script>\n' + activeProject.mainJs + '\n</script>');
     }
-    const csp = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data:; style-src \'unsafe-inline\' https:; script-src \'unsafe-inline\'; font-src https: data:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'; object-src \'none\'">';
+    const csp = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: blob:; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'; font-src data:; media-src data: blob:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'; object-src \'none\'; frame-src \'none\'">';
     if (/<head[^>]*>/i.test(html)) html = html.replace(/<head[^>]*>/i, (head) => head + csp);
     else html = '<head>' + csp + '</head>' + html;
     return html;
