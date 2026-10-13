@@ -29,7 +29,7 @@ import {
 import { Startup } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
 import { composeWebsiteFiles } from '../lib/websiteComposer';
-import { composeGeneratedWebsiteFiles, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
+import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
 import { createZipBlob } from '../lib/zipBuilder';
 
 export interface WebsiteProject {
@@ -305,7 +305,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     });
 
     const zipBlob = createZipBlob([
-      { name: 'index.html', content: activeProject.code || files.indexHtml },
+      { name: 'index.html', content: hydrateWebsiteImage(activeProject.code || files.indexHtml, activeProject.imagePreview || '') },
       { name: 'src/styles.css', content: activeProject.stylesCss || files.stylesCss },
       { name: 'src/main.js', content: activeProject.mainJs || files.mainJs },
       { name: 'package.json', content: activeProject.packageJson || files.packageJson },
@@ -366,7 +366,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   // Preview only executes inside the sandboxed iframe, never in the MornAI app context.
   const livePreviewHtml = useMemo(() => {
     if (!activeProject?.code) return '';
-    let html = activeProject.code;
+    let html = hydrateWebsiteImage(activeProject.code, activeProject.imagePreview || '');
     if (activeProject.stylesCss) {
       html = html.replace(/<link\b[^>]*href=["']\.\/src\/styles\.css["'][^>]*>/i,
         '<style>\n' + activeProject.stylesCss + '\n</style>');
