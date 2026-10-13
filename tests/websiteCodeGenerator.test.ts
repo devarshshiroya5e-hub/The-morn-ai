@@ -69,3 +69,31 @@ test("rejects external TypeScript imports from isolated preview source", () => {
   };
   assert.throws(() => validateGeneratedWebsite(page), /must not import external modules/);
 });
+
+
+test("normalizes root-relative and MornAI links to local website anchors", () => {
+  const page = fixture("A custom local navigation site");
+  page.html = page.html.replace("<body>", '<body><section id="how-it-works">How this site works</section><nav><a href="/">Home</a><a href="/how-it-works">How it works</a><a href="https://themorn.ai/get-in-touch">Get in touch</a></nav>');
+  const result = validateGeneratedWebsite(page);
+  assert.match(result.html, /href="#top"/);
+  assert.match(result.html, /href="#how-it-works"/);
+  assert.match(result.html, /href="#contact"/);
+  assert.doesNotMatch(result.html, /href="https?:\/\/(?:www\.)?(?:themorn\.ai|mornai\.app)/i);
+});
+
+test("strips a verbatim founder prompt if the model echoes it into HTML", () => {
+  const prompt = "Create a blue bicycle store landing page with a booking button.";
+  const page = fixture("A bicycle store");
+  page.html = page.html.replace("<body>", "<body><p>" + prompt + "</p>");
+  const result = validateGeneratedWebsite(page, { prompt });
+  assert.doesNotMatch(result.html, new RegExp(escapeForTest(prompt), "i"));
+});
+
+test("rejects generated code that attempts to navigate the preview frame", () => {
+  const page = { ...fixture("Unsafe navigation"), js: 'window.location.href = "/";' };
+  assert.throws(() => validateGeneratedWebsite(page), /restricted browser API/i);
+});
+
+function escapeForTest(value: string): string {
+  return value.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+}
