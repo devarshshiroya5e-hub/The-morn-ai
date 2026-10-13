@@ -23,8 +23,10 @@ function escapeHtml(value: string): string {
 }
 
 function isAllowedImage(value: string): boolean {
-  return /^https:\/\/[^\s"'<>]+$/i.test(value)
-    || /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=]+$/i.test(value);
+  if (/^https:\/\/[^\s"'<>]+$/i.test(value)) return true;
+  // Avoid fragile delimiter escaping for the base64 alphabet; uploaded FileReader data is base64.
+  return /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,/i.test(value)
+    && !/[\s"'<>]/.test(value);
 }
 
 /** Inserts the selected image only into the temporary preview or exported HTML. */
@@ -60,6 +62,7 @@ export function validateGeneratedWebsite(input: unknown): GeneratedWebsite {
   html = html.replace(/<script\b[^>]*\/?>/gi, "");
   html = html.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
   html = html.replace(/\b(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/gi, '$1="#"');
+  html = html.replace(/\b(href|src)\s*=\s*javascript:[^\s>]+/gi, '$1="#"');
 
   // Avoid refresh redirects and remote CSS/JS bootstrap code in the preview.
   html = html.replace(/<meta\b[^>]*http-equiv\s*=\s*(["'])?refresh\1?[^>]*>/gi, "");
@@ -67,7 +70,7 @@ export function validateGeneratedWebsite(input: unknown): GeneratedWebsite {
   css = css.replace(/@import\s+(?:url\([^)]*\)|[^;]+);?/gi, "");
   css = css.replace(/expression\s*\(/gi, "/* blocked expression( */");
 
-  if (/\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b|navigator\.sendBeacon|import\s*\(|\bimport\s*["']|new\s+Function\b|\beval\s*\(|document\.cookie|localStorage|sessionStorage|window\.(?:parent|top|opener)\b|document\.(?:write|domain)\b/i.test(js)) {
+  if (/\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b|navigator\.sendBeacon|import\s*\(|\bimport\s*["']|new\s+Function\b|\beval\s*\(|document\.cookie|localStorage|sessionStorage|window\.(?:parent|top|opener)\b|document\.(?:write|domain)\b/i.test(js)) {
     throw new Error("The generated JavaScript uses a restricted browser API. Please regenerate the website.");
   }
 
