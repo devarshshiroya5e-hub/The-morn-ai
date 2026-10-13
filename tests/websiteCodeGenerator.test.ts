@@ -49,3 +49,23 @@ test("removes inline execution hooks and rejects remote-code or sandbox escape A
 test("rejects truncated or malformed model responses", () => {
   assert.throws(() => validateGeneratedWebsite({ title: "Short", tagline: "Missing files", html: "<html></html>", css: "body{}", js: "" }), /incomplete|complete HTML/i);
 });
+
+test("preserves TypeScript source and exports a Vite-compatible TypeScript project", () => {
+  const page = fixture("An interactive product builder") as ReturnType<typeof fixture> & { typescript: string };
+  page.typescript = "const button: HTMLButtonElement | null = document.querySelector<HTMLButtonElement>(\"#add\");\nbutton?.addEventListener(\"click\", () => { document.body.dataset.clicked = \"true\"; });";
+  const result = composeGeneratedWebsiteFiles(page, { startupName: "Interactive Studio" });
+
+  assert.equal(result.mainTs, page.typescript);
+  assert.match(result.indexHtml, /<script type="module" src="\.\/src\/main\.ts"><\/script>/);
+  assert.match(result.packageJson, /"typescript": "\^5\.8\.3"/);
+  assert.match(result.packageJson, /"typecheck":/);
+  assert.match(result.readmeMd, /npm run typecheck/);
+});
+
+test("rejects external TypeScript imports from isolated preview source", () => {
+  const page = {
+    ...fixture(),
+    typescript: 'import { createRoot } from "react";',
+  };
+  assert.throws(() => validateGeneratedWebsite(page), /must not import external modules/);
+});
