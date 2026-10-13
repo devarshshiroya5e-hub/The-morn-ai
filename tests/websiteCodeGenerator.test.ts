@@ -9,7 +9,7 @@ function fixture(headline = "A different custom website") {
     title: "Custom Website",
     tagline: "A tailored website description",
     html: html(headline),
-    css: "body{margin:0;font-family:Georgia,serif;background:#f2eee7;color:#211f1c}main{max-width:1080px;margin:auto;padding:8vw}h1{font-size:clamp(3rem,9vw,7rem);letter-spacing:-.06em}section{padding:4rem 0}",
+    css: "body{margin:0;font-family:Georgia,serif;background:#f2eee7;color:#211f1c}main{max-width:1080px;margin:auto;padding:8vw}h1{font-size:clamp(3rem,9vw,7rem);letter-spacing:-.06em}section{padding:4rem 0}header,footer{padding:2rem 4vw;border-bottom:1px solid #c7beb3}a{color:inherit;text-underline-offset:.25em}section+section{border-top:1px solid #c7beb3}a:focus-visible{outline:2px solid #9b3d2b;outline-offset:4px}",
     js: "document.querySelectorAll('a[href^=\"#\"]').forEach(function(a){a.addEventListener('click',function(){document.body.dataset.lastTarget=a.getAttribute('href');});});",
   };
 }
@@ -21,8 +21,8 @@ test("keeps generated page source instead of wrapping it in a fixed template", (
   assert.match(second.indexHtml, /An editorial fashion studio/);
   assert.notEqual(first.indexHtml, second.indexHtml);
   assert.match(first.stylesCss, /font-family:Georgia/);
-  assert.match(first.indexHtml, /\\.\\/src\\/styles\\.css/);
-  assert.match(first.indexHtml, /\\.\\/src\\/main\\.js/);
+  assert.match(first.indexHtml, /\.\/src\/styles\.css/);
+  assert.match(first.indexHtml, /\.\/src\/main\.js/);
 });
 
 test("injects uploaded product photos only into the explicit image placeholder", () => {
