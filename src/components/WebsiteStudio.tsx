@@ -252,7 +252,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         imageProvided: Boolean(productPhoto || activeProject?.imagePreview),
       });
       setProgressPercent(75);
-      setProgressStep("Rendering the validated design into HTML and CSS…");
+      setProgressStep(data.degraded ? "The AI model is unavailable. Preparing an editable starter design…" : "Rendering the validated design into HTML and CSS…");
       const files = composeGeneratedWebsiteFiles(data, {
         startupName: startup.name,
         imageUrl: productPhoto || activeProject?.imagePreview,
@@ -281,8 +281,8 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       }
       setViewMode("preview");
       setProgressPercent(100);
-      setProgressStep("Website generated successfully.");
-      window.setTimeout(() => { setIsGenerating(false); setProgressPercent(0); setProgressStep(""); }, 700);
+      setProgressStep(data.degraded ? "Starter website created. Review the placeholder details before publishing." : "Website generated successfully.");
+      window.setTimeout(() => { setIsGenerating(false); setProgressPercent(0); setProgressStep(""); }, data.degraded ? 2400 : 700);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Website generation failed. Please try again.";
       console.error("Website generation failed:", error);
