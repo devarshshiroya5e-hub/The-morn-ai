@@ -41,6 +41,7 @@ export interface WebsiteProject {
   code: string;
   stylesCss?: string;
   mainJs?: string;
+  mainTs?: string;
   packageJson?: string;
   readmeMd?: string;
   createdAt: number;
@@ -57,8 +58,9 @@ interface WebsiteStudioProps {
  * 1. index.html
  * 2. src/styles.css
  * 3. src/main.js
- * 4. package.json
- * 5. README.md
+ * 4. src/main.ts (when TypeScript is generated)
+ * 5. package.json
+ * 6. README.md
  */
 function buildProjectFiles(params: {
   startupName: string; tagline: string; prompt: string; industry?: string; sections?: string[];
@@ -126,7 +128,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
   const [viewportMode, setViewportMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [activeCodeFile, setActiveCodeFile] = useState<'index.html' | 'styles.css' | 'main.js' | 'package.json' | 'readme.md'>('index.html');
+  const [activeCodeFile, setActiveCodeFile] = useState<'index.html' | 'styles.css' | 'main.js' | 'main.ts' | 'package.json' | 'readme.md'>('index.html');
 
   const [productPhoto, setProductPhoto] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -245,14 +247,14 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
     try {
       setProgressPercent(35);
-      setProgressStep("Writing custom HTML, CSS, and interactions. This can take up to two minutes…");
+      setProgressStep("Building custom HTML, CSS, and TypeScript interactions. This can take up to two minutes…");
       const data = await postMornAI<GeneratedWebsite>("website-generate", {
         startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
         imageProvided: Boolean(productPhoto || activeProject?.imagePreview),
       });
       setProgressPercent(75);
-      setProgressStep(data.degraded ? "The AI model is unavailable. Preparing an editable starter design…" : "Rendering the validated design into HTML and CSS…");
+      setProgressStep(data.degraded ? "The AI model is unavailable. Preparing an editable starter design…" : "Rendering the validated HTML, CSS, and TypeScript design…");
       const files = composeGeneratedWebsiteFiles(data, {
         startupName: startup.name,
         imageUrl: productPhoto || activeProject?.imagePreview,
@@ -266,14 +268,14 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         setProjects((prev) => prev.map((p) => p.id === activeProject.id ? {
           ...p, title: newTitle, tagline: newTagline, prompt: activePrompt,
           imagePreview: productPhoto || p.imagePreview,
-          code: files.indexHtml, stylesCss: files.stylesCss, mainJs: files.mainJs,
+          code: files.indexHtml, stylesCss: files.stylesCss, mainJs: files.mainJs, mainTs: files.mainTs,
           packageJson: files.packageJson, readmeMd: files.readmeMd, updatedAt: now,
         } : p));
       } else {
         const project: WebsiteProject = {
           id: "proj-" + now, title: newTitle, tagline: newTagline, prompt: activePrompt,
           imagePreview: productPhoto, code: files.indexHtml, stylesCss: files.stylesCss,
-          mainJs: files.mainJs, packageJson: files.packageJson, readmeMd: files.readmeMd,
+          mainJs: files.mainJs, mainTs: files.mainTs, packageJson: files.packageJson, readmeMd: files.readmeMd,
           createdAt: now, updatedAt: now,
         };
         setProjects((prev) => [project, ...prev]);
@@ -309,6 +311,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       { name: 'index.html', content: hydrateWebsiteImage(activeProject.code || files.indexHtml, activeProject.imagePreview || '') },
       { name: 'src/styles.css', content: activeProject.stylesCss || files.stylesCss },
       { name: 'src/main.js', content: activeProject.mainJs || files.mainJs },
+      ...(activeProject.mainTs ? [{ name: 'src/main.ts', content: activeProject.mainTs }] : []),
       { name: 'package.json', content: activeProject.packageJson || files.packageJson },
       { name: 'README.md', content: activeProject.readmeMd || files.readmeMd },
     ]);
@@ -355,6 +358,8 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         return activeProject.stylesCss || '';
       case 'main.js':
         return activeProject.mainJs || '';
+      case 'main.ts':
+        return activeProject.mainTs || '';
       case 'package.json':
         return activeProject.packageJson || '';
       case 'readme.md':
@@ -373,7 +378,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         '<style>\n' + activeProject.stylesCss + '\n</style>');
     }
     if (activeProject.mainJs) {
-      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.js["'][^>]*><\/script>/i,
+      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.(?:js|ts)["'][^>]*><\/script>/i,
         '<script>\n' + activeProject.mainJs + '\n</script>');
     }
     const csp = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: blob:; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'; font-src data:; media-src data: blob:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'; object-src \'none\'; frame-src \'none\'">';
@@ -709,6 +714,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     { id: 'index.html', label: 'index.html', icon: <FileCode className="h-3.5 w-3.5 text-orange-500" /> },
                     { id: 'styles.css', label: 'styles.css', icon: <Palette className="h-3.5 w-3.5 text-blue-500" /> },
                     { id: 'main.js', label: 'main.js', icon: <FileCode className="h-3.5 w-3.5 text-amber-500" /> },
+                    ...(activeProject?.mainTs ? [{ id: 'main.ts', label: 'main.ts', icon: <FileCode className="h-3.5 w-3.5 text-blue-600" /> }] : []),
                     { id: 'package.json', label: 'package.json', icon: <Package className="h-3.5 w-3.5 text-emerald-500" /> },
                     { id: 'readme.md', label: 'README.md', icon: <FileText className="h-3.5 w-3.5 text-slate-500" /> },
                   ].map((f) => (
@@ -735,7 +741,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       <Layers className="h-4 w-4 text-violet-600" />
                       Project Files
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">5 files</span>
+                    <span className="text-[10px] font-mono text-slate-400">{activeProject?.mainTs ? 6 : 5} files</span>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-2 space-y-1 text-xs font-mono">
@@ -783,6 +789,20 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                         <FileCode className="h-3.5 w-3.5 text-amber-500" />
                         <span>main.js</span>
                       </button>
+                      {activeProject?.mainTs && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveCodeFile('main.ts')}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                            activeCodeFile === 'main.ts'
+                              ? 'bg-violet-100 text-violet-900 font-bold'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <FileCode className="h-3.5 w-3.5 text-blue-600" />
+                          <span>main.ts</span>
+                        </button>
+                      )}
                     </div>
 
                     <button

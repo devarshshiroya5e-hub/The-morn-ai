@@ -1,4 +1,4 @@
-export const WEBSITE_GENERATION_MODEL = "cohere/north-mini-code:free";
+export const WEBSITE_GENERATION_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
 export const WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS = 105_000;
 export const WEBSITE_GENERATION_CLIENT_TIMEOUT_MS = 125_000;
-export const WEBSITE_GENERATION_MAX_TOKENS = 3_600;
+export const WEBSITE_GENERATION_MAX_TOKENS = 6_000;
