@@ -27,6 +27,14 @@ function isAllowedImage(value: string): boolean {
     || /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=]+$/i.test(value);
 }
 
+/** Inserts the selected image only into the temporary preview or exported HTML. */
+export function hydrateWebsiteImage(html: string, imageValue: string): string {
+  if (isAllowedImage(imageValue)) return html.replace(/__MORNAI_PRODUCT_IMAGE__/g, imageValue);
+  return html
+    .replace(/<img\b[^>]*src=["']__MORNAI_PRODUCT_IMAGE__["'][^>]*>/gi, "")
+    .replace(/__MORNAI_PRODUCT_IMAGE__/g, "");
+}
+
 /** Validate model-generated source before it is saved or previewed. */
 export function validateGeneratedWebsite(input: unknown): GeneratedWebsite {
   const source = asRecord(input);
@@ -92,12 +100,9 @@ export function composeGeneratedWebsiteFiles(
   const imageUrl = typeof options.imageUrl === "string" && options.imageUrl.length <= 12_000_000 ? options.imageUrl.trim() : "";
   let html = website.html;
 
-  if (isAllowedImage(imageUrl)) {
-    html = html.replace(/__MORNAI_PRODUCT_IMAGE__/g, imageUrl);
-  } else {
-    html = html.replace(/<img\b[^>]*src=["']__MORNAI_PRODUCT_IMAGE__["'][^>]*>/gi, "");
-    html = html.replace(/__MORNAI_PRODUCT_IMAGE__/g, "");
-  }
+  // Keep the marker in the persisted project to avoid duplicating large base64
+  // images in localStorage. The preview/export hydrates it from imagePreview.
+  if (!isAllowedImage(imageUrl)) html = hydrateWebsiteImage(html, "");
 
   const projectName = cleanText(options.startupName || website.title, 100);
   const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "mornai-website";
