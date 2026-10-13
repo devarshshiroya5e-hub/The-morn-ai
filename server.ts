@@ -5,6 +5,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { validateGeneratedWebsite } from "./src/lib/websiteCodeGenerator";
+import { createWebsiteGenerationFallback } from "./src/lib/websiteGenerationFallback";
 import {
   WEBSITE_GENERATION_MAX_TOKENS,
   WEBSITE_GENERATION_MODEL,
@@ -1271,12 +1272,25 @@ app.post("/api/ai/website-generate", async (req, res) => {
     const website = validateGeneratedWebsite(parsed);
     return res.json(website);
   } catch (error) {
-    console.error("Website source generation/validation failed:", error);
-    return res.status(502).json({
-      error: error instanceof Error
-        ? "Website generation failed: " + error.message
-        : "Website generation failed because the AI response could not be validated. Please retry."
-    });
+    console.error("Website source generation/validation failed; using an editable starter fallback:", error);
+    try {
+      const fallback = createWebsiteGenerationFallback({
+        startup,
+        prompt: founderBrief,
+        imageProvided,
+      });
+      return res.json({
+        ...fallback,
+        generationNote: "The AI coding model was unavailable, so MornAI created an editable starter website from your brief. Review and customize it before publishing.",
+      });
+    } catch (fallbackError) {
+      console.error("Website starter fallback failed:", fallbackError);
+      return res.status(502).json({
+        error: error instanceof Error
+          ? "Website generation failed: " + error.message
+          : "Website generation failed because the AI response could not be validated. Please retry."
+      });
+    }
   }
 });
 
