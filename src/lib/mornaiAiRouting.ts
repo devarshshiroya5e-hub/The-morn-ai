@@ -33,3 +33,13 @@ export function looksLikeHtmlResponse(contentType: string, raw: string): boolean
   return /text\/html/i.test(contentType)
     || /^\uFEFF?\s*(?:<!doctype\s+html|<html\b)/i.test(raw.slice(0, 1000));
 }
+
+export function isGeneratedWebsitePayload(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const result = value as Record<string, unknown>;
+  return typeof result.title === "string" && result.title.trim().length > 0
+    && typeof result.tagline === "string" && result.tagline.trim().length > 0
+    && typeof result.html === "string" && result.html.trim().length >= 500
+    && typeof result.css === "string" && result.css.trim().length >= 300
+    && typeof result.js === "string";
+}
