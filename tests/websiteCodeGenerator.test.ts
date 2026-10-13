@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composeGeneratedWebsiteFiles, validateGeneratedWebsite } from "../src/lib/websiteCodeGenerator";
+import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, validateGeneratedWebsite } from "../src/lib/websiteCodeGenerator";
 
 const html = (headline: string) => '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Draft</title></head><body><header><a href="#top">Brand</a></header><main id="top"><section><p>Design-led introduction</p><h1>' + headline + '</h1><p>A bespoke page body with enough structure to form a valid generated website.</p><a href="#contact">Explore</a></section><section id="contact"><h2>Next steps</h2><p>Contact the team</p></section></main><footer>Brand</footer></body></html>';
 
@@ -29,7 +29,9 @@ test("injects uploaded product photos only into the explicit image placeholder",
   const page = fixture();
   page.html = page.html.replace("</section>", '<img alt="Product" src="__MORNAI_PRODUCT_IMAGE__"></section>');
   const result = composeGeneratedWebsiteFiles(page, { imageUrl: "data:image/png;base64,aGVsbG8=" });
-  assert.match(result.indexHtml, /data:image\/png;base64,aGVsbG8=/);
+  assert.match(result.indexHtml, /__MORNAI_PRODUCT_IMAGE__/);
+  const preview = hydrateWebsiteImage(result.indexHtml, "data:image/png;base64,aGVsbG8=");
+  assert.match(preview, /data:image\/png;base64,aGVsbG8=/);
   const noPhoto = composeGeneratedWebsiteFiles(page);
   assert.doesNotMatch(noPhoto.indexHtml, /__MORNAI_PRODUCT_IMAGE__/);
 });
