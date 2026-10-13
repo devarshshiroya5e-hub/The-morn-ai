@@ -1,3 +1,5 @@
+import { getMornAIApiBases, isGeneratedWebsitePayload, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "./mornaiAiRouting";
+
 export type MornAIEndpoint =
   | "co-founder-chat"
   | "generate-roadmap"
@@ -27,22 +29,15 @@ let pinnedApiBase: string | null = null;
 const getApiBases = () => {
   const origin =
     typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "";
-
   const isLocal = origin.includes("localhost") || origin.includes("127.0.0.1");
 
-  // In production static hosting (e.g. Firebase, Vercel), origin does NOT host the Express API.
-  // Render hosts the API (https://the-morn-ai.onrender.com). Prioritize Render!
-  const bases = [
-    pinnedApiBase || "",
-    isLocal ? origin : "",
-    RENDER_MORNAI_API,
-    configuredApiBase && configuredApiBase !== origin ? configuredApiBase : "",
+  return getMornAIApiBases({
     origin,
-  ]
-    .map((value) => String(value || "").replace(/\/$/, ""))
-    .filter(Boolean);
-
-  return Array.from(new Set(bases));
+    configuredBase: configuredApiBase,
+    pinnedBase: pinnedApiBase,
+    renderBase: RENDER_MORNAI_API,
+    isLocal,
+  });
 };
 
 const requestJson = async (url: string, body: unknown, timeoutMs = 30_000) => {
@@ -224,10 +219,10 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
             const payload = JSON.parse(raw);
             message = payload?.error || message;
           } catch {}
-        } else if (raw.startsWith("<!doctype") || raw.startsWith("<html")) {
+        } else if (looksLikeHtmlResponse(contentType, raw)) {
           message = base === RENDER_MORNAI_API
-            ? "Render returned the frontend page instead of the AI API."
-            : "This frontend host does not expose the MornAI API.";
+            ? `The Render API returned HTML for /api/ai/${endpoint}. Its backend may still be on an older deployment; redeploy the Render service from main.`
+            : `The configured API URL (${base}) returned a webpage instead of API JSON. Check VITE_MORNAI_API_URL.`;
         }
         lastError = new Error(message);
         continue;
@@ -236,8 +231,8 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
       if (!contentType.includes("application/json")) {
         if (pinnedApiBase === base) pinnedApiBase = null;
         lastError = new Error(
-          raw.startsWith("<!doctype") || raw.startsWith("<html")
-            ? "AI endpoint returned HTML instead of JSON."
+          looksLikeHtmlResponse(contentType, raw)
+            ? `The API URL (${base}) returned frontend HTML for /api/ai/${endpoint}. This route is missing on that backend, or the URL points to the frontend instead of the Express API.`
             : "MornAI AI server returned a non-JSON response.",
         );
         continue;
@@ -245,6 +240,13 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
 
       try {
         const parsed = JSON.parse(raw) as T;
+        if (endpoint === "website-generate" && !isGeneratedWebsitePayload(parsed)) {
+          if (pinnedApiBase === base) pinnedApiBase = null;
+          lastError = new Error(
+            "The API returned an outdated or incomplete website response. Redeploy the Render backend from the latest main branch so /api/ai/website-generate returns HTML, CSS, and JavaScript.",
+          );
+          continue;
+        }
         pinnedApiBase = base;
         return parsed;
       } catch {
@@ -259,7 +261,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
     }
   }
 
-  if (endpoint === "website-blueprint") {
+  if (requiresLiveMornAIResponse(endpoint)) {
     throw new Error(lastError?.message || "Website generation server is unavailable. Check the API connection and try again.");
   }
 
