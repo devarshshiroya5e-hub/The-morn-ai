@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getMornAIApiBases, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "../src/lib/mornaiAiRouting";
+import { getMornAIApiBases, isGeneratedWebsitePayload, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "../src/lib/mornaiAiRouting";
 
 test("production requests do not fall through to a static frontend origin", () => {
   assert.deepEqual(getMornAIApiBases({
@@ -42,4 +42,15 @@ test("recognizes HTML even when it has a byte-order mark or leading whitespace",
   assert.equal(looksLikeHtmlResponse("text/html; charset=utf-8", "<!doctype html>"), true);
   assert.equal(looksLikeHtmlResponse("text/plain", "\uFEFF  <html>"), true);
   assert.equal(looksLikeHtmlResponse("application/json", '{"ok":true}'), false);
+});
+
+test("rejects outdated blueprint JSON when the code generator is expected", () => {
+  assert.equal(isGeneratedWebsitePayload({ title: "Example", tagline: "Description", sections: [] }), false);
+  assert.equal(isGeneratedWebsitePayload({ title: "Example", tagline: "Description", html: "<html></html>", css: "body{}", js: "" }), false);
+  assert.equal(isGeneratedWebsitePayload({
+    title: "Example", tagline: "Description",
+    html: "<html>" + "x".repeat(600) + "</html>",
+    css: "body{" + "x".repeat(350) + "}",
+    js: "document.title='Example';",
+  }), true);
 });
