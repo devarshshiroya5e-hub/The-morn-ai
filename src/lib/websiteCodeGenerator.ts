@@ -112,6 +112,8 @@ export function normalizeWebsiteNavigation(inputHtml: string, privatePrompt = ""
     const isAbsoluteWeb = /^https?:\/\//i.test(href);
     const host = isAbsoluteWeb ? (href.match(/^https?:\/\/([^/:?#]+)/i)?.[1]?.toLowerCase() || "") : "";
     const isMornAi = /(?:^|\.)mornai(?:\.app|\.ai|\.com)$/.test(host)
+      || /^(?:www\.)?themorn\.ai$/.test(host)
+      || /^(?:www\.)?morn\.ai$/.test(host)
       || /(?:^|\.)the-?morn-?ai(?:\.app|\.ai|\.com)$/.test(host)
       || /(?:^|\.)themorn-?ai(?:\.web\.app|\.firebaseapp\.com)$/.test(host)
       || /(?:^|\.)localhost$/.test(host);
