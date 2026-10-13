@@ -86,7 +86,7 @@ test("strips a verbatim founder prompt if the model echoes it into HTML", () => 
   const page = fixture("A bicycle store");
   page.html = page.html.replace("<body>", "<body><p>" + prompt + "</p>");
   const result = validateGeneratedWebsite(page, { prompt });
-  assert.doesNotMatch(result.html, new RegExp(escapeForTest(prompt), "i"));
+  assert.equal(result.html.toLowerCase().includes(prompt.toLowerCase()), false);
 });
 
 test("rejects generated code that attempts to navigate the preview frame", () => {
@@ -94,6 +94,3 @@ test("rejects generated code that attempts to navigate the preview frame", () =>
   assert.throws(() => validateGeneratedWebsite(page), /restricted browser API/i);
 });
 
-function escapeForTest(value: string): string {
-  return value.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
-}
