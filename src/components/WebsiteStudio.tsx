@@ -306,7 +306,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
         imageProvided: Boolean(productPhoto || activeProject?.imagePreview),
-        existingWebsite: activeProject ? {
+        existingWebsite: activeProject?.prompt?.trim() ? {
           title: activeProject.title,
           tagline: activeProject.tagline,
           html: (activeProject.code || "").slice(0, 16000),
