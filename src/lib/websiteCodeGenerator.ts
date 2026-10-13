@@ -40,12 +40,100 @@ export function hydrateWebsiteImage(html: string, imageValue: string): string {
     .replace(/__MORNAI_PRODUCT_IMAGE__/g, "");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^$()|[\]\\]/g, "\\/** Validate model-generated source before it is saved or previewed. */");
+}
+
+function anchorSlug(value: string): string {
+  return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "top";
+}
+
+/**
+ * Keep single-page preview navigation on the generated site. Strip the private prompt
+ * if a model mistakenly echoes it verbatim into visible page content.
+ */
+export function normalizeWebsiteNavigation(inputHtml: string, privatePrompt = ""): string {
+  let html = inputHtml;
+  const prompt = privatePrompt.trim();
+  if (prompt.length >= 12) {
+    html = html.replace(new RegExp(escapeRegExp(prompt), "gi"), "");
+  }
+  html = html.replace(/<body\b([^>]*)>/i, (match, attrs: string) =>
+    /\bid\s*=/i.test(attrs) ? match : "<body" + attrs + ' id="top">'
+  );
+  const ids = new Set<string>(["top"]);
+  for (const match of html.matchAll(/\bid\s*=\s*(["'])(.*?)\1/gi)) {
+    if (match[2]) ids.add(match[2].trim().toLowerCase());
+  }
+
+  const targetFor = (label: string, href: string): string => {
+    const cleanedHref = href.trim();
+    const pathWithoutOrigin = cleanedHref.replace(/^https?:\/\/[^/]+/i, "");
+    const rawPath = pathWithoutOrigin.split(/[?#]/, 1)[0].replace(/^\/+/, "").replace(/^\.\//, "").replace(/\.html?$/i, "");
+    const candidate = anchorSlug(rawPath.split("/").filter(Boolean).pop() || "");
+    if (ids.has(candidate)) return candidate;
+
+    const words = (label + " " + cleanedHref).toLowerCase();
+    const semanticGroups: Array<[RegExp, string[]]> = [
+      [/\b(contact|get in touch|reach us|book|appointment|enquir|inquiry)\b/, ["contact", "get-in-touch", "cta", "booking"]],
+      [/\b(how it works|how we work|process|steps|workflow)\b/, ["how-it-works", "process", "steps", "workflow"]],
+      [/\b(pricing|price|plans|cost)\b/, ["pricing", "plans", "cost"]],
+      [/\b(service|services|solution|offerings)\b/, ["services", "solutions", "offerings"]],
+      [/\b(feature|features|capabilities|product)\b/, ["features", "product", "capabilities"]],
+      [/\b(about|story|team|company)\b/, ["about", "team", "story", "company"]],
+      [/\b(home|homepage|logo|top)\b/, ["top", "home", "hero"]]
+    ];
+    for (const entry of semanticGroups) {
+      if (!entry[0].test(words)) continue;
+      for (const wanted of entry[1]) {
+        if (ids.has(wanted)) return wanted;
+        const partial = Array.from(ids).find((id) => id.includes(wanted) || wanted.includes(id));
+        if (partial) return partial;
+      }
+    }
+    const closest = Array.from(ids).find((id) => id.includes(candidate) || candidate.includes(id));
+    return closest || "top";
+  };
+
+  html = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi, (whole, attrs: string, inner: string) => {
+    const hrefMatch = attrs.match(/\bhref\s*=\s*(["'])(.*?)\1/i);
+    if (!hrefMatch) return whole;
+    const href = hrefMatch[2].trim();
+    if (/^(?:mailto|tel):/i.test(href)) return whole;
+    if (/^(?:javascript|data|vbscript):/i.test(href)) {
+      return whole.replace(hrefMatch[0], 'href="#top"').replace(/\s+target\s*=\s*(["']).*?\1/gi, "");
+    }
+    if (href.startsWith("#")) {
+      const id = href.slice(1).trim().toLowerCase();
+      if (ids.has(id)) return whole.replace(/\s+target\s*=\s*(["']).*?\1/gi, "");
+    }
+
+    const isAbsoluteWeb = /^https?:\/\//i.test(href);
+    const host = isAbsoluteWeb ? (href.match(/^https?:\/\/([^/:?#]+)/i)?.[1]?.toLowerCase() || "") : "";
+    const isMornAi = /(?:^|\.)mornai(?:\.app|\.ai|\.com)$/.test(host)
+      || /(?:^|\.)the-?morn-?ai(?:\.app|\.ai|\.com)$/.test(host)
+      || /(?:^|\.)themorn-?ai(?:\.web\.app|\.firebaseapp\.com)$/.test(host)
+      || /(?:^|\.)localhost$/.test(host);
+    const isLocalPath = !isAbsoluteWeb || isMornAi;
+    if (!isLocalPath) return whole;
+
+    const label = inner.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const target = targetFor(label, href);
+    const replacedAttrs = attrs.replace(/\bhref\s*=\s*(["'])(.*?)\1/i, 'href="#' + target + '"')
+      .replace(/\s+target\s*=\s*(["']).*?\1/gi, "");
+    return "<a" + replacedAttrs + ">" + inner + "</a>";
+  });
+  return html;
+}
+
 /** Validate model-generated source before it is saved or previewed. */
-export function validateGeneratedWebsite(input: unknown): GeneratedWebsite {
+export function validateGeneratedWebsite(input: unknown, options: { prompt?: string } = {}): GeneratedWebsite {
   const source = asRecord(input);
   const title = cleanText(source.title, 100);
   const tagline = cleanText(source.tagline, 240);
   let html = typeof source.html === "string" ? source.html.trim() : "";
+  html = normalizeWebsiteNavigation(html, options.prompt || "");
   let css = typeof source.css === "string" ? source.css.trim() : "";
   let js = typeof source.js === "string" ? source.js.trim() : "";
   const typescript = typeof source.typescript === "string" ? source.typescript.trim() : "";
@@ -76,7 +164,7 @@ export function validateGeneratedWebsite(input: unknown): GeneratedWebsite {
   css = css.replace(/@import\s+(?:url\([^)]*\)|[^;]+);?/gi, "");
   css = css.replace(/expression\s*\(/gi, "/* blocked expression( */");
 
-  if (/\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b|navigator\.sendBeacon|import\s*\(|\bimport\s*["']|new\s+Function\b|\beval\s*\(|document\.cookie|localStorage|sessionStorage|window\.(?:parent|top|opener)\b|document\.(?:write|domain)\b/i.test(js)) {
+  if (/\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b|navigator\.sendBeacon|import\s*\(|\bimport\s*["']|new\s+Function\b|\beval\s*\(|document\.cookie|localStorage|sessionStorage|window\.(?:parent|top|opener|location|open)\b|document\.(?:write|domain|location)\b|\blocation\.(?:href|assign|replace)\b|history\.(?:pushState|replaceState)\b/i.test(js)) {
     throw new Error("The generated JavaScript uses a restricted browser API. Please regenerate the website.");
   }
 
