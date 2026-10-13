@@ -245,6 +245,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
     try {
       setProgressPercent(35);
+      setProgressStep("Writing custom HTML, CSS, and interactions. This can take up to two minutes…");
       const data = await postMornAI<GeneratedWebsite>("website-generate", {
         startup: { name: startup.name, industry: startup.industry, tagline: startup.tagline, pitch: startup.pitch },
         prompt: activePrompt,
