@@ -276,7 +276,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         const project: WebsiteProject = {
           id: "proj-" + now, title: newTitle, tagline: newTagline, prompt: activePrompt,
           imagePreview: productPhoto, code: files.indexHtml, stylesCss: files.stylesCss,
-          mainJs: files.mainJs, packageJson: files.packageJson, readmeMd: files.readmeMd,
+          mainJs: files.mainJs, mainTs: files.mainTs, packageJson: files.packageJson, readmeMd: files.readmeMd,
           createdAt: now, updatedAt: now,
         };
         setProjects((prev) => [project, ...prev]);
@@ -790,6 +790,20 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                         <FileCode className="h-3.5 w-3.5 text-amber-500" />
                         <span>main.js</span>
                       </button>
+                      {activeProject?.mainTs && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveCodeFile('main.ts')}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                            activeCodeFile === 'main.ts'
+                              ? 'bg-violet-100 text-violet-900 font-bold'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <FileCode className="h-3.5 w-3.5 text-blue-600" />
+                          <span>main.ts</span>
+                        </button>
+                      )}
                     </div>
 
                     <button
