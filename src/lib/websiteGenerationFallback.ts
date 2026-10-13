@@ -96,7 +96,11 @@ export function createWebsiteGenerationFallback(input: WebsiteFallbackInput): Ge
     js: files.mainJs,
   });
 
-  return { ...validated, degraded: true };
+  return {
+    ...validated,
+    degraded: true,
+    generationNote: "The AI coding model was unavailable, so MornAI created an editable starter website from your brief. Review and customize it before publishing.",
+  };
 }
 
 function clean(value: unknown, max: number): string {
