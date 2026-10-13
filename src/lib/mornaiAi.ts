@@ -258,8 +258,12 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
     }
   }
 
-  // Graceful fallback: If remote/local server times out or is unreachable, return high-quality local fallback data
-  console.warn(`[MornAI AI] Using resilient local fallback for "${endpoint}": ${lastError?.message || 'Server unavailable'}`);
+  if (endpoint === "website-blueprint") {
+    throw new Error(lastError?.message || "Website generation server is unavailable. Check the API connection and try again.");
+  }
+
+  // Other endpoints retain their existing resilient local fallback.
+  console.warn(`[MornAI AI] Using resilient local fallback for "${endpoint}": ${lastError?.message || "Server unavailable"}`);
   return generateLocalFallback<T>(endpoint, body);
 }
 
