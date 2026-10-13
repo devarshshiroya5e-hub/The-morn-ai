@@ -213,7 +213,6 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       code: files.indexHtml,
       stylesCss: files.stylesCss,
       mainJs: files.mainJs,
-      mainTs: files.mainTs,
       packageJson: files.packageJson,
       readmeMd: files.readmeMd,
       createdAt: Date.now(),
