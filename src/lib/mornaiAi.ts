@@ -1,3 +1,4 @@
+import { WEBSITE_GENERATION_CLIENT_TIMEOUT_MS } from "./websiteGenerationPolicy";
 import { getMornAIApiBases, isGeneratedWebsitePayload, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "./mornaiAiRouting";
 
 export type MornAIEndpoint =
@@ -204,8 +205,10 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
 
   for (const base of bases) {
     const url = base + "/api/ai/" + endpoint;
-    // Render free services sleep on inactivity; allow 45s for cold start. Same-origin gets 25s.
-    const timeoutMs = base === RENDER_MORNAI_API ? (endpoint === "website-generate" ? 70_000 : 45_000) : (endpoint === "website-generate" ? 65_000 : 25_000);
+    // Website source generation has a bounded provider request; leave time for Render and JSON validation.
+    const timeoutMs = endpoint === "website-generate"
+      ? WEBSITE_GENERATION_CLIENT_TIMEOUT_MS
+      : base === RENDER_MORNAI_API ? 45_000 : 25_000;
 
     try {
       const response = await requestJson(url, body, timeoutMs);
