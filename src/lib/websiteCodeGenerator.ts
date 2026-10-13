@@ -4,6 +4,8 @@ export type GeneratedWebsite = {
   html: string;
   css: string;
   js: string;
+  degraded?: boolean;
+  generationNote?: string;
 };
 
 type RecordValue = Record<string, unknown>;
