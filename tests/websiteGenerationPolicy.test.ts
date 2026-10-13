@@ -7,9 +7,10 @@ import {
   WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
 } from "../src/lib/websiteGenerationPolicy";
 
-test("Website Studio uses a free coding model and bounded output budget", () => {
-  assert.equal(WEBSITE_GENERATION_MODEL, "cohere/north-mini-code:free");
-  assert.ok(WEBSITE_GENERATION_MAX_TOKENS <= 4_000);
+test("Website Studio uses NVIDIA Nemotron 3 Ultra free with a larger code output budget", () => {
+  assert.equal(WEBSITE_GENERATION_MODEL, "nvidia/nemotron-3-ultra-550b-a55b:free");
+  assert.ok(WEBSITE_GENERATION_MAX_TOKENS >= 6_000);
+  assert.ok(WEBSITE_GENERATION_MAX_TOKENS <= 8_000);
 });
 
 test("browser timeout gives the server time to return a provider timeout error", () => {
