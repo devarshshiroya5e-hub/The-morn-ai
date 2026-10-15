@@ -366,6 +366,15 @@ export function validateGeneratedWebsite(input: unknown, options: { prompt?: str
   return { title, tagline, html, css, js, ...(typescript ? { typescript } : {}) };
 }
 
+export function formatGeneratedWebsiteSource(
+  source: string,
+  file: "index.html" | "styles.css" | "main.js" | "main.ts",
+): string {
+  if (file === "index.html") return formatHtmlSource(source);
+  if (file === "styles.css") return formatBraceSource(source, "css");
+  return formatBraceSource(source, "js");
+}
+
 export function composeGeneratedWebsiteFiles(
   input: unknown,
   options: { startupName?: string; imageUrl?: string; prompt?: string } = {},
