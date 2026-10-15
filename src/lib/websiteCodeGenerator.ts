@@ -149,7 +149,7 @@ function formatHtmlSource(input: string): string {
     const tagName = trimmed.match(/^<\/?([a-z0-9-]+)/i)?.[1]?.toLowerCase() || "";
     if (closing) depth = Math.max(0, depth - 1);
     output += "  ".repeat(depth) + trimmed + "\n";
-    if (tagName && !closing && !voidTags.has(tagName) && !/\\/>$/.test(trimmed) && !/^<!/.test(trimmed)) depth += 1;
+    if (tagName && !closing && !voidTags.has(tagName) && !/\/>$/.test(trimmed) && !/^<!/.test(trimmed)) depth += 1;
   }
   return output.trimEnd() + "\n";
 }
