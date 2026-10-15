@@ -58,19 +58,20 @@ function removeVerbatimText(input: string, privateText: string): string {
 
 
 function readTagAttribute(tag: string, attribute: string): string {
-  const pattern = new RegExp("\\\\b" + attribute + "\\\\s*=\\\\s*(?:\\\"([^\\\"]*)\\\"|'([^']*)'|([^\\\\s>]+))", "i");
+  const pattern = new RegExp("\\b" + attribute + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", "i");
   const match = tag.match(pattern);
   return (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
 }
 
 function plainTextFromMarkup(value: string): string {
-  return value.replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim()
-    .replace(/&amp;/gi, "&").replace(/&quot;/gi, '\\"').replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">");
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+    .replace(/&amp;/gi, "&").replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">");
 }
 
 function cleanHtmlDocument(value: string): string {
-  let html = value.trim().replace(/^```(?:html|xml)?\\s*/i, "").replace(/\\s*```$/i, "").trim();
-  const start = html.search(/<!doctype\\s+html|<html\\b/i);
+  const fence = String.fromCharCode(96).repeat(3);
+  let html = value.trim().replace(new RegExp("^" + fence + "(?:html|xml)?\\s*", "i"), "").replace(new RegExp("\\s*" + fence + "$", "i"), "").trim();
+  const start = html.search(/<!doctype\s+html|<html\b/i);
   if (start >= 0) html = html.slice(start);
   const end = html.toLowerCase().lastIndexOf("</html>");
   if (end >= 0) html = html.slice(0, end + 7);
@@ -79,9 +80,9 @@ function cleanHtmlDocument(value: string): string {
 
 function splitEmbeddedWebsiteAssets(inputHtml: string): { html: string; css: string; js: string; title: string; tagline: string } {
   let html = cleanHtmlDocument(inputHtml);
-  const title = plainTextFromMarkup(html.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title\\s*>/i)?.[1] || "");
+  const title = plainTextFromMarkup(html.match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i)?.[1] || "");
   let tagline = "";
-  for (const match of html.matchAll(/<meta\\b[^>]*>/gi)) {
+  for (const match of html.matchAll(/<meta\b[^>]*>/gi)) {
     const tag = match[0];
     if (readTagAttribute(tag, "name").toLowerCase() === "description") {
       tagline = plainTextFromMarkup(readTagAttribute(tag, "content"));
@@ -90,20 +91,20 @@ function splitEmbeddedWebsiteAssets(inputHtml: string): { html: string; css: str
   }
   const styles: string[] = [];
   const scripts: string[] = [];
-  html = html.replace(/<style\\b[^>]*>([\\s\\S]*?)<\\/style\\s*>/gi, (_whole, body: string) => {
+  html = html.replace(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi, (_whole, body: string) => {
     if (body.trim()) styles.push(body.trim());
     return "";
   });
-  html = html.replace(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi, (_whole, attrs: string, body: string) => {
+  html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi, (_whole, attrs: string, body: string) => {
     const scriptType = readTagAttribute(attrs, "type").toLowerCase();
-    if (body.trim() && !/(?:json|ld\\+json)/i.test(scriptType)) scripts.push(body.trim());
+    if (body.trim() && !/(?:json|ld\+json)/i.test(scriptType)) scripts.push(body.trim());
     return "";
   });
-  html = html.replace(/<script\\b[^>]*\\/?\\s*>/gi, "");
-  html = html.replace(/<link\\b[^>]*>/gi, (tag) =>
+  html = html.replace(/<script\b[^>]*\/?\s*>/gi, "");
+  html = html.replace(/<link\b[^>]*>/gi, (tag) =>
     /stylesheet/i.test(readTagAttribute(tag, "rel")) && /^https?:/i.test(readTagAttribute(tag, "href")) ? "" : tag,
   );
-  return { html, css: styles.join("\\n\\n"), js: scripts.join("\\n\\n"), title, tagline };
+  return { html, css: styles.join("\n\n"), js: scripts.join("\n\n"), title, tagline };
 }
 
 /**
@@ -128,8 +129,8 @@ export function parseGeneratedWebsiteResponse(
     title,
     tagline,
     html: extracted.html,
-    css: [sourceCss, extracted.css].filter(Boolean).join("\\n\\n"),
-    js: [sourceJs, extracted.js].filter(Boolean).join("\\n\\n"),
+    css: [sourceCss, extracted.css].filter(Boolean).join("\n\n"),
+    js: [sourceJs, extracted.js].filter(Boolean).join("\n\n"),
     ...(typescript ? { typescript } : {}),
   };
 }
@@ -147,10 +148,10 @@ function formatHtmlSource(input: string): string {
     const closing = /^<\\//.test(trimmed);
     const tagName = trimmed.match(/^<\\/?([a-z0-9-]+)/i)?.[1]?.toLowerCase() || "";
     if (closing) depth = Math.max(0, depth - 1);
-    output += "  ".repeat(depth) + trimmed + "\\n";
+    output += "  ".repeat(depth) + trimmed + "\n";
     if (tagName && !closing && !voidTags.has(tagName) && !/\\/>$/.test(trimmed) && !/^<!/.test(trimmed)) depth += 1;
   }
-  return output.trimEnd() + "\\n";
+  return output.trimEnd() + "\n";
 }
 
 function formatBraceSource(input: string, language: "css" | "js"): string {
@@ -167,29 +168,29 @@ function formatBraceSource(input: string, language: "css" | "js"): string {
   const indent = () => "  ".repeat(Math.max(0, depth));
   const flush = () => {
     const trimmed = line.trim();
-    if (trimmed) output += indent() + trimmed + "\\n";
+    if (trimmed) output += indent() + trimmed + "\n";
     line = "";
   };
   for (let i = 0; i < source.length; i += 1) {
     const char = source[i];
     const next = source[i + 1] || "";
-    if (lineComment) { line += char; if (char === "\\n") { flush(); lineComment = false; } continue; }
+    if (lineComment) { line += char; if (char === "\n") { flush(); lineComment = false; } continue; }
     if (blockComment) { line += char; if (char === "*" && next === "/") { line += next; i += 1; blockComment = false; } continue; }
     if (quote) {
       line += char;
       if (escaped) escaped = false;
-      else if (char === "\\\\") escaped = true;
+      else if (char === "\\") escaped = true;
       else if (char === quote) quote = "";
       continue;
     }
-    if (char === "'" || char === '\\"' || (language === "js" && char === "`")) { quote = char; line += char; continue; }
+    if (char === "'" || char === '"' || (language === "js" && char === String.fromCharCode(96))) { quote = char; line += char; continue; }
     if (language === "js" && char === "/" && next === "/") { line += char + next; i += 1; lineComment = true; continue; }
     if (char === "/" && next === "*") { line += char + next; i += 1; blockComment = true; continue; }
     if (char === "(") { parens += 1; line += char; continue; }
     if (char === ")") { parens = Math.max(0, parens - 1); line += char; continue; }
     if (char === "{" && parens === 0) {
       const prefix = line.trimEnd();
-      output += indent() + (prefix ? prefix + " " : "") + "{\\n";
+      output += indent() + (prefix ? prefix + " " : "") + "{\n";
       depth += 1;
       line = "";
       continue;
@@ -197,17 +198,18 @@ function formatBraceSource(input: string, language: "css" | "js"): string {
     if (char === "}" && parens === 0) {
       flush();
       depth = Math.max(0, depth - 1);
-      output += indent() + "}\\n";
+      output += indent() + "}\n";
       line = "";
       continue;
     }
     if (char === ";" && parens === 0) { line += char; flush(); continue; }
-    if (char === "\\n") { flush(); continue; }
+    if (char === "\n") { flush(); continue; }
     line += char;
   }
   flush();
-  return output.trimEnd() + "\\n";
+  return output.trimEnd() + "\n";
 }
+
 /** Validate model-generated source before it is saved or previewed. */
 function anchorSlug(value: string): string {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
