@@ -262,7 +262,7 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
       const aborted = error instanceof Error && error.name === "AbortError";
       lastError = aborted
         ? new Error(endpoint === "website-generate"
-          ? "Website generation took too long. Your saved website is unchanged; retry when the free coding model is less busy."
+          ? "Website generation exceeded its request deadline. Your saved website is unchanged; retry once. If it keeps happening, check the Render logs for the primary and backup model timeout."
           : "MornAI AI request timed out.")
         : error instanceof Error
           ? error
