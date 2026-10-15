@@ -29,7 +29,7 @@ import {
 import { Startup } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
 import { composeWebsiteFiles } from '../lib/websiteComposer';
-import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, normalizeWebsiteNavigation, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
+import { composeGeneratedWebsiteFiles, formatGeneratedWebsiteSource, hydrateWebsiteImage, normalizeWebsiteNavigation, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
 import { createZipBlob } from '../lib/zipBuilder';
 
 interface WebsiteChatMessage {
@@ -110,7 +110,17 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+            .filter((project: unknown) => project && typeof project === 'object')
+            .map((project: WebsiteProject) => ({
+              ...project,
+              code: typeof project.code === 'string' ? formatGeneratedWebsiteSource(project.code, 'index.html') : '',
+              stylesCss: typeof project.stylesCss === 'string' ? formatGeneratedWebsiteSource(project.stylesCss, 'styles.css') : project.stylesCss,
+              mainJs: typeof project.mainJs === 'string' ? formatGeneratedWebsiteSource(project.mainJs, 'main.js') : project.mainJs,
+              mainTs: typeof project.mainTs === 'string' ? formatGeneratedWebsiteSource(project.mainTs, 'main.ts') : project.mainTs,
+            }));
+        }
       }
     } catch {}
     return [];
@@ -181,13 +191,18 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     if (progressTimerRef.current !== null) window.clearInterval(progressTimerRef.current);
   }, []);
 
-  // Sync projects to localStorage
+  // Debounce project writes while typing in the source editor, then persist the latest full project.
+  const projectPersistTimerRef = useRef<number | null>(null);
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(projects));
-    } catch (e) {
-      console.warn('Failed to persist website projects:', e);
-    }
+    if (projectPersistTimerRef.current !== null) window.clearTimeout(projectPersistTimerRef.current);
+    projectPersistTimerRef.current = window.setTimeout(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(projects));
+      } catch (e) {
+        console.warn('Failed to persist website projects:', e);
+      }
+      projectPersistTimerRef.current = null;
+    }, 350);
   }, [projects, storageKey]);
 
   // Sync active project id
