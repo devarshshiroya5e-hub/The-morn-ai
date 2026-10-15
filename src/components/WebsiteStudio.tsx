@@ -668,7 +668,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
               <button
                 type="button"
                 onClick={handleOpenNewProjectModal}
-                className="shrink-0 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50"
+                className="shrink-0 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-700 shadow-[0_3px_8px_-6px_rgba(15,23,42,0.55)] transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:shadow-[0_6px_12px_-8px_rgba(91,33,182,0.5)] active:translate-y-0"
                 title="Create a new website project"
               >
                 <Plus className="h-3.5 w-3.5" /> New
@@ -679,7 +679,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                 <select
                   value={activeProject?.id || ''}
                   onChange={(e) => setActiveProjectId(e.target.value)}
-                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] font-semibold text-slate-700 outline-none focus:border-violet-400"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-slate-700 shadow-[inset_0_1px_2px_rgba(15,23,42,0.06),0_3px_8px_-7px_rgba(15,23,42,0.5)] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                   aria-label="Switch saved website project"
                 >
                   {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
@@ -767,7 +767,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="website-photo-upload" />
               <label
                 htmlFor="website-photo-upload"
-                className="shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+                className="shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-[0_3px_8px_-6px_rgba(15,23,42,0.55)] transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 active:translate-y-0"
                 title="Attach product photo"
               >
                 <ImagePlus className="h-4 w-4" />
@@ -942,10 +942,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       <button
                         type="button"
                         onClick={() => setActiveCodeFile('styles.css')}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent text-left transition ${
                           activeCodeFile === 'styles.css'
-                            ? 'bg-violet-100 text-violet-900 font-bold'
-                            : 'text-slate-600 hover:bg-slate-100'
+                            ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                            : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                         }`}
                       >
                         <Palette className="h-3.5 w-3.5 text-blue-500" />
@@ -955,10 +955,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       <button
                         type="button"
                         onClick={() => setActiveCodeFile('main.js')}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent text-left transition ${
                           activeCodeFile === 'main.js'
-                            ? 'bg-violet-100 text-violet-900 font-bold'
-                            : 'text-slate-600 hover:bg-slate-100'
+                            ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                            : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                         }`}
                       >
                         <FileCode className="h-3.5 w-3.5 text-amber-500" />
@@ -968,10 +968,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                         <button
                           type="button"
                           onClick={() => setActiveCodeFile('main.ts')}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent text-left transition ${
                             activeCodeFile === 'main.ts'
-                              ? 'bg-violet-100 text-violet-900 font-bold'
-                              : 'text-slate-600 hover:bg-slate-100'
+                              ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                              : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                           }`}
                         >
                           <FileCode className="h-3.5 w-3.5 text-blue-600" />
@@ -983,10 +983,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <button
                       type="button"
                       onClick={() => setActiveCodeFile('package.json')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-left transition ${
                         activeCodeFile === 'package.json'
-                          ? 'bg-violet-100 text-violet-900 font-bold'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                          : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                       }`}
                     >
                       <Package className="h-4 w-4 text-emerald-500" />
@@ -996,10 +996,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <button
                       type="button"
                       onClick={() => setActiveCodeFile('readme.md')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-left transition ${
                         activeCodeFile === 'readme.md'
-                          ? 'bg-violet-100 text-violet-900 font-bold'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                          : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                       }`}
                     >
                       <FileText className="h-4 w-4 text-slate-500" />
