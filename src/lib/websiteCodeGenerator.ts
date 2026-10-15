@@ -380,7 +380,10 @@ export function composeGeneratedWebsiteFiles(
   input: unknown,
   options: { startupName?: string; imageUrl?: string; prompt?: string } = {},
 ): { indexHtml: string; stylesCss: string; mainJs: string; mainTs?: string; packageJson: string; readmeMd: string } {
-  const website = validateGeneratedWebsite(input, { prompt: options.prompt });
+  const candidate = typeof input === "string"
+    ? parseGeneratedWebsiteResponse(input, { startupName: options.startupName })
+    : input;
+  const website = validateGeneratedWebsite(candidate, { prompt: options.prompt });
   const imageUrl = typeof options.imageUrl === "string" && options.imageUrl.length <= 12_000_000 ? options.imageUrl.trim() : "";
   let html = website.html;
 
