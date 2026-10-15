@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "../src/lib/websiteCodeGenerator";
+import { composeGeneratedWebsiteFiles, formatGeneratedWebsiteSource, hydrateWebsiteImage, parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "../src/lib/websiteCodeGenerator";
 
 const html = (headline: string) => '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Draft</title></head><body><header><a href="#top">Brand</a></header><main id="top"><section><p>Design-led introduction</p><h1>' + headline + '</h1><p>A bespoke page body with enough structure to form a valid generated website.</p><a href="#contact">Explore</a></section><section id="contact"><h2>Next steps</h2><p>Contact the team</p></section></main><footer>Brand</footer></body></html>';
 
@@ -55,7 +55,7 @@ test("preserves TypeScript source and exports a Vite-compatible TypeScript proje
   page.typescript = "const button: HTMLButtonElement | null = document.querySelector<HTMLButtonElement>(\"#add\");\nbutton?.addEventListener(\"click\", () => { document.body.dataset.clicked = \"true\"; });";
   const result = composeGeneratedWebsiteFiles(page, { startupName: "Interactive Studio" });
 
-  assert.equal(result.mainTs, page.typescript);
+  assert.equal(result.mainTs, formatGeneratedWebsiteSource(page.typescript, "main.ts"));
   assert.match(result.indexHtml, /<script type="module" src="\.\/src\/main\.ts"><\/script>/);
   assert.match(result.packageJson, /"typescript": "\^5\.8\.3"/);
   assert.match(result.packageJson, /"typecheck":/);
