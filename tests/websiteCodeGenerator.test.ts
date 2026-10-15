@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, validateGeneratedWebsite } from "../src/lib/websiteCodeGenerator";
+import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "../src/lib/websiteCodeGenerator";
 
 const html = (headline: string) => '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Draft</title></head><body><header><a href="#top">Brand</a></header><main id="top"><section><p>Design-led introduction</p><h1>' + headline + '</h1><p>A bespoke page body with enough structure to form a valid generated website.</p><a href="#contact">Explore</a></section><section id="contact"><h2>Next steps</h2><p>Contact the team</p></section></main><footer>Brand</footer></body></html>';
 
@@ -111,8 +111,8 @@ test("accepts complete model-written HTML and extracts embedded CSS and JavaScri
   assert.match(parsed.js, /Choose your next ride/);
   assert.doesNotMatch(parsed.html, /<style|<script/i);
   const files = composeGeneratedWebsiteFiles(rawHtml, { startupName: "Northline Cycles" });
-  assert.match(files.indexHtml, /<h1>Ride further\\.<\\/h1>/);
-  assert.ok(files.indexHtml.split("\\n").length > 8, "HTML code should be formatted across multiple lines");
+  assert.match(files.indexHtml, /<h1>Ride further\.<\/h1>/);
+  assert.ok(files.indexHtml.split("\n").length > 8, "HTML code should be formatted across multiple lines");
   assert.ok(files.stylesCss.split("\\n").length > 4, "CSS code should be formatted across multiple lines");
   assert.ok(files.mainJs.split("\\n").length > 2, "JavaScript code should be formatted across multiple lines");
 });
