@@ -29,7 +29,7 @@ import {
 import { Startup } from '../types';
 import { postMornAI } from '../lib/mornaiAi';
 import { composeWebsiteFiles } from '../lib/websiteComposer';
-import { composeGeneratedWebsiteFiles, hydrateWebsiteImage, normalizeWebsiteNavigation, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
+import { composeGeneratedWebsiteFiles, formatGeneratedWebsiteSource, hydrateWebsiteImage, normalizeWebsiteNavigation, type GeneratedWebsite } from '../lib/websiteCodeGenerator';
 import { createZipBlob } from '../lib/zipBuilder';
 
 interface WebsiteChatMessage {
@@ -110,7 +110,17 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+            .filter((project: unknown) => project && typeof project === 'object')
+            .map((project: WebsiteProject) => ({
+              ...project,
+              code: typeof project.code === 'string' ? formatGeneratedWebsiteSource(project.code, 'index.html') : '',
+              stylesCss: typeof project.stylesCss === 'string' ? formatGeneratedWebsiteSource(project.stylesCss, 'styles.css') : project.stylesCss,
+              mainJs: typeof project.mainJs === 'string' ? formatGeneratedWebsiteSource(project.mainJs, 'main.js') : project.mainJs,
+              mainTs: typeof project.mainTs === 'string' ? formatGeneratedWebsiteSource(project.mainTs, 'main.ts') : project.mainTs,
+            }));
+        }
       }
     } catch {}
     return [];
@@ -181,13 +191,18 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     if (progressTimerRef.current !== null) window.clearInterval(progressTimerRef.current);
   }, []);
 
-  // Sync projects to localStorage
+  // Debounce project writes while typing in the source editor, then persist the latest full project.
+  const projectPersistTimerRef = useRef<number | null>(null);
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(projects));
-    } catch (e) {
-      console.warn('Failed to persist website projects:', e);
-    }
+    if (projectPersistTimerRef.current !== null) window.clearTimeout(projectPersistTimerRef.current);
+    projectPersistTimerRef.current = window.setTimeout(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(projects));
+      } catch (e) {
+        console.warn('Failed to persist website projects:', e);
+      }
+      projectPersistTimerRef.current = null;
+    }, 350);
   }, [projects, storageKey]);
 
   // Sync active project id
@@ -457,6 +472,26 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     }
   };
 
+  // Source edits are saved into the active project immediately. HTML, CSS and JS edits
+  // are reflected in the sandboxed preview as soon as the state updates.
+  const handleActiveCodeChange = (nextContent: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    setProjects((prev) => prev.map((project) => {
+      if (project.id !== projectId) return project;
+      const updated = { ...project, updatedAt: Date.now() };
+      switch (activeCodeFile) {
+        case 'index.html': updated.code = nextContent; break;
+        case 'styles.css': updated.stylesCss = nextContent; break;
+        case 'main.js': updated.mainJs = nextContent; break;
+        case 'main.ts': updated.mainTs = nextContent; break;
+        case 'package.json': updated.packageJson = nextContent; break;
+        case 'readme.md': updated.readmeMd = nextContent; break;
+      }
+      return updated;
+    }));
+  };
+
   // Preview only executes inside the sandboxed iframe, never in the MornAI app context.
   const livePreviewHtml = useMemo(() => {
     if (!activeProject?.code) return '';
@@ -466,7 +501,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         '<style>\n' + activeProject.stylesCss + '\n</style>');
     }
     if (activeProject.mainJs) {
-      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.(?:js|ts)["'][^>]*><\/script>/i,
+      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.(?:js|ts)["'][^>]*>\s*<\/script>/i,
         '<script>\n' + activeProject.mainJs + '\n</script>');
     }
     const csp = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: blob:; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'; font-src data:; media-src data: blob:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'; object-src \'none\'; frame-src \'none\'">';
@@ -634,10 +669,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
         {/* Left Chat Panel: ongoing website conversation + prompt input */}
         <aside
-          className={'fixed top-14 bottom-0 left-0 z-50 w-[360px] max-w-[90vw] border-r border-slate-200 bg-white flex flex-col transition-all duration-300 ease-in-out sm:static sm:top-auto sm:bottom-auto sm:left-auto sm:z-auto sm:h-full ' +
-            (isSidebarOpen ? 'translate-x-0 shadow-2xl sm:shadow-none' : '-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0')}
+          className={'fixed top-14 bottom-0 left-0 z-50 w-[360px] max-w-[90vw] border-r-2 border-slate-200/90 bg-gradient-to-b from-white to-slate-50 flex flex-col ring-1 ring-inset ring-white shadow-[8px_0_26px_-18px_rgba(15,23,42,0.7)] transition-all duration-300 ease-in-out sm:static sm:top-auto sm:bottom-auto sm:left-auto sm:z-auto sm:my-2 sm:ml-2 sm:h-[calc(100%-1rem)] sm:rounded-2xl sm:border sm:border-slate-200 sm:ring-2 sm:ring-white sm:shadow-[0_1px_2px_rgba(15,23,42,0.08),0_14px_28px_-18px_rgba(15,23,42,0.28),inset_0_1px_0_rgba(255,255,255,0.95)] ' +
+            (isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0 sm:w-0 sm:my-0 sm:ml-0 sm:overflow-hidden sm:border-0 sm:ring-0 sm:shadow-none')}
         >
-          <div className="shrink-0 p-3 border-b border-slate-200 bg-white">
+          <div className="shrink-0 p-3 border-b border-slate-200 bg-gradient-to-b from-white via-white to-slate-50 shadow-[0_3px_10px_-9px_rgba(15,23,42,0.6)]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
@@ -648,7 +683,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
               <button
                 type="button"
                 onClick={handleOpenNewProjectModal}
-                className="shrink-0 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-700 hover:border-violet-300 hover:bg-violet-50"
+                className="shrink-0 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-700 shadow-[0_3px_8px_-6px_rgba(15,23,42,0.55)] transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:shadow-[0_6px_12px_-8px_rgba(91,33,182,0.5)] active:translate-y-0"
                 title="Create a new website project"
               >
                 <Plus className="h-3.5 w-3.5" /> New
@@ -659,7 +694,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                 <select
                   value={activeProject?.id || ''}
                   onChange={(e) => setActiveProjectId(e.target.value)}
-                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] font-semibold text-slate-700 outline-none focus:border-violet-400"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-slate-700 shadow-[inset_0_1px_2px_rgba(15,23,42,0.06),0_3px_8px_-7px_rgba(15,23,42,0.5)] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                   aria-label="Switch saved website project"
                 >
                   {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
@@ -679,7 +714,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
             )}
           </div>
 
-          <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-3 overscroll-contain bg-white">
+          <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-3 overscroll-contain bg-slate-50/50">
             {chatMessages.length === 0 ? (
               <div className="pt-4">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
@@ -695,7 +730,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       key={pill}
                       type="button"
                       onClick={() => { setPromptText(pill); void handleGenerateWebsite(pill); }}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-semibold leading-relaxed text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-semibold leading-relaxed text-slate-700 shadow-[0_3px_8px_-7px_rgba(15,23,42,0.65)] transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:shadow-[0_7px_14px_-9px_rgba(91,33,182,0.45)] active:translate-y-0"
                     >
                       {pill}
                     </button>
@@ -706,7 +741,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
               chatMessages.map((message) => (
                 <div key={message.id} className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
                   <div className={'max-w-[94%] min-w-0 rounded-2xl px-3 py-2.5 ' +
-                    (message.role === 'user' ? 'rounded-br-md bg-violet-600 text-white' : 'rounded-bl-md border border-slate-200 bg-slate-50 text-slate-800')}>
+                    (message.role === 'user' ? 'rounded-br-md border border-violet-700/30 bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_4px_12px_-8px_rgba(91,33,182,0.8)]' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 shadow-[0_3px_10px_-8px_rgba(15,23,42,0.45)] ring-1 ring-inset ring-white')}>
                     <div className={'mb-1 text-[9px] font-extrabold uppercase tracking-wide ' +
                       (message.role === 'user' ? 'text-violet-100' : 'text-slate-500')}>
                       {message.role === 'user' ? 'You' : 'MornAI Builder'}
@@ -747,7 +782,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="website-photo-upload" />
               <label
                 htmlFor="website-photo-upload"
-                className="shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+                className="shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-[0_3px_8px_-6px_rgba(15,23,42,0.55)] transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 active:translate-y-0"
                 title="Attach product photo"
               >
                 <ImagePlus className="h-4 w-4" />
@@ -778,7 +813,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                 }
               }}
               placeholder={activeProject ? "Describe a change to this website…" : "Describe the website you want…"}
-              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs leading-relaxed text-slate-900 shadow-xs outline-none placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs leading-relaxed text-slate-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.07),0_3px_8px_-6px_rgba(15,23,42,0.4)] outline-none placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
             />
             <div className="mt-2 flex items-center justify-between gap-2">
               <p className="text-[9px] leading-relaxed text-slate-400">Enter to send · Shift+Enter for a new line</p>
@@ -907,10 +942,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <button
                       type="button"
                       onClick={() => setActiveCodeFile('index.html')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-left transition ${
                         activeCodeFile === 'index.html'
-                          ? 'bg-violet-100 text-violet-900 font-bold'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                          : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                       }`}
                     >
                       <FileCode className="h-4 w-4 text-orange-500" />
@@ -922,10 +957,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       <button
                         type="button"
                         onClick={() => setActiveCodeFile('styles.css')}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent text-left transition ${
                           activeCodeFile === 'styles.css'
-                            ? 'bg-violet-100 text-violet-900 font-bold'
-                            : 'text-slate-600 hover:bg-slate-100'
+                            ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                            : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                         }`}
                       >
                         <Palette className="h-3.5 w-3.5 text-blue-500" />
@@ -935,10 +970,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       <button
                         type="button"
                         onClick={() => setActiveCodeFile('main.js')}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent text-left transition ${
                           activeCodeFile === 'main.js'
-                            ? 'bg-violet-100 text-violet-900 font-bold'
-                            : 'text-slate-600 hover:bg-slate-100'
+                            ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                            : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                         }`}
                       >
                         <FileCode className="h-3.5 w-3.5 text-amber-500" />
@@ -948,10 +983,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                         <button
                           type="button"
                           onClick={() => setActiveCodeFile('main.ts')}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition ${
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent text-left transition ${
                             activeCodeFile === 'main.ts'
-                              ? 'bg-violet-100 text-violet-900 font-bold'
-                              : 'text-slate-600 hover:bg-slate-100'
+                              ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                              : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                           }`}
                         >
                           <FileCode className="h-3.5 w-3.5 text-blue-600" />
@@ -963,10 +998,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <button
                       type="button"
                       onClick={() => setActiveCodeFile('package.json')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-left transition ${
                         activeCodeFile === 'package.json'
-                          ? 'bg-violet-100 text-violet-900 font-bold'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                          : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                       }`}
                     >
                       <Package className="h-4 w-4 text-emerald-500" />
@@ -976,10 +1011,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <button
                       type="button"
                       onClick={() => setActiveCodeFile('readme.md')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-left transition ${
                         activeCodeFile === 'readme.md'
-                          ? 'bg-violet-100 text-violet-900 font-bold'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                          : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                       }`}
                     >
                       <FileText className="h-4 w-4 text-slate-500" />
@@ -994,6 +1029,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <span className="font-mono font-bold text-slate-800 flex items-center gap-2">
                       <FileCode className="h-4 w-4 text-violet-600" />
                       {activeCodeFile}
+                      <span className="ml-1 hidden md:inline font-sans text-[10px] font-semibold text-emerald-700">Editable · auto-saved</span>
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -1015,8 +1051,29 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     </div>
                   </div>
 
-                  <div className="flex-1 min-h-0 overflow-auto p-4 font-mono text-xs text-slate-800 leading-relaxed bg-white selection:bg-violet-200">
-                    <pre className="whitespace-pre">{getActiveCodeContent()}</pre>
+                  <div className="flex-1 min-h-0 overflow-hidden bg-[#fbfcff]">
+                    <textarea
+                      aria-label={`Edit ${activeCodeFile}`}
+                      value={getActiveCodeContent()}
+                      onChange={(event) => handleActiveCodeChange(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab') {
+                          event.preventDefault();
+                          const target = event.currentTarget;
+                          const start = target.selectionStart;
+                          const end = target.selectionEnd;
+                          const next = target.value.slice(0, start) + '  ' + target.value.slice(end);
+                          handleActiveCodeChange(next);
+                          requestAnimationFrame(() => {
+                            target.selectionStart = target.selectionEnd = start + 2;
+                          });
+                        }
+                      }}
+                      spellCheck={false}
+                      wrap="off"
+                      className="block h-full w-full min-w-0 resize-none overflow-auto whitespace-pre border-0 bg-transparent px-5 py-4 font-mono text-[12px] leading-6 text-slate-800 outline-none selection:bg-violet-200 focus:ring-0"
+                      style={{ tabSize: 2 }}
+                    />
                   </div>
                 </div>
               </div>
