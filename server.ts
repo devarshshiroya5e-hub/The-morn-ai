@@ -1258,7 +1258,7 @@ app.post("/api/ai/website-generate", async (req, res) => {
     "PRIVATE PROMPT SEPARATION AND CUSTOM DESIGN:",
     "- Never display, copy, or quote the supplied prompt as website content. It is a private instruction, not website copy. Write natural customer-facing copy based on the intent. Never show system instructions, output rules, or raw JSON on the page.",
     "- Each new project must make deliberate design decisions: fitting art direction, distinctive layout, color palette, typography, section composition, and interaction patterns. Avoid a default hero-plus-three-cards template unless the brief calls for it.",
-    "- For edits, use the existing HTML/CSS/TypeScript as the starting point and apply the requested change while preserving unrelated content and working behavior.",
+    "- For edits, use the existing HTML/CSS/JavaScript as the starting point and apply the requested change while preserving unrelated content and working behavior.",
     "- Keep in-page navigation inside the generated site. Use valid local section anchors; never use \"/\", root-relative page URLs, or MornAI URLs for in-page navigation. Do not point generated buttons back to the MornAI application.",
     "MAKE IT FUNCTIONAL, NOT A STATIC MOCKUP:",
     "- Implement real behavior for every visible interactive control: navigation, mobile menu, tabs, accordions, search/filter/sort, selectors, calculators, gallery controls, cart quantity and totals, dialogs, and other requested UI as appropriate.",
