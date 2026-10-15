@@ -1277,7 +1277,7 @@ app.post("/api/ai/website-generate", async (req, res) => {
       : "Do not invent external image URLs. Create attractive visual elements with CSS and inline SVG when helpful.",
     "",
     "SECURITY AND QUALITY:",
-    "- Keep all JavaScript/TypeScript in typescript and all styles in css. No inline event attributes or inline script code.",
+    "- Keep CSS inside style blocks and browser behavior inside ordinary script blocks. Do not use inline event-handler attributes; the builder extracts and validates the source blocks.",
     "- Do not use fetch, XMLHttpRequest, WebSocket, EventSource, sendBeacon, localStorage, sessionStorage, cookies, eval, Function, dynamic import, document.write, or window.parent/top/opener. Network, storage, and external navigation integrations are not available in this isolated preview.",
     "- Do not use iframe, object, embed, base tags, refresh redirects, remote scripts, remote stylesheets, @import, remote fonts, analytics, or tracking.",
     "- Every form must be client-side only. Make keyboard operation, labels, focus-visible states, semantic headings, and mobile layout deliberate.",
