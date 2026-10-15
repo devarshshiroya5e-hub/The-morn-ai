@@ -56,6 +56,158 @@ function removeVerbatimText(input: string, privateText: string): string {
   return result + input.slice(cursor);
 }
 
+
+function readTagAttribute(tag: string, attribute: string): string {
+  const pattern = new RegExp("\\\\b" + attribute + "\\\\s*=\\\\s*(?:\\\"([^\\\"]*)\\\"|'([^']*)'|([^\\\\s>]+))", "i");
+  const match = tag.match(pattern);
+  return (match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim();
+}
+
+function plainTextFromMarkup(value: string): string {
+  return value.replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim()
+    .replace(/&amp;/gi, "&").replace(/&quot;/gi, '\\"').replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">");
+}
+
+function cleanHtmlDocument(value: string): string {
+  let html = value.trim().replace(/^```(?:html|xml)?\\s*/i, "").replace(/\\s*```$/i, "").trim();
+  const start = html.search(/<!doctype\\s+html|<html\\b/i);
+  if (start >= 0) html = html.slice(start);
+  const end = html.toLowerCase().lastIndexOf("</html>");
+  if (end >= 0) html = html.slice(0, end + 7);
+  return html.trim();
+}
+
+function splitEmbeddedWebsiteAssets(inputHtml: string): { html: string; css: string; js: string; title: string; tagline: string } {
+  let html = cleanHtmlDocument(inputHtml);
+  const title = plainTextFromMarkup(html.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title\\s*>/i)?.[1] || "");
+  let tagline = "";
+  for (const match of html.matchAll(/<meta\\b[^>]*>/gi)) {
+    const tag = match[0];
+    if (readTagAttribute(tag, "name").toLowerCase() === "description") {
+      tagline = plainTextFromMarkup(readTagAttribute(tag, "content"));
+      if (tagline) break;
+    }
+  }
+  const styles: string[] = [];
+  const scripts: string[] = [];
+  html = html.replace(/<style\\b[^>]*>([\\s\\S]*?)<\\/style\\s*>/gi, (_whole, body: string) => {
+    if (body.trim()) styles.push(body.trim());
+    return "";
+  });
+  html = html.replace(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi, (_whole, attrs: string, body: string) => {
+    const scriptType = readTagAttribute(attrs, "type").toLowerCase();
+    if (body.trim() && !/(?:json|ld\\+json)/i.test(scriptType)) scripts.push(body.trim());
+    return "";
+  });
+  html = html.replace(/<script\\b[^>]*\\/?\\s*>/gi, "");
+  html = html.replace(/<link\\b[^>]*>/gi, (tag) =>
+    /stylesheet/i.test(readTagAttribute(tag, "rel")) && /^https?:/i.test(readTagAttribute(tag, "href")) ? "" : tag,
+  );
+  return { html, css: styles.join("\\n\\n"), js: scripts.join("\\n\\n"), title, tagline };
+}
+
+/**
+ * Accept either the coding model's structured file object or the complete HTML document
+ * returned by models that work best writing source directly.
+ */
+export function parseGeneratedWebsiteResponse(
+  input: unknown,
+  defaults: { startupName?: string; tagline?: string } = {},
+): GeneratedWebsite {
+  const source = typeof input === "string" ? {} : asRecord(input);
+  const rawHtml = typeof input === "string"
+    ? input
+    : typeof source.html === "string" ? source.html : typeof source.code === "string" ? source.code : "";
+  const extracted = splitEmbeddedWebsiteAssets(rawHtml);
+  const sourceCss = typeof source.css === "string" ? source.css.trim() : typeof source.styles === "string" ? source.styles.trim() : "";
+  const sourceJs = typeof source.js === "string" ? source.js.trim() : typeof source.javascript === "string" ? source.javascript.trim() : "";
+  const typescript = typeof source.typescript === "string" ? source.typescript.trim() : "";
+  const title = cleanText(source.title, 100) || extracted.title || (cleanText(defaults.startupName, 80) || "Custom") + " Website";
+  const tagline = cleanText(source.tagline, 240) || extracted.tagline || cleanText(defaults.tagline, 240) || "A custom website built for your brief.";
+  return {
+    title,
+    tagline,
+    html: extracted.html,
+    css: [sourceCss, extracted.css].filter(Boolean).join("\\n\\n"),
+    js: [sourceJs, extracted.js].filter(Boolean).join("\\n\\n"),
+    ...(typescript ? { typescript } : {}),
+  };
+}
+
+function formatHtmlSource(input: string): string {
+  const source = input.trim();
+  const tokens = source.match(/<!--[\\s\\S]*?-->|<!doctype[^>]*>|<\\/?[a-z][^>]*>|[^<]+/gi);
+  if (!tokens) return input;
+  const voidTags = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
+  let depth = 0;
+  let output = "";
+  for (const token of tokens) {
+    const trimmed = token.trim();
+    if (!trimmed) continue;
+    const closing = /^<\\//.test(trimmed);
+    const tagName = trimmed.match(/^<\\/?([a-z0-9-]+)/i)?.[1]?.toLowerCase() || "";
+    if (closing) depth = Math.max(0, depth - 1);
+    output += "  ".repeat(depth) + trimmed + "\\n";
+    if (tagName && !closing && !voidTags.has(tagName) && !/\\/>$/.test(trimmed) && !/^<!/.test(trimmed)) depth += 1;
+  }
+  return output.trimEnd() + "\\n";
+}
+
+function formatBraceSource(input: string, language: "css" | "js"): string {
+  const source = input.trim();
+  if (!source) return "";
+  let output = "";
+  let line = "";
+  let depth = 0;
+  let parens = 0;
+  let quote = "";
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  const indent = () => "  ".repeat(Math.max(0, depth));
+  const flush = () => {
+    const trimmed = line.trim();
+    if (trimmed) output += indent() + trimmed + "\\n";
+    line = "";
+  };
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i];
+    const next = source[i + 1] || "";
+    if (lineComment) { line += char; if (char === "\\n") { flush(); lineComment = false; } continue; }
+    if (blockComment) { line += char; if (char === "*" && next === "/") { line += next; i += 1; blockComment = false; } continue; }
+    if (quote) {
+      line += char;
+      if (escaped) escaped = false;
+      else if (char === "\\\\") escaped = true;
+      else if (char === quote) quote = "";
+      continue;
+    }
+    if (char === "'" || char === '\\"' || (language === "js" && char === "`")) { quote = char; line += char; continue; }
+    if (language === "js" && char === "/" && next === "/") { line += char + next; i += 1; lineComment = true; continue; }
+    if (char === "/" && next === "*") { line += char + next; i += 1; blockComment = true; continue; }
+    if (char === "(") { parens += 1; line += char; continue; }
+    if (char === ")") { parens = Math.max(0, parens - 1); line += char; continue; }
+    if (char === "{" && parens === 0) {
+      const prefix = line.trimEnd();
+      output += indent() + (prefix ? prefix + " " : "") + "{\\n";
+      depth += 1;
+      line = "";
+      continue;
+    }
+    if (char === "}" && parens === 0) {
+      flush();
+      depth = Math.max(0, depth - 1);
+      output += indent() + "}\\n";
+      line = "";
+      continue;
+    }
+    if (char === ";" && parens === 0) { line += char; flush(); continue; }
+    if (char === "\\n") { flush(); continue; }
+    line += char;
+  }
+  flush();
+  return output.trimEnd() + "\\n";
+}
 /** Validate model-generated source before it is saved or previewed. */
 function anchorSlug(value: string): string {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
@@ -248,10 +400,10 @@ export function composeGeneratedWebsiteFiles(
     "\nThe index.html entry imports the source files through Vite, so run the development server rather than opening index.html directly.\n\nReview contact details, pricing, claims, backend integrations, and any placeholders before publishing.";
 
   return {
-    indexHtml: html,
-    stylesCss: website.css,
-    mainJs: website.js,
-    ...(website.typescript ? { mainTs: website.typescript } : {}),
+    indexHtml: formatHtmlSource(html),
+    stylesCss: formatBraceSource(website.css, "css"),
+    mainJs: formatBraceSource(website.js, "js"),
+    ...(website.typescript ? { mainTs: formatBraceSource(website.typescript, "js") } : {}),
     packageJson,
     readmeMd,
   };
