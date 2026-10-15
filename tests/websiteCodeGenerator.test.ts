@@ -111,8 +111,8 @@ test("accepts complete model-written HTML and extracts embedded CSS and JavaScri
   assert.match(parsed.js, /Choose your next ride/);
   assert.doesNotMatch(parsed.html, /<style|<script/i);
   const files = composeGeneratedWebsiteFiles(rawHtml, { startupName: "Northline Cycles" });
-  assert.match(files.indexHtml, /<h1>Ride further\.<\/h1>/);
+  assert.match(files.indexHtml, /<h1>\s*Ride further\.\s*<\/h1>/);
   assert.ok(files.indexHtml.split("\n").length > 8, "HTML code should be formatted across multiple lines");
-  assert.ok(files.stylesCss.split("\\n").length > 4, "CSS code should be formatted across multiple lines");
-  assert.ok(files.mainJs.split("\\n").length > 2, "JavaScript code should be formatted across multiple lines");
+  assert.ok(files.stylesCss.split("\n").length > 4, "CSS code should be formatted across multiple lines");
+  assert.ok(files.mainJs.split("\n").length > 2, "JavaScript code should be formatted across multiple lines");
 });
