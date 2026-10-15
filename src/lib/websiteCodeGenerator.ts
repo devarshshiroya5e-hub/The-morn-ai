@@ -188,21 +188,21 @@ function formatBraceSource(input: string, language: "css" | "js"): string {
     if (char === "/" && next === "*") { line += char + next; i += 1; blockComment = true; continue; }
     if (char === "(") { parens += 1; line += char; continue; }
     if (char === ")") { parens = Math.max(0, parens - 1); line += char; continue; }
-    if (char === "{" && parens === 0) {
+    if (char === "{") {
       const prefix = line.trimEnd();
       output += indent() + (prefix ? prefix + " " : "") + "{\n";
       depth += 1;
       line = "";
       continue;
     }
-    if (char === "}" && parens === 0) {
+    if (char === "}") {
       flush();
       depth = Math.max(0, depth - 1);
       output += indent() + "}\n";
       line = "";
       continue;
     }
-    if (char === ";" && parens === 0) { line += char; flush(); continue; }
+    if (char === ";" && (parens === 0 || depth > 0)) { line += char; flush(); continue; }
     if (char === "\n") { flush(); continue; }
     line += char;
   }
@@ -313,7 +313,7 @@ export function validateGeneratedWebsite(input: unknown, options: { prompt?: str
   const typescript = typeof source.typescript === "string" ? source.typescript.trim() : "";
 
   if (!title || !tagline) throw new Error("The generated website is missing its title or description.");
-  if (html.length < 500 || html.length > 45_000) throw new Error("The AI returned incomplete or oversized HTML. Please regenerate the website.");
+  if (html.length < 300 || html.length > 45_000) throw new Error("The AI returned incomplete or oversized HTML. Please regenerate the website.");
   if (css.length < 300 || css.length > 45_000) throw new Error("The AI returned incomplete or oversized CSS. Please regenerate the website.");
   if (js.length > 24_000) throw new Error("The AI returned oversized JavaScript. Please regenerate the website.");
   if (typescript.length > 24_000) throw new Error("The AI returned oversized TypeScript. Please regenerate the website.");
