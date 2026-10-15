@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { transform } from "esbuild";
 import { parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "./src/lib/websiteCodeGenerator";
 import {
+  WEBSITE_GENERATION_FALLBACK_TIMEOUT_MS,
   WEBSITE_GENERATION_MAX_TOKENS,
   WEBSITE_GENERATION_MODEL,
   WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
@@ -1308,7 +1309,8 @@ app.post("/api/ai/website-generate", async (req, res) => {
         maxTokens: WEBSITE_GENERATION_MAX_TOKENS,
         temperature: 0.42,
         requestTimeoutMs: WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
-        disableModelFallbacks: true,
+        fallbackRequestTimeoutMs: WEBSITE_GENERATION_FALLBACK_TIMEOUT_MS,
+        disableModelFallbacks: false,
         stopOnTimeout: true,
         suppressJsonMode: true,
         skipGeminiFallback: true,
