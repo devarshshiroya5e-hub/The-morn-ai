@@ -137,7 +137,7 @@ export function parseGeneratedWebsiteResponse(
 
 function formatHtmlSource(input: string): string {
   const source = input.trim();
-  const tokens = source.match(/<!--[\\s\\S]*?-->|<!doctype[^>]*>|<\\/?[a-z][^>]*>|[^<]+/gi);
+  const tokens = source.match(/<!--[\s\S]*?-->|<!doctype[^>]*>|<\/?[a-z][^>]*>|[^<]+/gi);
   if (!tokens) return input;
   const voidTags = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
   let depth = 0;
@@ -145,8 +145,8 @@ function formatHtmlSource(input: string): string {
   for (const token of tokens) {
     const trimmed = token.trim();
     if (!trimmed) continue;
-    const closing = /^<\\//.test(trimmed);
-    const tagName = trimmed.match(/^<\\/?([a-z0-9-]+)/i)?.[1]?.toLowerCase() || "";
+    const closing = /^<\//.test(trimmed);
+    const tagName = trimmed.match(/^<\/?([a-z0-9-]+)/i)?.[1]?.toLowerCase() || "";
     if (closing) depth = Math.max(0, depth - 1);
     output += "  ".repeat(depth) + trimmed + "\n";
     if (tagName && !closing && !voidTags.has(tagName) && !/\\/>$/.test(trimmed) && !/^<!/.test(trimmed)) depth += 1;
