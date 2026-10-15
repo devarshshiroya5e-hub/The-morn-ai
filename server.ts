@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { transform } from "esbuild";
 import { parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "./src/lib/websiteCodeGenerator";
 import {
+  WEBSITE_GENERATION_FALLBACK_TIMEOUT_MS,
   WEBSITE_GENERATION_MAX_TOKENS,
   WEBSITE_GENERATION_MODEL,
   WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
@@ -117,6 +118,7 @@ type AiGenerateOptions = {
     maxTokens?: number;
     temperature?: number;
     requestTimeoutMs?: number;
+    fallbackRequestTimeoutMs?: number;
     disableModelFallbacks?: boolean;
     stopOnTimeout?: boolean;
     suppressJsonMode?: boolean;
@@ -222,21 +224,29 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         }
 
         const controller = new AbortController();
-        const requestTimeoutMs = options.config?.requestTimeoutMs
-          ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000);
+        const requestTimeoutMs = model === options.model
+          ? options.config?.requestTimeoutMs ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000)
+          : options.config?.fallbackRequestTimeoutMs
+            ?? options.config?.requestTimeoutMs
+            ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000);
         const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
 
         let response: Response;
+        let payload: any;
         try {
+          // Keep the same deadline active while reading the body. OpenRouter may send
+          // headers before the model finishes writing the actual HTML response.
           response = await fetch(
             "https://openrouter.ai/api/v1/chat/completions",
             { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal },
           );
+          payload = await response.json().catch((error) => {
+            if (controller.signal.aborted) throw error;
+            return {};
+          });
         } finally {
           clearTimeout(timeout);
         }
-
-        const payload = await response.json().catch(() => ({}));
 
         if (!response.ok) {
           const providerMessage =
@@ -270,9 +280,10 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
           message: (timedOut ? "Provider request timed out after " + Math.round((options.config?.requestTimeoutMs ?? 28_000) / 1000) + "s: " : "") + message,
         };
         lastError = error;
-        // Repeating a full timeout against other keys/models only makes the browser time out too.
+        // Don't retry the same long-running model with other API keys. Move to the
+        // next configured model so one stalled free provider cannot consume the whole browser deadline.
         if (timedOut && options.config?.stopOnTimeout) {
-          throw new Error("Website code generation exceeded the provider time limit. Retry once; if it repeats, check the free model's availability.");
+          break;
         }
       }
     }
@@ -291,9 +302,14 @@ function resolveModel(requested: string) {
 }
 
 function modelFallbacks(model: string, _needsJson = false) {
-  if (model === MODEL_IDS.ultra) return [MODEL_IDS.ultra, MODEL_IDS.super];
-  if (model === MODEL_IDS.super) return [MODEL_IDS.super, MODEL_IDS.ultra];
-  return [MODEL_IDS.super, MODEL_IDS.ultra];
+  // Preserve the requested tier: when Website Studio selects a :free model, its
+  // backup must also be free even if the server's general AI mode is set to paid.
+  const isFree = model.endsWith(":free");
+  const ultra = isFree ? FREE_MODEL_IDS.ultra : PAID_MODEL_IDS.ultra;
+  const superModel = isFree ? FREE_MODEL_IDS.super : PAID_MODEL_IDS.super;
+  if (model === PAID_MODEL_IDS.ultra || model === FREE_MODEL_IDS.ultra) return [model, superModel];
+  if (model === PAID_MODEL_IDS.super || model === FREE_MODEL_IDS.super) return [model, ultra];
+  return [model, superModel, ultra];
 }
 function getAiClient() {
   const hasOpenRouter = hasAnyOpenRouterKey();
@@ -1293,7 +1309,8 @@ app.post("/api/ai/website-generate", async (req, res) => {
         maxTokens: WEBSITE_GENERATION_MAX_TOKENS,
         temperature: 0.42,
         requestTimeoutMs: WEBSITE_GENERATION_PROVIDER_TIMEOUT_MS,
-        disableModelFallbacks: true,
+        fallbackRequestTimeoutMs: WEBSITE_GENERATION_FALLBACK_TIMEOUT_MS,
+        disableModelFallbacks: false,
         stopOnTimeout: true,
         suppressJsonMode: true,
         skipGeminiFallback: true,
