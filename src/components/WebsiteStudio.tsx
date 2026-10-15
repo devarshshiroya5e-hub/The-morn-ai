@@ -457,6 +457,26 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
     }
   };
 
+  // Source edits are saved into the active project immediately. HTML, CSS and JS edits
+  // are reflected in the sandboxed preview as soon as the state updates.
+  const handleActiveCodeChange = (nextContent: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    setProjects((prev) => prev.map((project) => {
+      if (project.id !== projectId) return project;
+      const updated = { ...project, updatedAt: Date.now() };
+      switch (activeCodeFile) {
+        case 'index.html': updated.code = nextContent; break;
+        case 'styles.css': updated.stylesCss = nextContent; break;
+        case 'main.js': updated.mainJs = nextContent; break;
+        case 'main.ts': updated.mainTs = nextContent; break;
+        case 'package.json': updated.packageJson = nextContent; break;
+        case 'readme.md': updated.readmeMd = nextContent; break;
+      }
+      return updated;
+    }));
+  };
+
   // Preview only executes inside the sandboxed iframe, never in the MornAI app context.
   const livePreviewHtml = useMemo(() => {
     if (!activeProject?.code) return '';
@@ -634,10 +654,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
 
         {/* Left Chat Panel: ongoing website conversation + prompt input */}
         <aside
-          className={'fixed top-14 bottom-0 left-0 z-50 w-[360px] max-w-[90vw] border-r border-slate-200 bg-white flex flex-col transition-all duration-300 ease-in-out sm:static sm:top-auto sm:bottom-auto sm:left-auto sm:z-auto sm:h-full ' +
-            (isSidebarOpen ? 'translate-x-0 shadow-2xl sm:shadow-none' : '-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0')}
+          className={'fixed top-14 bottom-0 left-0 z-50 w-[360px] max-w-[90vw] border-r-2 border-slate-200/90 bg-gradient-to-b from-white to-slate-50 flex flex-col ring-1 ring-inset ring-white shadow-[8px_0_26px_-18px_rgba(15,23,42,0.7)] transition-all duration-300 ease-in-out sm:static sm:top-auto sm:bottom-auto sm:left-auto sm:z-auto sm:my-2 sm:ml-2 sm:h-[calc(100%-1rem)] sm:rounded-2xl sm:border sm:border-slate-200 sm:ring-2 sm:ring-white sm:shadow-[0_1px_2px_rgba(15,23,42,0.08),0_14px_28px_-18px_rgba(15,23,42,0.28),inset_0_1px_0_rgba(255,255,255,0.95)] ' +
+            (isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0 sm:w-0 sm:my-0 sm:ml-0 sm:overflow-hidden sm:border-0 sm:ring-0 sm:shadow-none')}
         >
-          <div className="shrink-0 p-3 border-b border-slate-200 bg-white">
+          <div className="shrink-0 p-3 border-b border-slate-200 bg-gradient-to-b from-white via-white to-slate-50 shadow-[0_3px_10px_-9px_rgba(15,23,42,0.6)]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
@@ -679,7 +699,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
             )}
           </div>
 
-          <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-3 overscroll-contain bg-white">
+          <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-3 overscroll-contain bg-slate-50/50">
             {chatMessages.length === 0 ? (
               <div className="pt-4">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
@@ -695,7 +715,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                       key={pill}
                       type="button"
                       onClick={() => { setPromptText(pill); void handleGenerateWebsite(pill); }}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-semibold leading-relaxed text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[11px] font-semibold leading-relaxed text-slate-700 shadow-[0_3px_8px_-7px_rgba(15,23,42,0.65)] transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:shadow-[0_7px_14px_-9px_rgba(91,33,182,0.45)] active:translate-y-0"
                     >
                       {pill}
                     </button>
@@ -706,7 +726,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
               chatMessages.map((message) => (
                 <div key={message.id} className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
                   <div className={'max-w-[94%] min-w-0 rounded-2xl px-3 py-2.5 ' +
-                    (message.role === 'user' ? 'rounded-br-md bg-violet-600 text-white' : 'rounded-bl-md border border-slate-200 bg-slate-50 text-slate-800')}>
+                    (message.role === 'user' ? 'rounded-br-md border border-violet-700/30 bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_4px_12px_-8px_rgba(91,33,182,0.8)]' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 shadow-[0_3px_10px_-8px_rgba(15,23,42,0.45)] ring-1 ring-inset ring-white')}>
                     <div className={'mb-1 text-[9px] font-extrabold uppercase tracking-wide ' +
                       (message.role === 'user' ? 'text-violet-100' : 'text-slate-500')}>
                       {message.role === 'user' ? 'You' : 'MornAI Builder'}
@@ -778,7 +798,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                 }
               }}
               placeholder={activeProject ? "Describe a change to this website…" : "Describe the website you want…"}
-              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs leading-relaxed text-slate-900 shadow-xs outline-none placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs leading-relaxed text-slate-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.07),0_3px_8px_-6px_rgba(15,23,42,0.4)] outline-none placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
             />
             <div className="mt-2 flex items-center justify-between gap-2">
               <p className="text-[9px] leading-relaxed text-slate-400">Enter to send · Shift+Enter for a new line</p>
@@ -907,10 +927,10 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <button
                       type="button"
                       onClick={() => setActiveCodeFile('index.html')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-left transition ${
                         activeCodeFile === 'index.html'
-                          ? 'bg-violet-100 text-violet-900 font-bold'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'border-violet-200 bg-white text-violet-900 font-bold shadow-[0_3px_8px_-6px_rgba(91,33,182,0.65)] ring-1 ring-inset ring-violet-100'
+                          : 'text-slate-600 hover:border-slate-200 hover:bg-white hover:shadow-[0_3px_8px_-7px_rgba(15,23,42,0.55)]'
                       }`}
                     >
                       <FileCode className="h-4 w-4 text-orange-500" />
@@ -994,6 +1014,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     <span className="font-mono font-bold text-slate-800 flex items-center gap-2">
                       <FileCode className="h-4 w-4 text-violet-600" />
                       {activeCodeFile}
+                      <span className="ml-1 hidden md:inline font-sans text-[10px] font-semibold text-emerald-700">Editable · auto-saved</span>
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -1015,8 +1036,29 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
                     </div>
                   </div>
 
-                  <div className="flex-1 min-h-0 overflow-auto p-4 font-mono text-xs text-slate-800 leading-relaxed bg-white selection:bg-violet-200">
-                    <pre className="whitespace-pre">{getActiveCodeContent()}</pre>
+                  <div className="flex-1 min-h-0 overflow-hidden bg-[#fbfcff]">
+                    <textarea
+                      aria-label={`Edit ${activeCodeFile}`}
+                      value={getActiveCodeContent()}
+                      onChange={(event) => handleActiveCodeChange(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab') {
+                          event.preventDefault();
+                          const target = event.currentTarget;
+                          const start = target.selectionStart;
+                          const end = target.selectionEnd;
+                          const next = target.value.slice(0, start) + '  ' + target.value.slice(end);
+                          handleActiveCodeChange(next);
+                          requestAnimationFrame(() => {
+                            target.selectionStart = target.selectionEnd = start + 2;
+                          });
+                        }
+                      }}
+                      spellCheck={false}
+                      wrap="off"
+                      className="block h-full w-full min-w-0 resize-none overflow-auto whitespace-pre border-0 bg-transparent px-5 py-4 font-mono text-[12px] leading-6 text-slate-800 outline-none selection:bg-violet-200 focus:ring-0"
+                      style={{ tabSize: 2 }}
+                    />
                   </div>
                 </div>
               </div>
