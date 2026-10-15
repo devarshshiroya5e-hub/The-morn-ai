@@ -1282,7 +1282,7 @@ app.post("/api/ai/website-generate", async (req, res) => {
     "- Do not use iframe, object, embed, base tags, refresh redirects, remote scripts, remote stylesheets, @import, remote fonts, analytics, or tracking.",
     "- Every form must be client-side only. Make keyboard operation, labels, focus-visible states, semantic headings, and mobile layout deliberate.",
     "- Return enough complete, well-structured source to realize the actual requested design and interactions. Do not force a generic section count or reduce the implementation to a short template.",
-    "- Escape JSON strings correctly. No markdown fences and no explanatory text outside the JSON object."
+    "- Return only finished HTML source. Do not wrap the document in markdown fences or add explanations before or after it."
   ].join("\n");
 
   try {
