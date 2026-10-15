@@ -94,3 +94,25 @@ test("rejects generated code that attempts to navigate the preview frame", () =>
   assert.throws(() => validateGeneratedWebsite(page), /restricted browser API/i);
 });
 
+
+
+test("accepts complete model-written HTML and extracts embedded CSS and JavaScript into editable files", () => {
+  const rawHtml = [
+    "<!doctype html>",
+    '<html lang="en"><head><meta charset="utf-8"><meta name="description" content="A custom bicycle shop"><title>Northline Cycles</title>',
+    "<style>body{margin:0;font-family:Arial,sans-serif;background:#f4f0e8;color:#142018}header,main,footer{max-width:1100px;margin:auto;padding:2rem}h1{font-size:clamp(3rem,8vw,6rem);letter-spacing:-.05em}button{border:0;border-radius:999px;padding:1rem 1.5rem;background:#173d2b;color:white;cursor:pointer}button:hover{transform:translateY(-2px)}@media(max-width:700px){header,main,footer{padding:1.25rem}}</style></head>",
+    '<body><header><a href="#top">Northline</a></header><main id="top"><h1>Ride further.</h1><p>Thoughtful bicycles for everyday adventures.</p><button id="details">Explore bikes</button><p id="notice" aria-live="polite"></p></main><footer>Built for the long road.</footer>',
+    "<script>const button = document.querySelector('#details'); button?.addEventListener('click', () => { document.querySelector('#notice').textContent = 'Choose your next ride.'; });</script></body></html>",
+  ].join("");
+  const parsed = parseGeneratedWebsiteResponse(rawHtml, { startupName: "Northline Cycles" });
+  assert.equal(parsed.title, "Northline Cycles");
+  assert.equal(parsed.tagline, "A custom bicycle shop");
+  assert.match(parsed.css, /font-family:Arial/);
+  assert.match(parsed.js, /Choose your next ride/);
+  assert.doesNotMatch(parsed.html, /<style|<script/i);
+  const files = composeGeneratedWebsiteFiles(rawHtml, { startupName: "Northline Cycles" });
+  assert.match(files.indexHtml, /<h1>Ride further\\.<\\/h1>/);
+  assert.ok(files.indexHtml.split("\\n").length > 8, "HTML code should be formatted across multiple lines");
+  assert.ok(files.stylesCss.split("\\n").length > 4, "CSS code should be formatted across multiple lines");
+  assert.ok(files.mainJs.split("\\n").length > 2, "JavaScript code should be formatted across multiple lines");
+});
