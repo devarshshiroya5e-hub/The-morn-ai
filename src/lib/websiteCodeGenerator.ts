@@ -318,14 +318,15 @@ export function validateGeneratedWebsite(input: unknown, options: { prompt?: str
   if (js.length > 24_000) throw new Error("The AI returned oversized JavaScript. Please regenerate the website.");
   if (typescript.length > 24_000) throw new Error("The AI returned oversized TypeScript. Please regenerate the website.");
   if (/^\s*(?:import|export)\s/m.test(typescript)) throw new Error("Generated TypeScript must not import external modules in the isolated website preview.");
-  if (!/<html\b/i.test(html) || !/<head\b/i.test(html) || !/<body\b/i.test(html)) {
+  if (!/<html\b/i.test(html) || !/<head\b/i.test(html) || !/<body\b/i.test(html)
+    || !/<\/head\s*>/i.test(html) || !/<\/body\s*>/i.test(html) || !/<\/html\s*>/i.test(html)) {
     throw new Error("The AI response is not a complete HTML document. Please regenerate the website.");
   }
   if (/<(?:iframe|object|embed|base|portal)\b/i.test(html)) {
     throw new Error("The generated HTML contains an unsupported embedded document. Please regenerate the website.");
   }
 
-  // Executable page logic is injected from the validated JavaScript/TypeScript file, never inline model HTML.
+  // Executable page logic is injected from the validated JavaScript/TypeScript source, never inline model HTML.
   html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "");
   html = html.replace(/<script\b[^>]*\/?>/gi, "");
   html = html.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
