@@ -501,7 +501,7 @@ export const WebsiteStudio: React.FC<WebsiteStudioProps> = ({ startup, onClose }
         '<style>\n' + activeProject.stylesCss + '\n</style>');
     }
     if (activeProject.mainJs) {
-      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.(?:js|ts)["'][^>]*><\/script>/i,
+      html = html.replace(/<script\b[^>]*src=["']\.\/src\/main\.(?:js|ts)["'][^>]*>\s*<\/script>/i,
         '<script>\n' + activeProject.mainJs + '\n</script>');
     }
     const csp = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: blob:; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'; font-src data:; media-src data: blob:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'; object-src \'none\'; frame-src \'none\'">';
