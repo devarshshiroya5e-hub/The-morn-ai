@@ -56,7 +56,7 @@ test("preserves TypeScript source and exports a Vite-compatible TypeScript proje
   const result = composeGeneratedWebsiteFiles(page, { startupName: "Interactive Studio" });
 
   assert.equal(result.mainTs, formatGeneratedWebsiteSource(page.typescript, "main.ts"));
-  assert.match(result.indexHtml, /<script type="module" src="\.\/src\/main\.ts"><\/script>/);
+  assert.match(result.indexHtml, /<script type="module" src="\.\/src\/main\.ts">\s*<\/script>/);
   assert.match(result.packageJson, /"typescript": "\^5\.8\.3"/);
   assert.match(result.packageJson, /"typecheck":/);
   assert.match(result.readmeMd, /npm run typecheck/);
