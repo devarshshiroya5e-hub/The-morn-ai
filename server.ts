@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { transform } from "esbuild";
 import { parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "./src/lib/websiteCodeGenerator";
+import { buildHeuristicMatchAnalysis } from "./src/lib/matchAnalysis";
 import {
   WEBSITE_GENERATION_FALLBACK_TIMEOUT_MS,
   WEBSITE_GENERATION_MAX_TOKENS,
@@ -108,7 +109,8 @@ const MODEL_IDS =
   process.env.MORNAI_USE_PAID_MODELS === "true"
     ? PAID_MODEL_IDS
     : FREE_MODEL_IDS;
-const FAST_FREE_TEXT_MODEL = "stealth/space-bunny-alpha";
+const FAST_FREE_TEXT_MODEL = "nvidia/nemotron-3.5-lightning:free";
+const FAST_TEXT_MODEL = process.env.MORNAI_USE_PAID_MODELS === "true" ? MODEL_IDS.gemma : FAST_FREE_TEXT_MODEL;
 type AiContent = string | Array<{ role?: string; parts?: Array<{ text?: string }> }>;
 type AiGenerateOptions = {
   model: string;
@@ -208,7 +210,8 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         if (
           options.config?.responseMimeType === "application/json" &&
           !options.config?.suppressJsonMode &&
-          !(MODEL_IDS === FREE_MODEL_IDS && model === FREE_MODEL_IDS.ultra)
+          !(MODEL_IDS === FREE_MODEL_IDS && model === FREE_MODEL_IDS.ultra) &&
+          model !== FAST_FREE_TEXT_MODEL
         ) {
           body.response_format = { type: "json_object" };
         }
@@ -225,10 +228,10 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
 
         const controller = new AbortController();
         const requestTimeoutMs = model === options.model
-          ? options.config?.requestTimeoutMs ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000)
+          ? options.config?.requestTimeoutMs ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 15_000)
           : options.config?.fallbackRequestTimeoutMs
             ?? options.config?.requestTimeoutMs
-            ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 55_000 : 28_000);
+            ?? ((options.config?.maxTokens ?? 0) > 4_000 ? 40_000 : 9_000);
         const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
 
         let response: Response;
@@ -277,12 +280,12 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         lastAiProviderFailure = {
           at: new Date().toISOString(),
           model,
-          message: (timedOut ? "Provider request timed out after " + Math.round((options.config?.requestTimeoutMs ?? 28_000) / 1000) + "s: " : "") + message,
+          message: (timedOut ? "Provider request timed out: " : "") + message,
         };
         lastError = error;
         // Don't retry the same long-running model with other API keys. Move to the
         // next configured model so one stalled free provider cannot consume the whole browser deadline.
-        if (timedOut && options.config?.stopOnTimeout) {
+        if (timedOut && options.config?.stopOnTimeout !== false) {
           break;
         }
       }
@@ -296,8 +299,10 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
 function resolveModel(requested: string) {
   if (requested === "mornai-ultra") return MODEL_IDS.ultra;
   if (requested === "mornai-super") return MODEL_IDS.super;
-  if (requested === "mornai-gemma") return MODEL_IDS.super;
-  if (requested === "gemini-3.8-flash") return MODEL_IDS.super;
+  // These legacy aliases were still routing common AI actions to the less
+  // available Super free endpoint. Prefer the current fast model instead.
+  if (requested === "mornai-gemma") return FAST_TEXT_MODEL;
+  if (requested === "gemini-3.8-flash") return FAST_TEXT_MODEL;
   return requested;
 }
 
@@ -307,6 +312,8 @@ function modelFallbacks(model: string, _needsJson = false) {
   const isFree = model.endsWith(":free");
   const ultra = isFree ? FREE_MODEL_IDS.ultra : PAID_MODEL_IDS.ultra;
   const superModel = isFree ? FREE_MODEL_IDS.super : PAID_MODEL_IDS.super;
+  // Keep fast text requests short: one current fast model, then one stronger backup.
+  if (model === FAST_FREE_TEXT_MODEL) return [model, FREE_MODEL_IDS.ultra];
   if (model === PAID_MODEL_IDS.ultra || model === FREE_MODEL_IDS.ultra) return [model, superModel];
   if (model === PAID_MODEL_IDS.super || model === FREE_MODEL_IDS.super) return [model, ultra];
   return [model, superModel, ultra];
@@ -693,7 +700,7 @@ Respond strictly in valid JSON without markdown wrapping or backticks. Format:
 }`;
 
     const response = await ai.models.generateContent({
-      model: MODEL_IDS.gemma,
+      model: FAST_TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -702,7 +709,10 @@ Respond strictly in valid JSON without markdown wrapping or backticks. Format:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Roadmap generation error:", err);
@@ -757,7 +767,7 @@ Return strictly JSON with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: MODEL_IDS.gemma,
+      model: FAST_TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -766,7 +776,10 @@ Return strictly JSON with:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Role generation error:", err);
@@ -850,7 +863,10 @@ Return strictly JSON formatted as:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Task delegation error:", err);
@@ -860,59 +876,70 @@ Return strictly JSON formatted as:
 
 // 5. Automated Founder-Employee Matching Engine
 app.post("/api/ai/match-analysis", async (req, res) => {
+  const { startup, candidate } = req.body || {};
+  const fallback = () => buildHeuristicMatchAnalysis(startup, candidate);
+
   try {
-    const { startup, candidate } = req.body;
     const ai = getAiClient();
+    if (!ai) return res.json(fallback());
 
-    if (!ai) {
-      // Heuristic matching
-      const startupSkills = new Set((startup?.techStack || []).concat(["React", "Product", "TypeScript", "AI"]));
-      const candidateSkills = candidate?.skills || ["React", "TypeScript"];
-      const matches = candidateSkills.filter((s: string) => startupSkills.has(s));
-      const score = Math.min(98, Math.max(72, Math.round((matches.length / Math.max(1, candidateSkills.length)) * 40 + 55)));
+    const prompt = `Perform a concise founder-contributor compatibility analysis using only the supplied details.
+Startup: "${startup?.name || "Startup"}" (${startup?.industry || "industry not specified"}, ${startup?.stage || "stage not specified"})
+Startup technology: ${(Array.isArray(startup?.techStack) ? startup.techStack : []).join(", ") || "not specified"}
+Open role requirements: ${JSON.stringify((Array.isArray(startup?.openRoles) ? startup.openRoles : []).slice(0, 6).map((role: any) => ({ title: role?.title, skills: role?.skills, description: role?.description })))}
+Candidate: ${candidate?.name || "Candidate"} (${candidate?.title || candidate?.role || "contributor"})
+Candidate skills: ${(Array.isArray(candidate?.skills) ? candidate.skills : []).join(", ") || "not specified"}
+Candidate bio: ${String(candidate?.bio || "").slice(0, 900)}
 
-      return res.json({
-        matchScore: score,
-        strengths: [
-          `Strong alignment in core stack: ${matches.join(", ") || "Engineering capabilities"}`,
-          `Complementary stage experience for ${startup?.stage || "Early stage"} startups`,
-          `High availability for active milestone sprints`
-        ],
-        synergyAnalysis: `${candidate?.name}'s technical background directly unblocks ${startup?.name}'s Phase 1 roadmap deliverable. Onboarding this contributor accelerates time-to-market by approximately 2.8 weeks.`,
-        suggestedNextSteps: "Schedule a 25-minute THE MORN AI appointment to align on sprint milestone deliverables and equity terms."
-      });
-    }
-
-    const prompt = `Perform an intelligent founder-employee compatibility analysis:
-Startup: "${startup?.name}" (${startup?.industry}, ${startup?.stage})
-Needs / Tech Stack: ${(startup?.techStack || []).join(", ")}
-Candidate: ${candidate?.name} (${candidate?.role})
-Candidate Skills: ${(candidate?.skills || []).join(", ")}
-Candidate Bio: ${candidate?.bio}
-
-Return strictly JSON with:
+Return only one valid JSON object, with no markdown:
 {
-  "matchScore": integer between 65 and 99,
-  "strengths": ["string", "string", "string"],
-  "synergyAnalysis": "2 sentences explaining the concrete impact on startup roadmap velocity",
-  "suggestedNextSteps": "Actionable appointment agenda item"
-}`;
+  "matchScore": integer from 0 to 100,
+  "strengths": ["specific strength", "specific strength", "specific strength"],
+  "synergyAnalysis": "Two concise sentences grounded in the supplied startup and candidate data.",
+  "suggestedNextSteps": "One practical next action."
+}
+Do not invent experience, outcomes, availability, or skills. Treat missing information as unknown.`;
 
     const response = await ai.models.generateContent({
-      model: MODEL_IDS.gemma,
+      model: FAST_TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        maxTokens: 450,
+        suppressJsonMode: true,
+        maxTokens: 350,
         temperature: 0.15,
+        requestTimeoutMs: 12_000,
+        fallbackRequestTimeoutMs: 8_000,
+        stopOnTimeout: true,
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
-    res.json(parsed);
-  } catch (err) {
-    console.error("Match analysis error:", err);
-    res.status(500).json({ error: "Failed to analyze match" });
+    const parsed = parseAiJson(response.text || "");
+    const parsedScore = Number(parsed?.matchScore);
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !Number.isFinite(parsedScore) ||
+      typeof parsed.synergyAnalysis !== "string"
+    ) {
+      throw new Error("The AI model did not return a valid match-analysis object");
+    }
+
+    const strengths = Array.isArray(parsed.strengths)
+      ? parsed.strengths.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
+      : [];
+
+    return res.json({
+      matchScore: Math.max(0, Math.min(100, Math.round(parsedScore))),
+      strengths,
+      synergyAnalysis: parsed.synergyAnalysis.trim(),
+      suggestedNextSteps: typeof parsed.suggestedNextSteps === "string" && parsed.suggestedNextSteps.trim()
+        ? parsed.suggestedNextSteps.trim()
+        : "Discuss the first deliverable, availability, and partnership terms.",
+    });
+  } catch (error) {
+    console.error("Match analysis error; returning a skills-based fallback:", error);
+    return res.status(200).json(fallback());
   }
 });
 
@@ -968,7 +995,10 @@ Return strictly JSON:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Predictive insights error:", err);
@@ -1009,7 +1039,10 @@ Return JSON:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Mentor suggestion error:", err);
@@ -1029,7 +1062,7 @@ app.post("/api/ai/daily-briefing", async (req, res) => {
     };
     if (!ai) return res.json(fallback);
     const prompt = "You are MornAI daily operating assistant. Return JSON only with headline, summary, and exactly 3 actions. Do not invent facts.\nUser: " + JSON.stringify(currentUser || {}) + "\nStartups: " + JSON.stringify((startups || []).slice(0, 10)) + "\nAppointments: " + JSON.stringify((appointments || []).slice(0, 10)) + "\nConnections: " + JSON.stringify((connections || []).slice(0, 10));
-    const response = await ai.models.generateContent({ model: MODEL_IDS.gemma, contents: prompt, config: { responseMimeType: "application/json" } });
+    const response = await ai.models.generateContent({ model: FAST_TEXT_MODEL, contents: prompt, config: { responseMimeType: "application/json" } });
     const parsed = parseAiJson(response.text) || {};
     const safeActions = Array.isArray(parsed.actions)
       ? parsed.actions
