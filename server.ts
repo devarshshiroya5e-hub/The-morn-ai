@@ -125,6 +125,7 @@ type AiGenerateOptions = {
     stopOnTimeout?: boolean;
     suppressJsonMode?: boolean;
     skipGeminiFallback?: boolean;
+    maxKeyAttempts?: number;
   };
 };
 let geminiClient: GoogleGenAI | null = null;
@@ -195,7 +196,9 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
     : modelFallbacks(options.model, options.config?.responseMimeType === "application/json");
 
   for (const model of modelsToTry) {
-    const keys = keysForModel(model);
+    // Latency-sensitive endpoints can limit attempts to one credential per model.
+    // This avoids cycling through every configured key before returning a useful fallback.
+    const keys = keysForModel(model).slice(0, options.config?.maxKeyAttempts ?? Number.POSITIVE_INFINITY);
     if (!keys.length) continue;
 
     for (const key of keys) {
@@ -593,8 +596,16 @@ Rules:
       model: chatModel,
       contents: contents as any,
       config: {
-        maxTokens: 700,
+        // Keep chat responsive on free-model congestion: one attempt per model,
+        // with a bounded backup request. The route's catch returns a transparent
+        // degraded reply rather than waiting on an unbounded Gemini fallback.
+        maxTokens: 500,
         temperature: 0.12,
+        requestTimeoutMs: 10_000,
+        fallbackRequestTimeoutMs: 6_000,
+        maxKeyAttempts: 1,
+        stopOnTimeout: true,
+        skipGeminiFallback: true,
       },
     });
 
