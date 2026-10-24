@@ -280,7 +280,7 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
         lastAiProviderFailure = {
           at: new Date().toISOString(),
           model,
-          message: (timedOut ? "Provider request timed out after " + Math.round((options.config?.requestTimeoutMs ?? 28_000) / 1000) + "s: " : "") + message,
+          message: (timedOut ? "Provider request timed out: " : "") + message,
         };
         lastError = error;
         // Don't retry the same long-running model with other API keys. Move to the
