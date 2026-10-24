@@ -709,7 +709,10 @@ Respond strictly in valid JSON without markdown wrapping or backticks. Format:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Roadmap generation error:", err);
@@ -773,7 +776,10 @@ Return strictly JSON with:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Role generation error:", err);
@@ -857,7 +863,10 @@ Return strictly JSON formatted as:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Task delegation error:", err);
@@ -986,7 +995,10 @@ Return strictly JSON:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Predictive insights error:", err);
@@ -1027,7 +1039,10 @@ Return JSON:
       },
     });
 
-    const parsed = JSON.parse(response.text || "{}");
+    const parsed = parseAiJson(response.text || "");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("AI provider returned invalid structured JSON");
+    }
     res.json(parsed);
   } catch (err) {
     console.error("Mentor suggestion error:", err);
