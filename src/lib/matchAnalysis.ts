@@ -39,9 +39,11 @@ export function buildHeuristicMatchAnalysis(
     [...toStrings(startup.techStack), ...roleSkills]
       .map((skill) => skill.toLocaleLowerCase()),
   );
-  const candidateSkills = Array.from(new Map(
-    toStrings(candidate.skills).map((skill) => [skill.toLocaleLowerCase(), skill]),
-  ).values());
+  const candidateSkillsByKey = new Map<string, string>();
+  for (const skill of toStrings(candidate.skills)) {
+    candidateSkillsByKey.set(skill.toLocaleLowerCase(), skill);
+  }
+  const candidateSkills = Array.from(candidateSkillsByKey.values());
   const matchedSkills = candidateSkills.filter((skill) =>
     requiredSkills.has(skill.toLocaleLowerCase()),
   );
