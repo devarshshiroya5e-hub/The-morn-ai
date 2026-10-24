@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Startup, User, RolePost, Appointment, MatchingAnalysis } from '../types';
 import { formatAnyCurrency, useLocalizedCurrency } from '../lib/currency';
+import { postMornAI } from '../lib/mornaiAi';
 import {
   ArrowLeft, ArrowRight, Calendar, CheckCircle2, Clock3, BrainCircuit,
   ShieldCheck, Send, Sparkles, Video, MapPin, BriefcaseBusiness, Users,
@@ -84,23 +85,27 @@ export const AppointmentBookingPage: React.FC<AppointmentBookingPageProps> = ({
 
   useEffect(() => {
     if (!startup || isInterestRequest) return;
+    let cancelled = false;
+
     const analyzeMatch = async () => {
       setIsLoadingMatch(true);
       try {
-        const res = await fetch('/api/ai/match-analysis', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startup, candidate: currentUser }),
+        const data = await postMornAI<MatchingAnalysis>('match-analysis', {
+          startup,
+          candidate: currentUser,
         });
-        const data = await res.json();
-        setMatchAnalysis(data);
+        if (!cancelled) setMatchAnalysis(data);
       } catch (err) {
-        console.error('Match analysis error:', err);
+        if (!cancelled) console.error('Match analysis error:', err);
       } finally {
-        setIsLoadingMatch(false);
+        if (!cancelled) setIsLoadingMatch(false);
       }
     };
-    analyzeMatch();
+
+    void analyzeMatch();
+    return () => {
+      cancelled = true;
+    };
   }, [startup, currentUser, isInterestRequest]);
 
   const openRoles = useMemo(
