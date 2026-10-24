@@ -82,8 +82,16 @@ export const appCheck = typeof window !== 'undefined' && recaptchaSiteKey
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// MornAI has seen repeated Firestore WebChannel failures on networks/browsers
+// that struggle to keep streaming requests alive. Force WebChannel long polling
+// so Firestore closes each response after delivering available data. This trades
+// a small amount of transport efficiency for more reliable listeners on affected
+// networks. Force mode and auto-detection must not be enabled together.
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
+  experimentalAutoDetectLongPolling: false,
+  experimentalForceLongPolling: true,
 });
 export const storage = getStorage(app);
 export const analytics = typeof window === 'undefined'
