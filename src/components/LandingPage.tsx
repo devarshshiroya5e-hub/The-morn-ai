@@ -24,7 +24,7 @@ const steps = [
 const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <motion.div layout className="mornai-glass-card overflow-hidden rounded-2xl shadow-sm transition-shadow hover:shadow-md">
+    <motion.div className="mornai-glass-card overflow-hidden rounded-2xl shadow-sm transition-shadow hover:shadow-md">
       <button onClick={() => setIsOpen(!isOpen)} className="flex w-full items-center justify-between p-5 text-left">
         <span className="font-bold text-slate-900">{question}</span>
         {isOpen ? <ChevronUp className="h-5 w-5 text-indigo-600" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
@@ -68,8 +68,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
     <div className="min-h-screen overflow-x-hidden bg-[#f8fafc] font-['Plus_Jakarta_Sans'] text-slate-900">
       <div className="mornai-ambient pointer-events-none fixed inset-0 -z-0" aria-hidden="true"><span className="mornai-orb mornai-orb-one" /><span className="mornai-orb mornai-orb-two" /><span className="mornai-orb mornai-orb-three" /></div>
 
-      <header className="fixed left-0 right-0 top-4 z-50 px-4">
-        <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-auto flex max-w-6xl items-center justify-between mornai-glass-nav rounded-full px-5 py-3 sm:px-6">
+      <header className="relative z-50 px-4 pt-4">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between mornai-glass-nav rounded-full px-5 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <BrandLogo className="grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-white/80" />
             <div>
@@ -83,11 +83,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
             <a href="#faq" className="transition-colors hover:text-slate-900">FAQ</a>
           </div>
           <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: .98 }} onClick={() => onOpenAuth('login')} className="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700">Log in</motion.button>
-        </motion.nav>
+        </nav>
       </header>
 
       <main className="relative z-10">
-        <section className="px-5 pb-20 pt-36 text-center sm:px-8 sm:pt-44">
+        <section className="px-5 pb-20 pt-20 text-center sm:px-8 sm:pt-24">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .24 }} className="mx-auto max-w-5xl">
             <span className="mornai-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-indigo-700"><UsersRound className="h-4 w-4" /> Meet the people your startup actually needs</span>
             <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04, duration: .28 }} className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-[-.04em] text-slate-950 sm:text-6xl md:text-7xl">

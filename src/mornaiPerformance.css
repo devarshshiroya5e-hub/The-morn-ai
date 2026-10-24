@@ -1,0 +1,61 @@
+/* MornAI smoothness pass: keep the glass look while avoiding avoidable scroll work. */
+
+/* The page transition only animates opacity. Do not promote every whole page to a permanent GPU layer. */
+.mornai-page-transition {
+  will-change: auto;
+  transform: none;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+
+/* These ambient decorations are fixed and static; smaller blur radii reduce repaint cost while scrolling. */
+.mornai-home-page::before,
+.mornai-marketplace-page::before {
+  filter: blur(32px) !important;
+}
+
+.mornai-orb {
+  filter: blur(24px) !important;
+}
+
+/* The chat area is a flex column with a dedicated messages scroller, so its composer does not need sticky positioning. */
+.mornai-chat-composer {
+  position: relative !important;
+  inset-block-end: auto !important;
+}
+
+/* Allow native scroll behaviour instead of blocking scroll chaining on the main page surfaces. */
+.mornai-main,
+.mornai-public-scroll,
+.mornai-auth-scroll {
+  overscroll-behavior-y: auto;
+  scroll-behavior: auto;
+}
+
+/* Large overlays are rare; use lighter frost so opening a studio or memory dialog does not trigger an excessive blur pass. */
+.mornai-website-overlay {
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.mornai-website-studio {
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+}
+
+.mornai-memory-log-overlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mornai-memory-log-modal {
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mornai-page-transition {
+    will-change: auto;
+    transform: none;
+  }
+}
