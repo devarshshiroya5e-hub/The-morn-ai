@@ -917,7 +917,7 @@ Do not invent experience, outcomes, availability, or skills. Treat missing infor
     }
 
     const strengths = Array.isArray(parsed.strengths)
-      ? parsed.strengths.filter((item: unknown): item is string => typeof item === "string" && item.trim()).slice(0, 5)
+      ? parsed.strengths.filter((item: unknown): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
       : [];
 
     return res.json({
