@@ -1,4 +1,5 @@
 import { WEBSITE_GENERATION_CLIENT_TIMEOUT_MS } from "./websiteGenerationPolicy";
+import { buildHeuristicMatchAnalysis } from "./matchAnalysis";
 import { getMornAIApiBases, isGeneratedWebsitePayload, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "./mornaiAiRouting";
 
 export type MornAIEndpoint =
@@ -46,7 +47,7 @@ const requestJson = async (url: string, body: unknown, timeoutMs = 30_000) => {
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,6 +58,11 @@ const requestJson = async (url: string, body: unknown, timeoutMs = 30_000) => {
       credentials: "omit",
       signal: controller.signal,
     });
+
+    // Keep the deadline active while reading the response body, not just until
+    // the server sends headers. Broken/slow connections must not hang indefinitely.
+    const raw = await response.text();
+    return { response, raw };
   } finally {
     window.clearTimeout(timeout);
   }
@@ -64,7 +70,7 @@ const requestJson = async (url: string, body: unknown, timeoutMs = 30_000) => {
 
 function generateLocalFallback<T = any>(endpoint: MornAIEndpoint, body: any): T {
   const safeBody = (body && typeof body === 'object') ? body : {};
-  const { currentUser, startup, startups, connections, message, userPrompt, prompt, source, userRole } = safeBody;
+  const { currentUser, startup, startups, connections, message, userPrompt, prompt, source, userRole, candidate } = safeBody;
   const isFounder = userRole === 'founder' || currentUser?.role === 'founder';
   const startupName = startup?.name || (Array.isArray(startups) && startups[0]?.name) || 'your startup';
 
@@ -122,12 +128,7 @@ function generateLocalFallback<T = any>(endpoint: MornAIEndpoint, body: any): T 
       } as unknown as T;
 
     case 'match-analysis':
-      return {
-        score: 91,
-        summary: 'Exceptional alignment across technical stack, domain trajectory, and collaboration expectations.',
-        strengths: ['Complementary skill coverage', 'Demonstrated domain expertise', 'High responsiveness for collaboration'],
-        recommendations: ['Schedule initial sync to align on milestone expectations', 'Review shared technical architecture'],
-      } as unknown as T;
+      return buildHeuristicMatchAnalysis(startup, candidate) as T;
 
     case 'writing-assist':
       return {
@@ -208,12 +209,11 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
     // Website source generation has a bounded provider request; leave time for Render and JSON validation.
     const timeoutMs = endpoint === "website-generate"
       ? WEBSITE_GENERATION_CLIENT_TIMEOUT_MS
-      : base === RENDER_MORNAI_API ? 45_000 : 25_000;
+      : base === RENDER_MORNAI_API ? 35_000 : 20_000;
 
     try {
-      const response = await requestJson(url, body, timeoutMs);
+      const { response, raw } = await requestJson(url, body, timeoutMs);
       const contentType = response.headers.get("content-type") || "";
-      const raw = await response.text();
 
       if (!response.ok) {
         let message = "MornAI AI server returned HTTP " + response.status;
