@@ -1,4 +1,5 @@
 import { WEBSITE_GENERATION_CLIENT_TIMEOUT_MS } from "./websiteGenerationPolicy";
+import { auth } from "./firebase";
 import { buildHeuristicMatchAnalysis } from "./matchAnalysis";
 import { getMornAIApiBases, isGeneratedWebsitePayload, looksLikeHtmlResponse, requiresLiveMornAIResponse } from "./mornaiAiRouting";
 
@@ -47,12 +48,19 @@ const requestJson = async (url: string, body: unknown, timeoutMs = 30_000) => {
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    // Wait until Firebase has restored the persisted session before deciding
+    // whether this request can carry an authenticated bearer token.
+    await auth.authStateReady();
+    const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (idToken) headers.Authorization = `Bearer ${idToken}`;
+
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
       mode: "cors",
       credentials: "omit",
@@ -216,6 +224,9 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
       const contentType = response.headers.get("content-type") || "";
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("Sign in to use MornAI AI features. If you are already signed in, refresh the page and try again.");
+        }
         let message = "MornAI AI server returned HTTP " + response.status;
         if (contentType.includes("application/json")) {
           try {
@@ -259,6 +270,9 @@ export async function postMornAI<T = any>(endpoint: MornAIEndpoint, body: unknow
         lastError = new Error("MornAI AI server returned malformed JSON.");
       }
     } catch (error) {
+      if (error instanceof Error && error.message.startsWith("Sign in to use MornAI AI features.")) {
+        throw error;
+      }
       const aborted = error instanceof Error && error.name === "AbortError";
       lastError = aborted
         ? new Error(endpoint === "website-generate"
