@@ -25,6 +25,11 @@ export default defineConfig(() => ({
           if (/\/node_modules\/(react|react-dom|scheduler|use-sync-external-store)\//.test(id)) {
             return 'vendor-react';
           }
+          // The storage SDK is used only inside the lazy startup-registration
+          // flow. Keep it separate so normal landing-page visits do not fetch it.
+          if (id.includes('/node_modules/firebase/storage/') || id.includes('/node_modules/@firebase/storage/')) {
+            return 'vendor-firebase-storage';
+          }
           if (id.includes('/node_modules/firebase/') || id.includes('/node_modules/@firebase/')) {
             return 'vendor-firebase';
           }

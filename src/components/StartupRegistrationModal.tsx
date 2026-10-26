@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { postMornAI } from '../lib/mornaiAi';
+import { getMornaiStorage } from '../lib/firebase';
 import { PartnershipMode, RolePartnership, Startup, User } from '../types';
 import { convertLocalToUsd, convertUsd, formatAnyCurrency, getCurrencyOptions, useLocalizedCurrency } from '../lib/currency';
-import { storage } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
 import { useBodyScrollLock } from '../lib/useBodyScrollLock';
 
@@ -292,15 +291,23 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     let startupCover = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
 
     try {
-      if (logoFile) {
-        const logoRef = ref(storage, `startups/${startupId}/logo-${Date.now()}-${logoFile.name.replace(/[^a-zA-Z0-9._-]/g, '')}`);
-        await uploadBytes(logoRef, logoFile, { contentType: logoFile.type });
-        startupLogo = await getDownloadURL(logoRef);
-      }
-      if (coverFile) {
-        const coverRef = ref(storage, `startups/${startupId}/cover-${Date.now()}-${coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '')}`);
-        await uploadBytes(coverRef, coverFile, { contentType: coverFile.type });
-        startupCover = await getDownloadURL(coverRef);
+      if (logoFile || coverFile) {
+        const [storage, storageSdk] = await Promise.all([
+          getMornaiStorage(),
+          import('firebase/storage'),
+        ]);
+        const { ref, uploadBytes, getDownloadURL } = storageSdk;
+
+        if (logoFile) {
+          const logoRef = ref(storage, `startups/${startupId}/logo-${Date.now()}-${logoFile.name.replace(/[^a-zA-Z0-9._-]/g, '')}`);
+          await uploadBytes(logoRef, logoFile, { contentType: logoFile.type });
+          startupLogo = await getDownloadURL(logoRef);
+        }
+        if (coverFile) {
+          const coverRef = ref(storage, `startups/${startupId}/cover-${Date.now()}-${coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '')}`);
+          await uploadBytes(coverRef, coverFile, { contentType: coverFile.type });
+          startupCover = await getDownloadURL(coverRef);
+        }
       }
     } catch (uploadError) {
       console.error('Startup image upload failed:', uploadError);

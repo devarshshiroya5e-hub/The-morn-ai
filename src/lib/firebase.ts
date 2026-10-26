@@ -1,7 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
@@ -93,7 +92,12 @@ export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: false,
   experimentalForceLongPolling: true,
 });
-export const storage = getStorage(app);
+// Load Firebase Storage only when a user actually uploads a file. The public
+// landing page and normal sign-in flow should not download the upload SDK.
+export const getMornaiStorage = async () => {
+  const { getStorage } = await import('firebase/storage');
+  return getStorage(app);
+};
 export const analytics = typeof window === 'undefined'
   ? null
   : isSupported().then((supported) => supported ? getAnalytics(app) : null);
