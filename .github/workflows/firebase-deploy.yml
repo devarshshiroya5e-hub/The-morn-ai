@@ -11,6 +11,7 @@ on:
       - "storage.rules"
       - "firestore.indexes.json"
       - "package.json"
+      - "package-lock.json"
       - "vite.config.ts"
       - "scripts/render-build.cjs"
       - "public/**"
