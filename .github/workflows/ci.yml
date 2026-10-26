@@ -22,10 +22,19 @@ jobs:
           set +e
           npm audit --json > "$RUNNER_TEMP/mornai-npm-audit.json"
           audit_status=$?
-          node --input-type=commonjs - "$RUNNER_TEMP/mornai-npm-audit.json" <<'NODE'
+          set -e
+          node --input-type=commonjs - "$RUNNER_TEMP/mornai-npm-audit.json" "$audit_status" <<'NODE'
           const fs = require("node:fs");
-          const report = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-          console.log("npm audit severity counts:", JSON.stringify(report.metadata?.vulnerabilities ?? {}));
+          let report;
+          try {
+            report = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          } catch (error) {
+            console.error("npm audit did not return valid JSON:", error.message);
+            process.exit(1);
+          }
+
+          const counts = report.metadata?.vulnerabilities ?? {};
+          console.log("npm audit severity counts:", JSON.stringify(counts));
           for (const [name, advisory] of Object.entries(report.vulnerabilities ?? {})) {
             console.log([
               advisory.severity.toUpperCase(),
@@ -35,8 +44,20 @@ jobs:
               `fix=${JSON.stringify(advisory.fixAvailable ?? null)}`,
             ].join(" | "));
           }
+
+          if (report.error) {
+            console.error("npm audit request failed:", report.error.summary || report.error.code || report.error);
+            process.exit(1);
+          }
+          if ((counts.high ?? 0) > 0 || (counts.critical ?? 0) > 0) {
+            console.error("CI blocked: high or critical dependency vulnerabilities remain.");
+            process.exit(1);
+          }
+          if (process.argv[3] !== "0" && (counts.total ?? 0) === 0) {
+            console.error("npm audit exited unsuccessfully without reporting vulnerability details; check the registry/network logs.");
+            process.exit(1);
+          }
           NODE
-          exit 0
       - run: npm test
       - run: npm run lint
       - run: npm run build
