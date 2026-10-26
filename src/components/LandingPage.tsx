@@ -219,7 +219,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
       <footer className="border-t border-white/70 bg-white/55 px-5 py-8 text-xs text-slate-500 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">
           <div><b className="text-slate-800">MORN<span className="text-indigo-600">AI</span></b><span className="ml-2">Human startup network + AI operating layer</span></div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a href="/for-startup-founders/" className="font-semibold text-slate-500 transition-colors hover:text-indigo-600">For startup founders</a>
+            <a href="/for-skilled-contributors/" className="font-semibold text-slate-500 transition-colors hover:text-indigo-600">For skilled contributors</a>
+            <a href="/guides/build-your-startup-team/" className="font-semibold text-slate-500 transition-colors hover:text-indigo-600">Startup team guide</a>
+            <a href="/guides/video-editors-startup-work/" className="font-semibold text-slate-500 transition-colors hover:text-indigo-600">Video editor guide</a>
             <button onClick={onOpenPrivacy} className="font-semibold text-slate-500 hover:text-indigo-600">Privacy Policy</button>
             <button onClick={() => onOpenAuth('login')} className="font-semibold text-slate-500 hover:text-indigo-600">Log in</button>
           </div>
