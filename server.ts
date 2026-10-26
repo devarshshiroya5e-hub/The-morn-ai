@@ -1,4 +1,5 @@
 import express from "express";
+import { createHash } from "node:crypto";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
@@ -31,23 +32,49 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "64kb" }));
 
 app.use((req, res, next) => {
+  // Defense-in-depth headers for API responses. Firebase Hosting applies the
+  // same baseline headers to static pages via firebase.json.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()");
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store");
+  }
+
   const origin = req.headers.origin;
-  const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || "*")
+  const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
-    .filter(Boolean);
+    .filter((value) => value && value !== "*");
 
-  const allowOrigin =
-    configuredOrigins.includes("*")
-      ? "*"
-      : origin && configuredOrigins.includes(origin)
-        ? origin
-        : null;
+  // A wildcard CORS setting is deliberately ignored. Configure explicit
+  // production origins in Render; local origins are allowed only in development.
+  const allowedOrigins = new Set([
+    "https://themorn-ai.web.app",
+    "https://themorn-ai.firebaseapp.com",
+    ...configuredOrigins,
+  ]);
+  const appUrl = String(process.env.MORNAI_APP_URL || "").trim();
+  if (appUrl) {
+    try {
+      allowedOrigins.add(new URL(appUrl).origin);
+    } catch {
+      // Ignore invalid optional configuration rather than allowing all origins.
+    }
+  }
+  if (process.env.NODE_ENV !== "production") {
+    allowedOrigins.add("http://localhost:3000");
+    allowedOrigins.add("http://localhost:5173");
+    allowedOrigins.add("http://127.0.0.1:3000");
+    allowedOrigins.add("http://127.0.0.1:5173");
+  }
 
-  if (allowOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "600");
     res.setHeader("Vary", "Origin");
   }
 
@@ -60,8 +87,12 @@ app.use((req, res, next) => {
 });
 
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
-const createRateLimiter = (limit: number, windowMs: number) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const key = `${req.ip}:${req.path}`;
+const createRateLimiter = (
+  limit: number,
+  windowMs: number,
+  keyFactory: (req: express.Request, res: express.Response) => string = (req) => `${req.ip}:${req.path}`,
+) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const key = keyFactory(req, res);
   const now = Date.now();
   const existing = rateBuckets.get(key);
 
@@ -89,6 +120,127 @@ const createRateLimiter = (limit: number, windowMs: number) => (req: express.Req
 };
 
 app.use("/api/ai", createRateLimiter(40, 60_000));
+
+//
+// Protect AI routes against direct API abuse. CORS is only a browser policy and is
+// not authentication: callers outside a browser can still invoke the API. Firebase
+// Auth validates each bearer token; successful results are cached briefly to reduce
+// latency and avoid repeated lookups during a single interaction.
+const CONFIGURED_FIREBASE_WEB_API_KEY = String(
+  process.env.FIREBASE_WEB_API_KEY || process.env.VITE_FIREBASE_API_KEY || "",
+).trim();
+let discoveredFirebaseWebApiKey: string | null = null;
+let firebaseWebApiKeyDiscovery: Promise<string> | null = null;
+
+async function getFirebaseWebApiKey(): Promise<string> {
+  if (CONFIGURED_FIREBASE_WEB_API_KEY) return CONFIGURED_FIREBASE_WEB_API_KEY;
+  if (discoveredFirebaseWebApiKey) return discoveredFirebaseWebApiKey;
+
+  if (!firebaseWebApiKeyDiscovery) {
+    firebaseWebApiKeyDiscovery = (async () => {
+      // Firebase Web API keys are public application configuration, not server
+      // secrets. Reuse the project's Hosting init endpoint so a duplicated Render
+      // environment variable is optional rather than a hidden deployment blocker.
+      const response = await fetch("https://themorn-ai.firebaseapp.com/__/firebase/init.json", {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) {
+        throw new Error(`Firebase public configuration lookup failed (HTTP ${response.status}).`);
+      }
+      const config: any = await response.json().catch(() => null);
+      if (typeof config?.apiKey !== "string" || !config.apiKey.trim()) {
+        throw new Error("Firebase public configuration did not include an API key.");
+      }
+      discoveredFirebaseWebApiKey = config.apiKey.trim();
+      return discoveredFirebaseWebApiKey;
+    })().finally(() => {
+      firebaseWebApiKeyDiscovery = null;
+    });
+  }
+
+  return firebaseWebApiKeyDiscovery;
+}
+
+const firebaseAuthCache = new Map<string, { uid: string; expiresAt: number }>();
+const FIREBASE_AUTH_CACHE_MS = 2 * 60 * 1000;
+
+async function resolveFirebaseUid(idToken: string): Promise<string | null> {
+  if (!idToken || idToken.length > 8192) return null;
+
+  const firebaseWebApiKey = await getFirebaseWebApiKey();
+  const cacheKey = createHash("sha256").update(idToken).digest("hex");
+  const now = Date.now();
+  const cached = firebaseAuthCache.get(cacheKey);
+  if (cached && now < cached.expiresAt) return cached.uid;
+  if (cached) firebaseAuthCache.delete(cacheKey);
+
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseWebApiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(5000),
+    },
+  );
+  const payload: any = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const code = String(payload?.error?.message || "");
+    if (/INVALID_ID_TOKEN|TOKEN_EXPIRED|USER_NOT_FOUND|INVALID_ARGUMENT/i.test(code)) {
+      return null;
+    }
+    throw new Error(`Firebase Auth token verification failed (HTTP ${response.status}).`);
+  }
+
+  const user = Array.isArray(payload?.users) ? payload.users[0] : null;
+  if (!user || typeof user.localId !== "string" || user.disabled === true) return null;
+
+  firebaseAuthCache.set(cacheKey, { uid: user.localId, expiresAt: now + FIREBASE_AUTH_CACHE_MS });
+  if (firebaseAuthCache.size > 5000) {
+    for (const [key, entry] of firebaseAuthCache) {
+      if (now >= entry.expiresAt) firebaseAuthCache.delete(key);
+    }
+  }
+  return user.localId;
+}
+
+const requireFirebaseAuth: express.RequestHandler = async (req, res, next) => {
+  const match = /^Bearer\s+(.+)$/i.exec(String(req.headers.authorization || ""));
+  if (!match) {
+    res.status(401).json({ error: "Sign in to use MornAI AI features." });
+    return;
+  }
+
+  try {
+    const uid = await resolveFirebaseUid(match[1].trim());
+    if (!uid) {
+      res.status(401).json({ error: "Your sign-in session is invalid or expired. Please sign in again." });
+      return;
+    }
+    res.locals.authenticatedUser = { uid };
+    next();
+  } catch (error) {
+    console.error("Firebase bearer-token verification unavailable:", error instanceof Error ? error.message : "unknown error");
+    res.status(503).json({ error: "Authentication verification is temporarily unavailable. Please retry shortly." });
+  }
+};
+
+app.use("/api/ai", requireFirebaseAuth);
+
+// AI website generation can consume much more compute and tokens than normal
+// chat calls. Limit each authenticated account to two generations per four
+// minutes, independently of IP, while preserving the general IP rate limit above.
+// This in-memory guard is per server instance; use a shared store for multi-instance
+// distributed enforcement in a future scale-out.
+app.use(
+  "/api/ai/website-generate",
+  createRateLimiter(2, 4 * 60_000, (_req, res) => {
+    const uid = res.locals.authenticatedUser?.uid;
+    return `${typeof uid === "string" ? uid : "unverified"}:website-generate`;
+  }),
+);
 
 // Unified MornAI AI provider: OpenRouter first, Gemini fallback.
 const PAID_MODEL_IDS = {
