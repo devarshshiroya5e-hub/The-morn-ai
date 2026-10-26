@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { postMornAI } from '../lib/mornaiAi';
+import { getMornaiStorage } from '../lib/firebase';
 import { PartnershipMode, RolePartnership, Startup, User } from '../types';
 import { convertLocalToUsd, convertUsd, formatAnyCurrency, getCurrencyOptions, useLocalizedCurrency } from '../lib/currency';
 import { X, Sparkles, BrainCircuit, Rocket, PlusCircle, Check, UploadCloud, ImagePlus } from 'lucide-react';
