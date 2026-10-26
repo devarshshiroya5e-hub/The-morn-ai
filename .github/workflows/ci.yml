@@ -16,6 +16,27 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - name: Report dependency vulnerabilities
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > "$RUNNER_TEMP/mornai-npm-audit.json"
+          audit_status=$?
+          node --input-type=commonjs - "$RUNNER_TEMP/mornai-npm-audit.json" <<'NODE'
+          const fs = require("node:fs");
+          const report = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          console.log("npm audit severity counts:", JSON.stringify(report.metadata?.vulnerabilities ?? {}));
+          for (const [name, advisory] of Object.entries(report.vulnerabilities ?? {})) {
+            console.log([
+              advisory.severity.toUpperCase(),
+              name,
+              `direct=${advisory.isDirect}`,
+              `range=${advisory.range}`,
+              `fix=${JSON.stringify(advisory.fixAvailable ?? null)}`,
+            ].join(" | "));
+          }
+          NODE
+          exit 0
       - run: npm test
       - run: npm run lint
       - run: npm run build
