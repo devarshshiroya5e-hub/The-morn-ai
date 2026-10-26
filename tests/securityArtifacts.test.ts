@@ -8,6 +8,8 @@ const server = fs.readFileSync(path.join(root, "server.ts"), "utf8");
 const firestoreRules = fs.readFileSync(path.join(root, "firestore.rules"), "utf8");
 const storageRules = fs.readFileSync(path.join(root, "storage.rules"), "utf8");
 const aiClient = fs.readFileSync(path.join(root, "src", "lib", "mornaiAi.ts"), "utf8");
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const packageLock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
 
 test("AI API requires a Firebase bearer token and sends it from the client", () => {
   assert.match(server, /app\.use\("\/api\/ai",\s*requireFirebaseAuth\)/);
@@ -21,6 +23,14 @@ test("AI API requires a Firebase bearer token and sends it from the client", () 
 test("website code generation is rate-limited per signed-in account", () => {
   assert.match(server, /createRateLimiter\(2,\s*4 \* 60_000/);
   assert.match(server, /res\.locals\.authenticatedUser\?\.uid/);
+});
+
+test("Firebase Firestore uses the patched gRPC dependency in a single lockfile location", () => {
+  assert.equal(packageJson.overrides?.["@firebase/firestore"]?.["@grpc/grpc-js"], "1.14.6");
+  const grpcVersions = Object.entries(packageLock.packages ?? {})
+    .filter(([packagePath]) => packagePath.endsWith("node_modules/@grpc/grpc-js"))
+    .map(([, metadata]) => metadata.version);
+  assert.deepEqual(grpcVersions, ["1.14.6"]);
 });
 
 test("Firestore keeps collaboration participant lists immutable on updates", () => {
