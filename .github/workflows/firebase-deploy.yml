@@ -16,6 +16,7 @@ on:
       - "scripts/render-build.cjs"
       - "public/**"
       - ".github/workflows/firebase-deploy.yml"
+      - ".github/workflows/post-deploy-smoke.yml"
   workflow_dispatch:
 
 jobs:
