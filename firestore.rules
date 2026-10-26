@@ -59,6 +59,7 @@ service cloud.firestore {
         && request.resource.data.toUserId != request.auth.uid
         && request.resource.data.participants is list
         && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.hasAll([request.resource.data.fromUserId, request.resource.data.toUserId])
         && request.resource.data.participants.size() == 2
         && request.resource.data.status == 'pending';
       allow update: if signedIn()
@@ -67,6 +68,7 @@ service cloud.firestore {
           || isParticipant(resource.data))
         && request.resource.data.fromUserId == resource.data.fromUserId
         && request.resource.data.toUserId == resource.data.toUserId
+        && request.resource.data.participants == resource.data.participants
         && (
           (request.auth.uid == resource.data.toUserId && request.resource.data.status in ['accepted', 'declined'])
           || (request.auth.uid == resource.data.fromUserId && request.resource.data.status == 'cancelled')
@@ -79,14 +81,28 @@ service cloud.firestore {
         && (resource.data.participantAId == request.auth.uid
           || resource.data.participantBId == request.auth.uid
           || isParticipant(resource.data));
-      allow create, update: if signedIn()
+      allow create: if signedIn()
         && request.resource.data.roomId == roomId
         && request.resource.data.participants is list
         && request.resource.data.participants.size() == 2
-        && request.auth.uid in request.resource.data.participants
         && request.resource.data.participantAId is string
         && request.resource.data.participantBId is string
-        && request.resource.data.participantAId != request.resource.data.participantBId;
+        && request.resource.data.participantAId != request.resource.data.participantBId
+        && request.resource.data.participants.hasAll([
+          request.resource.data.participantAId,
+          request.resource.data.participantBId
+        ])
+        && request.auth.uid in request.resource.data.participants;
+      // Participants and identity fields must be immutable after room creation;
+      // otherwise one participant could add an outsider to a private room.
+      allow update: if signedIn()
+        && (resource.data.participantAId == request.auth.uid
+          || resource.data.participantBId == request.auth.uid
+          || isParticipant(resource.data))
+        && request.resource.data.roomId == roomId
+        && request.resource.data.participantAId == resource.data.participantAId
+        && request.resource.data.participantBId == resource.data.participantBId
+        && request.resource.data.participants == resource.data.participants;
       allow delete: if false;
     }
 
@@ -155,7 +171,8 @@ service cloud.firestore {
           || resource.data.talentId == request.auth.uid
           || isParticipant(resource.data))
         && request.resource.data.founderId == resource.data.founderId
-        && request.resource.data.talentId == resource.data.talentId;
+        && request.resource.data.talentId == resource.data.talentId
+        && request.resource.data.participants == resource.data.participants;
       allow delete: if false;
     }
 
@@ -181,7 +198,9 @@ service cloud.firestore {
     match /startups/{startupId} {
       allow read: if isMember(startupId);
       allow create: if signedIn() && request.resource.data.founderId == request.auth.uid;
-      allow update, delete: if isFounder(startupId);
+      allow update: if isFounder(startupId)
+        && request.resource.data.founderId == resource.data.founderId;
+      allow delete: if isFounder(startupId);
 
       match /members/{memberId} {
         allow read: if isMember(startupId);
@@ -217,7 +236,12 @@ service cloud.firestore {
         && request.resource.data.participants is list
         && request.auth.uid in request.resource.data.participants
         && request.resource.data.callerId == request.auth.uid;
-      allow update: if signedIn() && request.auth.uid in resource.data.participants;
+      // A participant may update call state, but cannot add another account to
+      // the call or rewrite who initiated it after the initial invitation.
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.callerId == resource.data.callerId;
       allow delete: if signedIn() && request.auth.uid in resource.data.participants;
 
       match /sessions/{sessionId} {
