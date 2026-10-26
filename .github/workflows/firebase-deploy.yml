@@ -8,6 +8,7 @@ on:
       - "index.html"
       - "firebase.json"
       - "firestore.rules"
+      - "storage.rules"
       - "firestore.indexes.json"
       - "package.json"
       - "vite.config.ts"
@@ -40,6 +41,6 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Hosting and Firestore
+      - name: Deploy Hosting, Firestore, and Storage rules
         run: |
-          npx firebase-tools@latest deploy --project themorn-ai --only hosting,firestore:rules,firestore:indexes --non-interactive
+          npx firebase-tools@latest deploy --project themorn-ai --only hosting,firestore:rules,firestore:indexes,storage --non-interactive
