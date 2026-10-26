@@ -12,7 +12,7 @@ const aiClient = fs.readFileSync(path.join(root, "src", "lib", "mornaiAi.ts"), "
 test("AI API requires a Firebase bearer token and sends it from the client", () => {
   assert.match(server, /app\.use\("\/api\/ai",\s*requireFirebaseAuth\)/);
   assert.match(server, /identitytoolkit\.googleapis\.com\/v1\/accounts:lookup/);
-  assert.match(server, /Authorization: Bearer/);
+  assert.match(server, /req\.headers\.authorization/);
   assert.match(aiClient, /Authorization\s*=\s*`Bearer \$\{idToken\}`/);
 });
 
