@@ -30,7 +30,7 @@ test("Firestore keeps collaboration participant lists immutable on updates", () 
   assert.match(firestoreRules, /request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['status'\]\)/);
   assert.match(firestoreRules, /request\.resource\.data\.createdBy == request\.auth\.uid/);
   assert.match(firestoreRules, /request\.resource\.data\.senderId == request\.auth\.uid/);
-  assert.match(firestoreRules, /resource\.roomType != 'startup'[\s\S]*?isMember\(resource\.data\.startupId\)/);
+  assert.match(firestoreRules, /resource\\.data\\.roomType != 'startup'[\\s\\S]*?isMember\\(resource\\.data\\.startupId\\)/);
   assert.match(firestoreRules, /request\.resource\.data\.createdBy == request\.auth\.uid[\s\S]*?startupExists\(request\.resource\.data\.startupId\)/);
 });
 
