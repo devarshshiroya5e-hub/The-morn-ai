@@ -41,6 +41,26 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Hosting, Firestore, and Storage rules
+      - name: Deploy Hosting and Firestore
         run: |
-          npx firebase-tools@latest deploy --project themorn-ai --only hosting,firestore:rules,firestore:indexes,storage --non-interactive
+          npx firebase-tools@latest deploy --project themorn-ai --only hosting,firestore:rules,firestore:indexes --non-interactive
+
+      - name: Deploy Storage rules when the project API is enabled
+        shell: bash
+        run: |
+          set +e
+          output="$(npx firebase-tools@latest deploy --project themorn-ai --only storage --non-interactive 2>&1)"
+          result=$?
+          printf '%s\n' "$output"
+
+          if [ "$result" -eq 0 ]; then
+            echo "Firebase Storage rules deployed."
+            exit 0
+          fi
+
+          if printf '%s' "$output" | grep -Fqi "Permissions denied enabling firebasestorage.googleapis.com"; then
+            echo "::warning::Hosting and Firestore were deployed, but Storage rules were skipped because the Firebase Storage API is not enabled and this deploy identity cannot enable it. A project owner must enable the API in Google Cloud Console, then rerun this workflow."
+            exit 0
+          fi
+
+          exit "$result"
