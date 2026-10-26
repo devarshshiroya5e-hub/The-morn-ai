@@ -29,7 +29,7 @@ test("Firebase Firestore uses the patched gRPC dependency in a single lockfile l
   assert.equal(packageJson.overrides?.["@firebase/firestore"]?.["@grpc/grpc-js"], "1.14.6");
   const grpcVersions = Object.entries(packageLock.packages ?? {})
     .filter(([packagePath]) => packagePath.endsWith("node_modules/@grpc/grpc-js"))
-    .map(([, metadata]) => metadata.version);
+    .map(([, metadata]) => (metadata as { version?: string }).version);
   assert.deepEqual(grpcVersions, ["1.14.6"]);
 });
 
