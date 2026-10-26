@@ -1,28 +1,31 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, limit, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Navbar } from './components/Navbar';
-import { StartupDetailModal } from './components/StartupDetailModal';
-import { FounderWorkspace } from './components/FounderWorkspace';
-import { TalentWorkspace } from './components/TalentWorkspace';
-import { AppointmentBookingPage } from './components/AppointmentBookingPage';
-import { AiCoFounderDrawer } from './components/AiCoFounderDrawer';
 import { AuthModal } from './components/AuthModal';
 import { LegalModal } from './components/LegalModal';
-import { StartupRegistrationModal } from './components/StartupRegistrationModal';
-import { ProfilePage } from './components/ProfilePage';
-import { ChatPage } from './components/ChatPage';
-import { VideoCallPage } from './components/VideoCallPage';
 import { IncomingCallOverlay, IncomingCallInfo } from './components/IncomingCallOverlay';
 import { LandingPage } from './components/LandingPage';
-import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
-import { HomeDashboard } from './components/HomeDashboard';
-import { MarketplacePage } from './components/MarketplacePage';
-import { NotificationCenter } from './components/NotificationCenter';
-import { PricingModal } from './components/PricingModal';
 import { buildMornaiNotifications, MornaiPreferences, nextDailyState, normalizePreferences } from './components/mornaiSignals';
+
+// Keep the public landing page eager, and load heavier signed-in views only when
+// the user opens them. This reduces the JavaScript required by the first visit.
+const StartupDetailModal = lazy(() => import('./components/StartupDetailModal').then((m) => ({ default: m.StartupDetailModal })));
+const FounderWorkspace = lazy(() => import('./components/FounderWorkspace').then((m) => ({ default: m.FounderWorkspace })));
+const TalentWorkspace = lazy(() => import('./components/TalentWorkspace').then((m) => ({ default: m.TalentWorkspace })));
+const AppointmentBookingPage = lazy(() => import('./components/AppointmentBookingPage').then((m) => ({ default: m.AppointmentBookingPage })));
+const AiCoFounderDrawer = lazy(() => import('./components/AiCoFounderDrawer').then((m) => ({ default: m.AiCoFounderDrawer })));
+const StartupRegistrationModal = lazy(() => import('./components/StartupRegistrationModal').then((m) => ({ default: m.StartupRegistrationModal })));
+const ProfilePage = lazy(() => import('./components/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const ChatPage = lazy(() => import('./components/ChatPage').then((m) => ({ default: m.ChatPage })));
+const VideoCallPage = lazy(() => import('./components/VideoCallPage').then((m) => ({ default: m.VideoCallPage })));
+const PrivacyPolicyPage = lazy(() => import('./components/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const HomeDashboard = lazy(() => import('./components/HomeDashboard').then((m) => ({ default: m.HomeDashboard })));
+const MarketplacePage = lazy(() => import('./components/MarketplacePage').then((m) => ({ default: m.MarketplacePage })));
+const NotificationCenter = lazy(() => import('./components/NotificationCenter').then((m) => ({ default: m.NotificationCenter })));
+const PricingModal = lazy(() => import('./components/PricingModal').then((m) => ({ default: m.PricingModal })));
 
 import { 
   initialStartups, 
@@ -1267,9 +1270,11 @@ export default function App() {
   if (activeView === 'privacy') {
     return (
       <div className="mornai-public-scroll">
-        <PrivacyPolicyPage
-          onBack={() => setActiveView(isLoggedIn ? 'home' : 'home')}
-        />
+        <Suspense fallback={<div className="p-10 text-center text-sm text-slate-500">Loading privacy policy…</div>}>
+          <PrivacyPolicyPage
+            onBack={() => setActiveView(isLoggedIn ? 'home' : 'home')}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -1337,7 +1342,8 @@ export default function App() {
           transition={{ duration: 0.1, ease: 'easeOut' }}
           className={`mornai-page-transition relative ${fillMainView ? 'flex min-h-0 flex-1 flex-col' : ''}`}
         >
-
+        <Suspense fallback={<div className="mx-auto max-w-3xl p-10 text-center text-sm text-slate-500" role="status">Loading your MornAI workspace…</div>}>
+        <>
         {/* AI Co-Founder & Strategist Slide-out Drawer */}
         {isAiDrawerOpen && (
           <AiCoFounderDrawer
@@ -1526,12 +1532,14 @@ export default function App() {
             }}
           />
         )}
-
+        </>
+        </Suspense>
         </motion.div>
       </main>
 
       {/* MODALS */}
 
+      <Suspense fallback={null}>
       {/* Startup Details Modal */}
       <StartupDetailModal
         startup={selectedStartupForDetail}
@@ -1586,6 +1594,7 @@ export default function App() {
         currentUser={currentUser}
         onClose={() => setIsPricingOpen(false)}
       />
+      </Suspense>
 
       <IncomingCallOverlay
         call={incomingCall}
