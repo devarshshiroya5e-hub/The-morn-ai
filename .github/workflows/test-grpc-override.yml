@@ -1,0 +1,56 @@
+name: Test Firestore gRPC override
+
+on:
+  push:
+    branches: [security/test-firestore-grpc-override]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Resolve dependencies with scoped override
+        run: npm install --ignore-scripts
+      - name: Inspect gRPC dependency tree
+        shell: bash
+        run: |
+          npm ls @grpc/grpc-js || true
+          node -e 'const fs=require("fs");const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));for(const [p,v] of Object.entries(l.packages||{})){if(p.endsWith("node_modules/@grpc/grpc-js"))console.log(p, v.version)}'
+      - name: Report npm audit
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > "$RUNNER_TEMP/audit.json"
+          node - "$RUNNER_TEMP/audit.json" <<'NODE'
+          const fs=require("fs");
+          const report=JSON.parse(fs.readFileSync(process.argv[2],"utf8"));
+          console.log("AUDIT_COUNTS",JSON.stringify(report.metadata?.vulnerabilities??{}));
+          for(const [name,v] of Object.entries(report.vulnerabilities??{})){
+            console.log("AUDIT",v.severity.toUpperCase(),name,"fix="+JSON.stringify(v.fixAvailable??null));
+          }
+          NODE
+          exit 0
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+      - name: Save the resolved lockfile to this test branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Package lock did not change."
+            exit 0
+          fi
+          git commit -m "Resolve patched gRPC for Firestore audit experiment"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
