@@ -126,18 +126,49 @@ app.use("/api/ai", createRateLimiter(40, 60_000));
 // not authentication: callers outside a browser can still invoke the API. Firebase
 // Auth validates each bearer token; successful results are cached briefly to reduce
 // latency and avoid repeated lookups during a single interaction.
-const FIREBASE_WEB_API_KEY = String(
+const CONFIGURED_FIREBASE_WEB_API_KEY = String(
   process.env.FIREBASE_WEB_API_KEY || process.env.VITE_FIREBASE_API_KEY || "",
 ).trim();
+let discoveredFirebaseWebApiKey: string | null = null;
+let firebaseWebApiKeyDiscovery: Promise<string> | null = null;
+
+async function getFirebaseWebApiKey(): Promise<string> {
+  if (CONFIGURED_FIREBASE_WEB_API_KEY) return CONFIGURED_FIREBASE_WEB_API_KEY;
+  if (discoveredFirebaseWebApiKey) return discoveredFirebaseWebApiKey;
+
+  if (!firebaseWebApiKeyDiscovery) {
+    firebaseWebApiKeyDiscovery = (async () => {
+      // Firebase Web API keys are public application configuration, not server
+      // secrets. Reuse the project's Hosting init endpoint so a duplicated Render
+      // environment variable is optional rather than a hidden deployment blocker.
+      const response = await fetch("https://themorn-ai.firebaseapp.com/__/firebase/init.json", {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) {
+        throw new Error(`Firebase public configuration lookup failed (HTTP ${response.status}).`);
+      }
+      const config: any = await response.json().catch(() => null);
+      if (typeof config?.apiKey !== "string" || !config.apiKey.trim()) {
+        throw new Error("Firebase public configuration did not include an API key.");
+      }
+      discoveredFirebaseWebApiKey = config.apiKey.trim();
+      return discoveredFirebaseWebApiKey;
+    })().finally(() => {
+      firebaseWebApiKeyDiscovery = null;
+    });
+  }
+
+  return firebaseWebApiKeyDiscovery;
+}
+
 const firebaseAuthCache = new Map<string, { uid: string; expiresAt: number }>();
 const FIREBASE_AUTH_CACHE_MS = 2 * 60 * 1000;
 
 async function resolveFirebaseUid(idToken: string): Promise<string | null> {
-  if (!FIREBASE_WEB_API_KEY) {
-    throw new Error("Firebase server-side token verification is not configured.");
-  }
   if (!idToken || idToken.length > 8192) return null;
 
+  const firebaseWebApiKey = await getFirebaseWebApiKey();
   const cacheKey = createHash("sha256").update(idToken).digest("hex");
   const now = Date.now();
   const cached = firebaseAuthCache.get(cacheKey);
@@ -145,7 +176,7 @@ async function resolveFirebaseUid(idToken: string): Promise<string | null> {
   if (cached) firebaseAuthCache.delete(cacheKey);
 
   const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(FIREBASE_WEB_API_KEY)}`,
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseWebApiKey)}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -176,11 +207,6 @@ async function resolveFirebaseUid(idToken: string): Promise<string | null> {
 }
 
 const requireFirebaseAuth: express.RequestHandler = async (req, res, next) => {
-  if (!FIREBASE_WEB_API_KEY) {
-    res.status(503).json({ error: "AI authentication is not configured on the server." });
-    return;
-  }
-
   const match = /^Bearer\s+(.+)$/i.exec(String(req.headers.authorization || ""));
   if (!match) {
     res.status(401).json({ error: "Sign in to use MornAI AI features." });
