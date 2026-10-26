@@ -40,5 +40,8 @@ test("each sitemap URL resolves to a static page with a matching canonical URL",
 });
 
 test("robots.txt advertises the sitemap at the same site origin", () => {
-  assert.match(robots, new RegExp(`Sitemap:\\s*${siteOrigin.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}/sitemap\\.xml\\s*`, "i"));
+  assert.ok(
+    robots.split(/\r?\n/).some((line) => line.trim() === `Sitemap: ${siteOrigin}/sitemap.xml`),
+    "robots.txt must advertise the sitemap.xml URL",
+  );
 });
