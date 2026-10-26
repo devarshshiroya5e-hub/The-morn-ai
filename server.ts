@@ -1,4 +1,5 @@
 import express from "express";
+import { createHash } from "node:crypto";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
@@ -115,6 +116,88 @@ const createRateLimiter = (limit: number, windowMs: number) => (req: express.Req
 };
 
 app.use("/api/ai", createRateLimiter(40, 60_000));
+
+//
+// Protect AI routes against direct API abuse. CORS is only a browser policy and is
+// not authentication: callers outside a browser can still invoke the API. Firebase
+// Auth validates each bearer token; successful results are cached briefly to reduce
+// latency and avoid repeated lookups during a single interaction.
+const FIREBASE_WEB_API_KEY = String(
+  process.env.FIREBASE_WEB_API_KEY || process.env.VITE_FIREBASE_API_KEY || "",
+).trim();
+const firebaseAuthCache = new Map<string, { uid: string; expiresAt: number }>();
+const FIREBASE_AUTH_CACHE_MS = 2 * 60 * 1000;
+
+async function resolveFirebaseUid(idToken: string): Promise<string | null> {
+  if (!FIREBASE_WEB_API_KEY) {
+    throw new Error("Firebase server-side token verification is not configured.");
+  }
+  if (!idToken || idToken.length > 8192) return null;
+
+  const cacheKey = createHash("sha256").update(idToken).digest("hex");
+  const now = Date.now();
+  const cached = firebaseAuthCache.get(cacheKey);
+  if (cached && now < cached.expiresAt) return cached.uid;
+  if (cached) firebaseAuthCache.delete(cacheKey);
+
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(FIREBASE_WEB_API_KEY)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(5000),
+    },
+  );
+  const payload: any = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const code = String(payload?.error?.message || "");
+    if (/INVALID_ID_TOKEN|TOKEN_EXPIRED|USER_NOT_FOUND|INVALID_ARGUMENT/i.test(code)) {
+      return null;
+    }
+    throw new Error(`Firebase Auth token verification failed (HTTP ${response.status}).`);
+  }
+
+  const user = Array.isArray(payload?.users) ? payload.users[0] : null;
+  if (!user || typeof user.localId !== "string" || user.disabled === true) return null;
+
+  firebaseAuthCache.set(cacheKey, { uid: user.localId, expiresAt: now + FIREBASE_AUTH_CACHE_MS });
+  if (firebaseAuthCache.size > 5000) {
+    for (const [key, entry] of firebaseAuthCache) {
+      if (now >= entry.expiresAt) firebaseAuthCache.delete(key);
+    }
+  }
+  return user.localId;
+}
+
+const requireFirebaseAuth: express.RequestHandler = async (req, res, next) => {
+  if (!FIREBASE_WEB_API_KEY) {
+    res.status(503).json({ error: "AI authentication is not configured on the server." });
+    return;
+  }
+
+  const match = /^Bearer\s+(.+)$/i.exec(String(req.headers.authorization || ""));
+  if (!match) {
+    res.status(401).json({ error: "Sign in to use MornAI AI features." });
+    return;
+  }
+
+  try {
+    const uid = await resolveFirebaseUid(match[1].trim());
+    if (!uid) {
+      res.status(401).json({ error: "Your sign-in session is invalid or expired. Please sign in again." });
+      return;
+    }
+    res.locals.authenticatedUser = { uid };
+    next();
+  } catch (error) {
+    console.error("Firebase bearer-token verification unavailable:", error instanceof Error ? error.message : "unknown error");
+    res.status(503).json({ error: "Authentication verification is temporarily unavailable. Please retry shortly." });
+  }
+};
+
+app.use("/api/ai", requireFirebaseAuth);
 
 // Unified MornAI AI provider: OpenRouter first, Gemini fallback.
 const PAID_MODEL_IDS = {
