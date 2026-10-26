@@ -87,8 +87,12 @@ app.use((req, res, next) => {
 });
 
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
-const createRateLimiter = (limit: number, windowMs: number) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const key = `${req.ip}:${req.path}`;
+const createRateLimiter = (
+  limit: number,
+  windowMs: number,
+  keyFactory: (req: express.Request, res: express.Response) => string = (req) => `${req.ip}:${req.path}`,
+) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const key = keyFactory(req, res);
   const now = Date.now();
   const existing = rateBuckets.get(key);
 
@@ -198,6 +202,19 @@ const requireFirebaseAuth: express.RequestHandler = async (req, res, next) => {
 };
 
 app.use("/api/ai", requireFirebaseAuth);
+
+// AI website generation can consume much more compute and tokens than normal
+// chat calls. Limit each authenticated account to two generations per four
+// minutes, independently of IP, while preserving the general IP rate limit above.
+// This in-memory guard is per server instance; use a shared store for multi-instance
+// distributed enforcement in a future scale-out.
+app.use(
+  "/api/ai/website-generate",
+  createRateLimiter(2, 4 * 60_000, (_req, res) => {
+    const uid = res.locals.authenticatedUser?.uid;
+    return `${typeof uid === "string" ? uid : "unverified"}:website-generate`;
+  }),
+);
 
 // Unified MornAI AI provider: OpenRouter first, Gemini fallback.
 const PAID_MODEL_IDS = {
