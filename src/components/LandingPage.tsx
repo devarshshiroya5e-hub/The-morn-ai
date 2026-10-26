@@ -110,13 +110,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onOpenPriv
             <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:p-7">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="flex gap-2"><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/><span className="h-2.5 w-2.5 rounded-full bg-slate-300"/></div>
-                <span className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Live startup network</span>
+                <span className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Platform preview</span>
               </div>
               <div className="mt-6 grid gap-4 md:grid-cols-3">
                 {[
-                  { icon: BrainCircuit, label: 'AI Co-Founder', value: '12 active decisions' },
-                  { icon: Target, label: 'Roadmap', value: '8 milestones in motion' },
-                  { icon: UsersRound, label: 'Talent', value: '24 relevant people' },
+                  { icon: BrainCircuit, label: 'AI Co-Founder', value: 'Startup context & decisions' },
+                  { icon: Target, label: 'Roadmap', value: 'Milestones & next steps' },
+                  { icon: UsersRound, label: 'Talent', value: 'People & open roles' },
                 ].map((item, i) => { const Icon = item.icon; return <motion.div key={item.label} animate={{ y: [0, i % 2 ? -4 : 4, 0] }} transition={{ duration: 2.4 + i * .25, repeat: Infinity, ease: 'easeInOut' }} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Icon className="h-5 w-5"/></span><p className="mt-5 text-xs font-semibold text-slate-400">{item.label}</p><b className="mt-1 block text-base text-slate-900">{item.value}</b></motion.div>; })}
               </div>
             </div>
