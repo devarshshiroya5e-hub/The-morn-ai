@@ -13,8 +13,8 @@ export default defineConfig(() => ({
   build: {
     sourcemap: false,
     reportCompressedSize: false,
-    minify: false,
-    cssMinify: false,
+    minify: true,
+    cssMinify: true,
     target: 'es2020',
   },
   server: {
