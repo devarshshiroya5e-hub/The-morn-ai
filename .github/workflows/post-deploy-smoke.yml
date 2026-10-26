@@ -187,6 +187,10 @@ jobs:
                       with urllib.request.urlopen(req, timeout=25) as response:
                           return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read()
                   except urllib.error.HTTPError as exc:
+                      if exc.code >= 500 and attempt + 1 < attempts:
+                          last_error = exc
+                          time.sleep(delay)
+                          continue
                       return exc.code, {k.lower(): v for k, v in exc.headers.items()}, exc.read()
                   except (urllib.error.URLError, TimeoutError, OSError) as exc:
                       last_error = exc
