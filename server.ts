@@ -31,23 +31,49 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "64kb" }));
 
 app.use((req, res, next) => {
+  // Defense-in-depth headers for API responses. Firebase Hosting applies the
+  // same baseline headers to static pages via firebase.json.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()");
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store");
+  }
+
   const origin = req.headers.origin;
-  const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || "*")
+  const configuredOrigins = String(process.env.CORS_ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
-    .filter(Boolean);
+    .filter((value) => value && value !== "*");
 
-  const allowOrigin =
-    configuredOrigins.includes("*")
-      ? "*"
-      : origin && configuredOrigins.includes(origin)
-        ? origin
-        : null;
+  // A wildcard CORS setting is deliberately ignored. Configure explicit
+  // production origins in Render; local origins are allowed only in development.
+  const allowedOrigins = new Set([
+    "https://themorn-ai.web.app",
+    "https://themorn-ai.firebaseapp.com",
+    ...configuredOrigins,
+  ]);
+  const appUrl = String(process.env.MORNAI_APP_URL || "").trim();
+  if (appUrl) {
+    try {
+      allowedOrigins.add(new URL(appUrl).origin);
+    } catch {
+      // Ignore invalid optional configuration rather than allowing all origins.
+    }
+  }
+  if (process.env.NODE_ENV !== "production") {
+    allowedOrigins.add("http://localhost:3000");
+    allowedOrigins.add("http://localhost:5173");
+    allowedOrigins.add("http://127.0.0.1:3000");
+    allowedOrigins.add("http://127.0.0.1:5173");
+  }
 
-  if (allowOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "600");
     res.setHeader("Vary", "Origin");
   }
 
