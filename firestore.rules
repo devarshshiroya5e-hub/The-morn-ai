@@ -177,14 +177,38 @@ service cloud.firestore {
           || isParticipant(resource.data))
         && request.resource.data.founderId == resource.data.founderId
         && request.resource.data.talentId == resource.data.talentId
-        && request.resource.data.participants == resource.data.participants;
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['confirmed', 'pending', 'completed', 'cancelled'];
       allow delete: if false;
     }
 
     match /startupInterestRequests/{requestId} {
-      allow create: if signedIn() && request.resource.data.talentId == request.auth.uid;
-      allow read: if signedIn() && (resource.data.talentId == request.auth.uid || resource.data.founderId == request.auth.uid);
-      allow update: if signedIn() && resource.data.founderId == request.auth.uid;
+      // These requests are created only by a contributor for a preview startup.
+      // Keep the document's identity tied to that signed-in contributor and the
+      // two people involved so requests cannot be forged for unrelated accounts.
+      allow create: if signedIn()
+        && request.resource.data.talentId == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.founderId is string
+        && request.resource.data.founderId != request.auth.uid
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.participants.hasAll([
+          request.resource.data.founderId,
+          request.resource.data.talentId
+        ])
+        && request.resource.data.requestType == 'preview_interest';
+      allow read: if signedIn()
+        && (resource.data.talentId == request.auth.uid || resource.data.founderId == request.auth.uid);
+      allow update: if signedIn()
+        && resource.data.founderId == request.auth.uid
+        && request.resource.data.founderId == resource.data.founderId
+        && request.resource.data.talentId == resource.data.talentId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.requestType == resource.data.requestType
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'updatedAtClient']);
       allow delete: if false;
     }
 
@@ -280,7 +304,12 @@ service cloud.firestore {
     }
 
     match /worldChat/messages/{messageId} {
-      allow read, create: if signedIn();
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000;
       allow update, delete: if false;
     }
 
