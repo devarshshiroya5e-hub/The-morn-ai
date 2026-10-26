@@ -1,0 +1,214 @@
+name: MornAI live deployment smoke tests
+
+on:
+  workflow_run:
+    workflows: ["Deploy MornAI Firebase"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firebase-hosting:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live sitemap, crawl pages, and security headers
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          import time
+          import urllib.error
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          from html.parser import HTMLParser
+
+          BASE = "https://themorn-ai.web.app"
+          EXPECTED_PATHS = {
+              "/",
+              "/for-startup-founders/",
+              "/for-skilled-contributors/",
+              "/guides/build-your-startup-team/",
+              "/guides/video-editors-startup-work/",
+          }
+
+          def get(url, attempts=6, delay=4):
+              last_error = None
+              for attempt in range(attempts):
+                  try:
+                      req = urllib.request.Request(
+                          url,
+                          headers={"User-Agent": "MornAI-Live-Smoke/1.0", "Cache-Control": "no-cache"},
+                      )
+                      with urllib.request.urlopen(req, timeout=20) as response:
+                          return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read()
+                  except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                      last_error = exc
+                      if attempt + 1 < attempts:
+                          time.sleep(delay)
+              raise RuntimeError(f"Unable to fetch {url} after {attempts} attempts: {last_error}")
+
+          class PageParser(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.title = []
+                  self.in_title = False
+                  self.description = ""
+                  self.canonical = ""
+                  self.h1_count = 0
+                  self.json_scripts = []
+                  self.in_json = False
+                  self.current_json = []
+
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  tag = tag.lower()
+                  if tag == "title":
+                      self.in_title = True
+                  elif tag == "meta" and attrs.get("name", "").lower() == "description":
+                      self.description = attrs.get("content", "").strip()
+                  elif tag == "link" and "canonical" in attrs.get("rel", "").lower().split():
+                      self.canonical = attrs.get("href", "").strip()
+                  elif tag == "h1":
+                      self.h1_count += 1
+                  elif tag == "script" and attrs.get("type", "").lower() == "application/ld+json":
+                      self.in_json = True
+                      self.current_json = []
+
+              def handle_endtag(self, tag):
+                  tag = tag.lower()
+                  if tag == "title":
+                      self.in_title = False
+                  elif tag == "script" and self.in_json:
+                      self.json_scripts.append("".join(self.current_json))
+                      self.in_json = False
+                      self.current_json = []
+
+              def handle_data(self, data):
+                  if self.in_title:
+                      self.title.append(data)
+                  if self.in_json:
+                      self.current_json.append(data)
+
+              @property
+              def title_text(self):
+                  return " ".join(" ".join(self.title).split())
+
+          status, root_headers, root_html = get(BASE + "/")
+          assert status == 200, f"homepage returned HTTP {status}"
+          for header, expected in {
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "DENY",
+              "referrer-policy": "strict-origin-when-cross-origin",
+              "cross-origin-opener-policy": "same-origin-allow-popups",
+          }.items():
+              actual = root_headers.get(header, "")
+              assert actual.lower() == expected.lower(), f"{header}: expected {expected!r}, got {actual!r}"
+          print("PASS homepage HTTP 200 and browser security headers")
+
+          status, index_headers, index_html = get(BASE + "/index.html")
+          assert status == 200, f"index.html returned HTTP {status}"
+          cache_control = index_headers.get("cache-control", "").lower()
+          assert "no-store" in cache_control, f"index.html cache policy is not no-store: {cache_control!r}"
+          print("PASS index.html uses no-store cache policy")
+
+          status, _, robots = get(BASE + "/robots.txt")
+          robots_text = robots.decode("utf-8", "replace")
+          assert status == 200, f"robots.txt returned HTTP {status}"
+          assert "User-agent: *" in robots_text
+          assert f"Sitemap: {BASE}/sitemap.xml" in robots_text
+          print("PASS robots.txt advertises the production sitemap")
+
+          status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml")
+          assert status == 200, f"sitemap.xml returned HTTP {status}"
+          assert "xml" in sitemap_headers.get("content-type", "").lower()
+          root = ET.fromstring(sitemap_body)
+          ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+          urls = [node.text.strip() for node in root.findall("sm:url/sm:loc", ns) if node.text]
+          assert len(urls) == len(set(urls)), "sitemap includes duplicate URLs"
+          paths = set()
+          for url in urls:
+              match = re.fullmatch(r"https://themorn-ai\.web\.app(/.*)", url)
+              assert match, f"unexpected sitemap host or protocol: {url}"
+              paths.add(match.group(1))
+          assert paths == EXPECTED_PATHS, f"sitemap paths differ: found {sorted(paths)}"
+          print(f"PASS sitemap.xml contains {len(urls)} unique production URLs")
+
+          for path in sorted(EXPECTED_PATHS):
+              url = BASE + path
+              status, headers, html = get(url)
+              assert status == 200, f"{url} returned HTTP {status}"
+              parser = PageParser()
+              parser.feed(html.decode("utf-8", "replace"))
+              assert parser.title_text, f"{url} is missing a title"
+              assert parser.description, f"{url} is missing a meta description"
+              expected_canonical = url if path != "/" else BASE + "/"
+              assert parser.canonical == expected_canonical, f"{url} canonical mismatch: {parser.canonical!r}"
+              if path != "/":
+                  assert parser.h1_count >= 1, f"{url} is missing an H1"
+              for block in parser.json_scripts:
+                  json.loads(block)
+              if path != "/":
+                  assert parser.json_scripts, f"{url} has no JSON-LD structured data"
+              print(f"PASS crawl page {url}")
+
+          print("Firebase Hosting smoke checks passed.")
+          PY
+
+  render-api:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Render API health, CORS, Firebase config, and auth guard
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import time
+          import urllib.error
+          import urllib.request
+
+          BASE = "https://the-morn-ai.onrender.com"
+          ORIGIN = "https://themorn-ai.web.app"
+
+          def request(path, method="GET", attempts=12, delay=10):
+              last_error = None
+              for attempt in range(attempts):
+                  req = urllib.request.Request(
+                      BASE + path,
+                      method=method,
+                      headers={"Origin": ORIGIN, "Accept": "application/json"},
+                  )
+                  try:
+                      with urllib.request.urlopen(req, timeout=25) as response:
+                          return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read()
+                  except urllib.error.HTTPError as exc:
+                      return exc.code, {k.lower(): v for k, v in exc.headers.items()}, exc.read()
+                  except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                      last_error = exc
+                      if attempt + 1 < attempts:
+                          time.sleep(delay)
+              raise RuntimeError(f"Render API did not respond after {attempts} attempts: {last_error}")
+
+          status, headers, body = request("/api/health")
+          assert status == 200, f"/api/health returned HTTP {status}: {body[:200]!r}"
+          assert headers.get("access-control-allow-origin") == ORIGIN, "API CORS did not allow the production frontend origin"
+          health = json.loads(body)
+          assert health.get("status") == "ok", f"unexpected health payload: {health!r}"
+          print("PASS Render /api/health and production CORS")
+
+          status, _, body = request("/api/firebase-config")
+          assert status == 200, f"/api/firebase-config returned HTTP {status}: {body[:200]!r}"
+          config = json.loads(body)
+          assert isinstance(config.get("apiKey"), str) and config["apiKey"]
+          assert config.get("projectId") == "themorn-ai", f"unexpected Firebase project id: {config.get('projectId')!r}"
+          print("PASS Render Firebase public config route")
+
+          status, _, body = request("/api/ai/status")
+          assert status == 401, f"unauthenticated /api/ai/status should be rejected with 401; got HTTP {status}: {body[:200]!r}"
+          print("PASS Render rejects unauthenticated AI API requests")
+          PY
