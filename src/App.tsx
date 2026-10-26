@@ -1540,60 +1540,67 @@ export default function App() {
       {/* MODALS */}
 
       <Suspense fallback={null}>
-      {/* Startup Details Modal */}
-      <StartupDetailModal
-        startup={selectedStartupForDetail}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        currentUser={currentUser}
-        onBookAppointment={handleOpenBookingModal}
-        onConsultAi={(startup) => {
-          if (startup.founderId !== currentUser.id) {
-            showToast('AI Co-Founder is only available for startups you own.');
-            return;
-          }
-          void selectOwnedStartup(startup.id).then(() => {
-            setIsDetailModalOpen(false);
-            setIsAiDrawerOpen(true);
-          });
-        }}
-      />
+      {/* Load modal chunks only when the user opens them. */}
+      {isDetailModalOpen && (
+        <StartupDetailModal
+          startup={selectedStartupForDetail}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          currentUser={currentUser}
+          onBookAppointment={handleOpenBookingModal}
+          onConsultAi={(startup) => {
+            if (startup.founderId !== currentUser.id) {
+              showToast('AI Co-Founder is only available for startups you own.');
+              return;
+            }
+            void selectOwnedStartup(startup.id).then(() => {
+              setIsDetailModalOpen(false);
+              setIsAiDrawerOpen(true);
+            });
+          }}
+        />
+      )}
 
-      {/* Register Ongoing Startup Modal */}
-      <StartupRegistrationModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
-        currentUser={currentUser}
-        onRegisterStartup={handleRegisterStartup}
-      />
+      {isRegisterModalOpen && (
+        <StartupRegistrationModal
+          isOpen={isRegisterModalOpen}
+          onClose={() => setIsRegisterModalOpen(false)}
+          currentUser={currentUser}
+          onRegisterStartup={handleRegisterStartup}
+        />
+      )}
 
-      <NotificationCenter
-        isOpen={isNotificationCenterOpen}
-        currentUser={currentUser}
-        startups={startups}
-        appointments={appointments}
-        connections={connections}
-        followedStartupIds={preferences.followedStartupIds || []}
-        readNotificationIds={preferences.readNotificationIds || []}
-        onClose={() => setIsNotificationCenterOpen(false)}
-        onMarkRead={markNotificationRead}
-        onMarkAllRead={markAllNotificationsRead}
-        onOpenNetwork={(tab) => {
-          setIsNotificationCenterOpen(false);
-          setActiveView('network');
-          window.sessionStorage.setItem('mornai-network-tab', tab || 'startups');
-        }}
-        onOpenWorkspace={() => {
-          setIsNotificationCenterOpen(false);
-          setActiveView('workspace');
-        }}
-      />
+      {isNotificationCenterOpen && (
+        <NotificationCenter
+          isOpen={isNotificationCenterOpen}
+          currentUser={currentUser}
+          startups={startups}
+          appointments={appointments}
+          connections={connections}
+          followedStartupIds={preferences.followedStartupIds || []}
+          readNotificationIds={preferences.readNotificationIds || []}
+          onClose={() => setIsNotificationCenterOpen(false)}
+          onMarkRead={markNotificationRead}
+          onMarkAllRead={markAllNotificationsRead}
+          onOpenNetwork={(tab) => {
+            setIsNotificationCenterOpen(false);
+            setActiveView('network');
+            window.sessionStorage.setItem('mornai-network-tab', tab || 'startups');
+          }}
+          onOpenWorkspace={() => {
+            setIsNotificationCenterOpen(false);
+            setActiveView('workspace');
+          }}
+        />
+      )}
 
-      <PricingModal
-        isOpen={isPricingOpen}
-        currentUser={currentUser}
-        onClose={() => setIsPricingOpen(false)}
-      />
+      {isPricingOpen && (
+        <PricingModal
+          isOpen={isPricingOpen}
+          currentUser={currentUser}
+          onClose={() => setIsPricingOpen(false)}
+        />
+      )}
       </Suspense>
 
       <IncomingCallOverlay
