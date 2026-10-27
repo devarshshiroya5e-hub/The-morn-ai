@@ -34,7 +34,7 @@ for (const file of ["sitemap.xml", "robots.txt"]) {
 const sitemapPath = "dist/sitemap.xml";
 const sitemap = fs.readFileSync(sitemapPath, "utf8");
 const sitemapNamespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
-const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\\/loc>/g)].map((match) => match[1]);
+const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 const expectedSitemapHost = "https://themorn-ai.web.app/";
 
 if (
