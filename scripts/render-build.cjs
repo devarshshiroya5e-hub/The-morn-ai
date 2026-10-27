@@ -22,7 +22,7 @@ function run(command, args) {
 
 run("vite", ["build"]);
 
-// Fail the build if public crawler files are missing from Firebase Hosting output.
+// Fail the build if crawler files are missing or the sitemap is malformed.
 for (const file of ["sitemap.xml", "robots.txt"]) {
   const outputPath = `dist/${file}`;
   if (!fs.existsSync(outputPath)) {
@@ -30,7 +30,26 @@ for (const file of ["sitemap.xml", "robots.txt"]) {
     process.exit(1);
   }
 }
-console.log("Verified sitemap.xml and robots.txt are present in dist/");
+
+const sitemapPath = "dist/sitemap.xml";
+const sitemap = fs.readFileSync(sitemapPath, "utf8");
+const sitemapNamespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
+const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\\/loc>/g)].map((match) => match[1]);
+const expectedSitemapHost = "https://themorn-ai.web.app/";
+
+if (
+  sitemap.charCodeAt(0) === 0xfeff ||
+  !sitemap.startsWith(`<urlset ${sitemapNamespace}>`) ||
+  !sitemap.trimEnd().endsWith("</urlset>") ||
+  !sitemap.includes("<url>") ||
+  !sitemap.includes("</url>") ||
+  sitemapLocations.length === 0 ||
+  sitemapLocations.some((url) => !url.startsWith(expectedSitemapHost))
+) {
+  console.error("Build verification failed: dist/sitemap.xml is not a valid MornAI sitemap. It must start with <urlset>, end with </urlset>, and contain absolute https://themorn-ai.web.app/ URLs.");
+  process.exit(1);
+}
+console.log(`Verified sitemap.xml (${sitemapLocations.length} URLs) and robots.txt are present in dist/`);
 run("esbuild", [
   "server.ts",
   "--bundle",
