@@ -33,23 +33,38 @@ for (const file of ["sitemap.xml", "robots.txt"]) {
 
 const sitemapPath = "dist/sitemap.xml";
 const sitemap = fs.readFileSync(sitemapPath, "utf8");
+const sitemapWithoutBom = sitemap.charCodeAt(0) === 0xfeff ? sitemap.slice(1) : sitemap;
+const sitemapBody = sitemapWithoutBom.replace(/^<\\?xml\\s+version=(["'])1\\.0\\1(?:\\s+encoding=(["'])UTF-8\\2)?\\s*\\?>\\s*/i, "");
 const sitemapNamespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
-const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+const sitemapLocations = [...sitemapBody.matchAll(/<loc>([^<]+)<\\/loc>/g)].map((match) => match[1]);
 const expectedSitemapHost = "https://themorn-ai.web.app/";
+const expectedSitemapUrls = [
+  "https://themorn-ai.web.app/",
+  "https://themorn-ai.web.app/for-startup-founders/",
+  "https://themorn-ai.web.app/for-skilled-contributors/",
+  "https://themorn-ai.web.app/guides/build-your-startup-team/",
+  "https://themorn-ai.web.app/guides/video-editors-startup-work/",
+];
+const normalizedSitemapUrls = [...sitemapLocations].sort();
+const expectedNormalizedSitemapUrls = [...expectedSitemapUrls].sort();
+const robots = fs.readFileSync("dist/robots.txt", "utf8");
+const robotsPointsToSitemap = /^Sitemap:\\s*https:\\/\\/themorn-ai\\.web\\.app\\/sitemap\\.xml\\s*$/im.test(robots);
 
 if (
-  sitemap.charCodeAt(0) === 0xfeff ||
-  !sitemap.startsWith(`<urlset ${sitemapNamespace}>`) ||
-  !sitemap.trimEnd().endsWith("</urlset>") ||
-  !sitemap.includes("<url>") ||
-  !sitemap.includes("</url>") ||
-  sitemapLocations.length === 0 ||
-  sitemapLocations.some((url) => !url.startsWith(expectedSitemapHost))
+  !sitemapBody.startsWith(`<urlset ${sitemapNamespace}>`) ||
+  !sitemapBody.trimEnd().endsWith("</urlset>") ||
+  !sitemapBody.includes("<url>") ||
+  !sitemapBody.includes("</url>") ||
+  sitemapLocations.length !== expectedSitemapUrls.length ||
+  new Set(sitemapLocations).size !== sitemapLocations.length ||
+  sitemapLocations.some((url) => !url.startsWith(expectedSitemapHost)) ||
+  normalizedSitemapUrls.some((url, index) => url !== expectedNormalizedSitemapUrls[index]) ||
+  !robotsPointsToSitemap
 ) {
-  console.error("Build verification failed: dist/sitemap.xml is not a valid MornAI sitemap. It must start with <urlset>, end with </urlset>, and contain absolute https://themorn-ai.web.app/ URLs.");
+  console.error("Build verification failed: sitemap.xml must be well-formed, contain exactly the five canonical MornAI SEO URLs, and robots.txt must advertise this sitemap.");
   process.exit(1);
 }
-console.log(`Verified sitemap.xml (${sitemapLocations.length} URLs) and robots.txt are present in dist/`);
+console.log(`Verified sitemap.xml (${sitemapLocations.length} expected URLs) and robots.txt are present in dist/`);
 run("esbuild", [
   "server.ts",
   "--bundle",
