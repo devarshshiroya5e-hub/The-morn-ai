@@ -1,0 +1,25 @@
+/* Stable interactive targets: hover feedback may change color and shadow, never geometry.
+   Moving a control under the pointer can repeatedly toggle :hover at its edges. */
+button:hover,
+button:focus-visible,
+button:active,
+a:hover,
+a:focus-visible,
+a:active,
+[role="button"]:hover,
+[role="button"]:focus-visible,
+[role="button"]:active,
+input[type="button"]:hover,
+input[type="button"]:focus-visible,
+input[type="button"]:active,
+input[type="submit"]:hover,
+input[type="submit"]:focus-visible,
+input[type="submit"]:active,
+input[type="reset"]:hover,
+input[type="reset"]:focus-visible,
+input[type="reset"]:active {
+  transform: none !important;
+  translate: none !important;
+  rotate: none !important;
+  scale: none !important;
+}
