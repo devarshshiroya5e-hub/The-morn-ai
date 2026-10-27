@@ -1,5 +1,5 @@
-/* Stable interactive targets: hover feedback may change color and shadow, never geometry.
-   Moving a control under the pointer can repeatedly toggle :hover at its edges. */
+/* Stable interactive targets: animate the visual surface, not the hit box.
+   Geometry-changing hover transforms made a pointer near the edge repeatedly toggle :hover. */
 button:hover,
 button:focus-visible,
 button:active,
@@ -22,4 +22,81 @@ input[type="reset"]:active {
   translate: none !important;
   rotate: none !important;
   scale: none !important;
+}
+
+/* Bring back fluid button motion using shadow and tone changes that cannot move the hit area. */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  transition-property: background, background-color, color, border-color, box-shadow, filter, opacity !important;
+  transition-duration: 180ms !important;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important;
+}
+
+button:hover,
+[role="button"]:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover {
+  filter: brightness(1.025) saturate(1.045) drop-shadow(0 4px 7px rgba(79, 70, 229, .10));
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input[type="button"]:focus-visible,
+input[type="submit"]:focus-visible,
+input[type="reset"]:focus-visible {
+  filter: brightness(1.015) saturate(1.02);
+}
+
+button:active,
+[role="button"]:active,
+input[type="button"]:active,
+input[type="submit"]:active,
+input[type="reset"]:active {
+  filter: brightness(.985) saturate(1.02) drop-shadow(0 1px 3px rgba(79, 70, 229, .08));
+}
+
+/* Text links keep a clean hover response without a shadow halo. */
+a {
+  transition-property: background, background-color, color, border-color, box-shadow, filter, opacity !important;
+  transition-duration: 180ms !important;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important;
+}
+a:hover,
+a:focus-visible {
+  filter: brightness(1.025) saturate(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    transition-duration: .01ms !important;
+  }
+  button:hover,
+  button:focus-visible,
+  button:active,
+  a:hover,
+  a:focus-visible,
+  a:active,
+  [role="button"]:hover,
+  [role="button"]:focus-visible,
+  [role="button"]:active,
+  input[type="button"]:hover,
+  input[type="button"]:focus-visible,
+  input[type="button"]:active,
+  input[type="submit"]:hover,
+  input[type="submit"]:focus-visible,
+  input[type="submit"]:active,
+  input[type="reset"]:hover,
+  input[type="reset"]:focus-visible,
+  input[type="reset"]:active {
+    filter: none !important;
+  }
 }
