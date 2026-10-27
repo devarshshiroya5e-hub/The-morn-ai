@@ -44,9 +44,10 @@ test("hover, focus, and active states keep interactive pointer targets stationar
   assert.match(stabilityCss, /scale:\s*none\s*!important/);
 });
 
-test("smooth hover feedback is restored with hit-box-stable shadow and filter transitions", () => {
-  assert.match(stabilityCss, /transition-property:[^;]*box-shadow[^;]*filter/i);
-  assert.match(stabilityCss, /button:hover[\s\S]*?drop-shadow\(/);
-  assert.match(stabilityCss, /button:active[\s\S]*?filter:\s*brightness\(/);
+test("button lift is animated through a moving drop shadow, not target geometry", () => {
+  assert.match(stabilityCss, /filter:\s*drop-shadow\(0 3px 5px rgba\(79, 70, 229, 0\)\) brightness\(1\) saturate\(1\)/);
+  assert.match(stabilityCss, /button:hover[\s\S]*?drop-shadow\(0 1px 11px rgba\(79, 70, 229, \.16\)\)/);
+  assert.match(stabilityCss, /button:active[\s\S]*?drop-shadow\(0 2px 3px/);
+  assert.match(stabilityCss, /\.mornai-ai-btn:hover[\s\S]*?drop-shadow\(0 1px 12px/);
   assert.match(stabilityCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 });
