@@ -65,4 +65,9 @@ jobs:
             exit 0
           fi
 
+          if printf '%s' "$output" | grep -Fqi "Permission 'firebasestorage.defaultBucket.get' denied"; then
+            echo "::warning::Hosting and Firestore were deployed successfully, but this deploy identity lacks permission to read the Firebase default Storage bucket. Storage rules were not deployed, and the post-deploy Hosting smoke tests should still run. Grant the deploy service account the required Firebase Storage bucket access, or verify Storage is configured for this project."
+            exit 0
+          fi
+
           exit "$result"
