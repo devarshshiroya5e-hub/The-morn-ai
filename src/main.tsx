@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import './mornaiMotionPolish.css';
 import './mornaiPerformance.css';
+import './mornaiButtonStability.css';
 
 
 class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
