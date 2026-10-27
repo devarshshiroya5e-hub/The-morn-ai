@@ -43,3 +43,10 @@ test("hover, focus, and active states keep interactive pointer targets stationar
   assert.match(stabilityCss, /rotate:\s*none\s*!important/);
   assert.match(stabilityCss, /scale:\s*none\s*!important/);
 });
+
+test("smooth hover feedback is restored with hit-box-stable shadow and filter transitions", () => {
+  assert.match(stabilityCss, /transition-property:[^;]*box-shadow[^;]*filter/i);
+  assert.match(stabilityCss, /button:hover[\s\S]*?drop-shadow\(/);
+  assert.match(stabilityCss, /button:active[\s\S]*?filter:\s*brightness\(/);
+  assert.match(stabilityCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+});
