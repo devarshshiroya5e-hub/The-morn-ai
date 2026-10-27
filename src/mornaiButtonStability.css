@@ -24,12 +24,13 @@ input[type="reset"]:active {
   scale: none !important;
 }
 
-/* Bring back fluid button motion using shadow and tone changes that cannot move the hit area. */
+/* A moving shadow simulates the original lift while the actual clickable box stays still. */
 button,
 [role="button"],
 input[type="button"],
 input[type="submit"],
 input[type="reset"] {
+  filter: drop-shadow(0 3px 5px rgba(79, 70, 229, 0)) brightness(1) saturate(1);
   transition-property: background, background-color, color, border-color, box-shadow, filter, opacity !important;
   transition-duration: 180ms !important;
   transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important;
@@ -40,7 +41,12 @@ button:hover,
 input[type="button"]:hover,
 input[type="submit"]:hover,
 input[type="reset"]:hover {
-  filter: brightness(1.025) saturate(1.045) drop-shadow(0 4px 7px rgba(79, 70, 229, .10));
+  filter: drop-shadow(0 1px 11px rgba(79, 70, 229, .16)) brightness(1.025) saturate(1.045);
+}
+
+/* Keep the signature purple AI button's stronger glow while moving the shadow, not its hit box. */
+.mornai-ai-btn:hover {
+  filter: drop-shadow(0 1px 12px rgba(124, 58, 237, .22)) brightness(1.025) saturate(1.06);
 }
 
 button:focus-visible,
@@ -48,7 +54,7 @@ button:focus-visible,
 input[type="button"]:focus-visible,
 input[type="submit"]:focus-visible,
 input[type="reset"]:focus-visible {
-  filter: brightness(1.015) saturate(1.02);
+  filter: drop-shadow(0 1px 8px rgba(79, 70, 229, .10)) brightness(1.015) saturate(1.02);
 }
 
 button:active,
@@ -56,7 +62,7 @@ button:active,
 input[type="button"]:active,
 input[type="submit"]:active,
 input[type="reset"]:active {
-  filter: brightness(.985) saturate(1.02) drop-shadow(0 1px 3px rgba(79, 70, 229, .08));
+  filter: drop-shadow(0 2px 3px rgba(79, 70, 229, .06)) brightness(.985) saturate(1.02);
 }
 
 /* Text links keep a clean hover response without a shadow halo. */
