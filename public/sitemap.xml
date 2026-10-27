@@ -3,9 +3,15 @@
     <loc>https://themorn-ai.web.app/</loc>
   </url>
   <url>
-    <loc>https://themorn-ai.web.app/founders/</loc>
+    <loc>https://themorn-ai.web.app/for-startup-founders/</loc>
   </url>
   <url>
-    <loc>https://themorn-ai.web.app/freelancers/</loc>
+    <loc>https://themorn-ai.web.app/for-skilled-contributors/</loc>
+  </url>
+  <url>
+    <loc>https://themorn-ai.web.app/guides/build-your-startup-team/</loc>
+  </url>
+  <url>
+    <loc>https://themorn-ai.web.app/guides/video-editors-startup-work/</loc>
   </url>
 </urlset>
