@@ -1,108 +1,193 @@
-/* Stable interactive targets: animate the visual surface, not the hit box.
-   Geometry-changing hover transforms made a pointer near the edge repeatedly toggle :hover. */
-button:hover,
-button:focus-visible,
-button:active,
-a:hover,
-a:focus-visible,
-a:active,
-[role="button"]:hover,
-[role="button"]:focus-visible,
-[role="button"]:active,
-input[type="button"]:hover,
-input[type="button"]:focus-visible,
-input[type="button"]:active,
-input[type="submit"]:hover,
-input[type="submit"]:focus-visible,
-input[type="submit"]:active,
-input[type="reset"]:hover,
-input[type="reset"]:focus-visible,
-input[type="reset"]:active {
-  transform: none !important;
-  translate: none !important;
-  rotate: none !important;
-  scale: none !important;
-}
-
-/* A moving shadow simulates the original lift while the actual clickable box stays still. */
+/* Stable hover hit targets with a real visual lift.
+   The small transparent guard stays in the original lower edge while the button moves up,
+   so :hover cannot repeatedly switch off when the pointer is close to the bottom border. */
 button,
 [role="button"],
+a[class*="btn"],
+a[class*="button"],
+a[class*="action"],
+a[class*="cta"],
+a[class*="primary"],
+a[class*="secondary"],
 input[type="button"],
 input[type="submit"],
 input[type="reset"] {
-  filter: drop-shadow(0 3px 5px rgba(79, 70, 229, 0)) brightness(1) saturate(1);
-  transition-property: background, background-color, color, border-color, box-shadow, filter, opacity !important;
+  position: relative;
+  transition-property: transform, background, background-color, color, border-color, box-shadow, filter, opacity !important;
   transition-duration: 180ms !important;
   transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important;
+  transform: translateY(0) !important;
 }
 
+/* A non-visible hover bridge remains at the unshifted lower edge. */
+button::after,
+[role="button"]::after,
+a[class*="btn"]::after,
+a[class*="button"]::after,
+a[class*="action"]::after,
+a[class*="cta"]::after,
+a[class*="primary"]::after,
+a[class*="secondary"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% - 3px);
+  height: 6px;
+  background: transparent;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: transform 180ms cubic-bezier(.22, 1, .36, 1);
+}
+
+/* The actual control now moves up by two pixels on hover/focus. */
 button:hover,
+button:focus-visible,
 [role="button"]:hover,
+[role="button"]:focus-visible,
+a[class*="btn"]:hover,
+a[class*="btn"]:focus-visible,
+a[class*="button"]:hover,
+a[class*="button"]:focus-visible,
+a[class*="action"]:hover,
+a[class*="action"]:focus-visible,
+a[class*="cta"]:hover,
+a[class*="cta"]:focus-visible,
+a[class*="primary"]:hover,
+a[class*="primary"]:focus-visible,
+a[class*="secondary"]:hover,
+a[class*="secondary"]:focus-visible,
 input[type="button"]:hover,
+input[type="button"]:focus-visible,
 input[type="submit"]:hover,
-input[type="reset"]:hover {
+input[type="submit"]:focus-visible,
+input[type="reset"]:hover,
+input[type="reset"]:focus-visible {
+  transform: translateY(-2px) !important;
   filter: drop-shadow(0 1px 11px rgba(79, 70, 229, .16)) brightness(1.025) saturate(1.045);
 }
 
-/* Keep the signature purple AI button's stronger glow while moving the shadow, not its hit box. */
+/* Counter-move only the invisible guard; it stays where the original lower edge was. */
+button:hover::after,
+button:focus-visible::after,
+[role="button"]:hover::after,
+[role="button"]:focus-visible::after,
+a[class*="btn"]:hover::after,
+a[class*="btn"]:focus-visible::after,
+a[class*="button"]:hover::after,
+a[class*="button"]:focus-visible::after,
+a[class*="action"]:hover::after,
+a[class*="action"]:focus-visible::after,
+a[class*="cta"]:hover::after,
+a[class*="cta"]:focus-visible::after,
+a[class*="primary"]:hover::after,
+a[class*="primary"]:focus-visible::after,
+a[class*="secondary"]:hover::after,
+a[class*="secondary"]:focus-visible::after {
+  transform: translateY(2px);
+}
+
+/* Preserve the stronger signature glow on MornAI's AI button. */
 .mornai-ai-btn:hover {
   filter: drop-shadow(0 1px 12px rgba(124, 58, 237, .22)) brightness(1.025) saturate(1.06);
 }
 
-button:focus-visible,
-[role="button"]:focus-visible,
-input[type="button"]:focus-visible,
-input[type="submit"]:focus-visible,
-input[type="reset"]:focus-visible {
-  filter: drop-shadow(0 1px 8px rgba(79, 70, 229, .10)) brightness(1.015) saturate(1.02);
-}
-
+/* Give press-down feedback without a scale transform that changes the hit area. */
 button:active,
 [role="button"]:active,
+a[class*="btn"]:active,
+a[class*="button"]:active,
+a[class*="action"]:active,
+a[class*="cta"]:active,
+a[class*="primary"]:active,
+a[class*="secondary"]:active,
 input[type="button"]:active,
 input[type="submit"]:active,
 input[type="reset"]:active {
+  transform: translateY(-1px) !important;
   filter: drop-shadow(0 2px 3px rgba(79, 70, 229, .06)) brightness(.985) saturate(1.02);
 }
 
-/* Text links keep a clean hover response without a shadow halo. */
-a {
+button:active::after,
+[role="button"]:active::after,
+a[class*="btn"]:active::after,
+a[class*="button"]:active::after,
+a[class*="action"]:active::after,
+a[class*="cta"]:active::after,
+a[class*="primary"]:active::after,
+a[class*="secondary"]:active::after {
+  transform: translateY(1px);
+}
+
+/* Keep plain text links clean; only button-like anchors receive the lift above. */
+a:not([class*="btn"]):not([class*="button"]):not([class*="action"]):not([class*="cta"]):not([class*="primary"]):not([class*="secondary"]) {
   transition-property: background, background-color, color, border-color, box-shadow, filter, opacity !important;
   transition-duration: 180ms !important;
   transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important;
 }
-a:hover,
-a:focus-visible {
+a:not([class*="btn"]):not([class*="button"]):not([class*="action"]):not([class*="cta"]):not([class*="primary"]):not([class*="secondary"]):hover,
+a:not([class*="btn"]):not([class*="button"]):not([class*="action"]):not([class*="cta"]):not([class*="primary"]):not([class*="secondary"]):focus-visible {
   filter: brightness(1.025) saturate(1.03);
+  transform: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   button,
-  a,
   [role="button"],
+  a[class*="btn"],
+  a[class*="button"],
+  a[class*="action"],
+  a[class*="cta"],
+  a[class*="primary"],
+  a[class*="secondary"],
   input[type="button"],
   input[type="submit"],
-  input[type="reset"] {
+  input[type="reset"],
+  button::after,
+  [role="button"]::after,
+  a[class*="btn"]::after,
+  a[class*="button"]::after,
+  a[class*="action"]::after,
+  a[class*="cta"]::after,
+  a[class*="primary"]::after,
+  a[class*="secondary"]::after {
     transition-duration: .01ms !important;
   }
   button:hover,
   button:focus-visible,
-  button:active,
-  a:hover,
-  a:focus-visible,
-  a:active,
   [role="button"]:hover,
   [role="button"]:focus-visible,
-  [role="button"]:active,
-  input[type="button"]:hover,
-  input[type="button"]:focus-visible,
-  input[type="button"]:active,
-  input[type="submit"]:hover,
-  input[type="submit"]:focus-visible,
-  input[type="submit"]:active,
-  input[type="reset"]:hover,
-  input[type="reset"]:focus-visible,
-  input[type="reset"]:active {
+  a[class*="btn"]:hover,
+  a[class*="btn"]:focus-visible,
+  a[class*="button"]:hover,
+  a[class*="button"]:focus-visible,
+  a[class*="action"]:hover,
+  a[class*="action"]:focus-visible,
+  a[class*="cta"]:hover,
+  a[class*="cta"]:focus-visible,
+  a[class*="primary"]:hover,
+  a[class*="primary"]:focus-visible,
+  a[class*="secondary"]:hover,
+  a[class*="secondary"]:focus-visible {
+    transform: none !important;
     filter: none !important;
+  }
+  button:hover::after,
+  button:focus-visible::after,
+  [role="button"]:hover::after,
+  [role="button"]:focus-visible::after,
+  a[class*="btn"]:hover::after,
+  a[class*="btn"]:focus-visible::after,
+  a[class*="button"]:hover::after,
+  a[class*="button"]:focus-visible::after,
+  a[class*="action"]:hover::after,
+  a[class*="action"]:focus-visible::after,
+  a[class*="cta"]:hover::after,
+  a[class*="cta"]:focus-visible::after,
+  a[class*="primary"]:hover::after,
+  a[class*="primary"]:focus-visible::after,
+  a[class*="secondary"]:hover::after,
+  a[class*="secondary"]:focus-visible::after {
+    transform: none !important;
   }
 }
