@@ -12,6 +12,7 @@ a[class*="secondary"],
 input[type="button"],
 input[type="submit"],
 input[type="reset"] {
+  position: relative;
   transition-property: transform, background, background-color, color, border-color, box-shadow, filter, opacity !important;
   transition-duration: 180ms !important;
   transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important;
