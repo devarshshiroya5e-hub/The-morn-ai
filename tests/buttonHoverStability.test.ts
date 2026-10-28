@@ -23,31 +23,26 @@ test("button stability stylesheet is loaded after existing motion styles", () =>
   }
 });
 
-test("hover, focus, and active states keep interactive pointer targets stationary", () => {
+test("interactive buttons physically lift on hover while their lower-edge hover guard stays in place", () => {
   for (const selector of [
     "button:hover",
-    "button:focus-visible",
-    "button:active",
-    "a:hover",
-    "a:focus-visible",
-    "a:active",
-    '[role="button"]:hover',
-    '[role="button"]:focus-visible',
-    '[role="button"]:active',
+    "[role=\"button\"]:hover",
+    'a[class*="btn"]:hover',
+    'a[class*="button"]:hover',
   ]) {
-    assert.ok(stabilityCss.includes(selector), `missing stable interaction selector: ${selector}`);
+    assert.ok(stabilityCss.includes(selector), `missing lifted interaction selector: ${selector}`);
   }
 
-  assert.match(stabilityCss, /transform:\s*none\s*!important/);
-  assert.match(stabilityCss, /translate:\s*none\s*!important/);
-  assert.match(stabilityCss, /rotate:\s*none\s*!important/);
-  assert.match(stabilityCss, /scale:\s*none\s*!important/);
+  assert.match(stabilityCss, /transform:\s*translateY\(-2px\)\s*!important/);
+  assert.match(stabilityCss, /top:\s*calc\(100% - 3px\)/);
+  assert.match(stabilityCss, /height:\s*6px/);
+  assert.match(stabilityCss, /button:hover::after[\s\S]*?transform:\s*translateY\(2px\)/);
+  assert.match(stabilityCss, /transition-property:\s*transform,/);
 });
 
-test("button lift is animated through a moving drop shadow, not target geometry", () => {
-  assert.match(stabilityCss, /filter:\s*drop-shadow\(0 3px 5px rgba\(79, 70, 229, 0\)\) brightness\(1\) saturate\(1\)/);
-  assert.match(stabilityCss, /button:hover[\s\S]*?drop-shadow\(0 1px 11px rgba\(79, 70, 229, \.16\)\)/);
-  assert.match(stabilityCss, /button:active[\s\S]*?drop-shadow\(0 2px 3px/);
-  assert.match(stabilityCss, /\.mornai-ai-btn:hover[\s\S]*?drop-shadow\(0 1px 12px/);
+test("press feedback and reduced-motion accessibility are preserved", () => {
+  assert.match(stabilityCss, /button:active[\s\S]*?transform:\s*translateY\(-1px\)/);
+  assert.match(stabilityCss, /\.mornai-ai-btn:hover[\s\S]*?drop-shadow/);
   assert.match(stabilityCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(stabilityCss, /prefers-reduced-motion:\s*reduce[\s\S]*?transform:\s*none\s*!important/);
 });
