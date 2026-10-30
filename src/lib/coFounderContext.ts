@@ -22,7 +22,7 @@ const cleanTextList = (value: unknown, maxItems = 24, maxLength = 120): string[]
         .filter((item): item is string => Boolean(item))
     : [];
 
-const pickTextFields = (source: DataRecord, fields: string[], maxLength = 900) =>
+const pickTextFields = (source: DataRecord, fields: string[], maxLength = 900): Record<string, string> =>
   Object.fromEntries(
     fields
       .map((field) => [field, cleanText(source[field], maxLength)] as const)
@@ -40,7 +40,7 @@ function summarizeOnboarding(value: unknown) {
   return pickTextFields(asRecord(value), ONBOARDING_FIELDS, 700);
 }
 
-function summarizeMember(value: unknown) {
+function summarizeMember(value: unknown): Record<string, any> {
   const member = asRecord(value);
   const summary: DataRecord = {
     ...pickTextFields(member, ["name", "role", "status", "joinedDate", "equityOrStipend"], 180),
@@ -51,7 +51,7 @@ function summarizeMember(value: unknown) {
   return summary;
 }
 
-function summarizeRole(value: unknown) {
+function summarizeRole(value: unknown): Record<string, any> {
   const role = asRecord(value);
   return {
     ...pickTextFields(
@@ -67,7 +67,7 @@ function summarizeRole(value: unknown) {
   };
 }
 
-function summarizeMilestone(value: unknown) {
+function summarizeMilestone(value: unknown): Record<string, any> {
   const milestone = asRecord(value);
   return {
     ...pickTextFields(
@@ -79,7 +79,7 @@ function summarizeMilestone(value: unknown) {
   };
 }
 
-function summarizeTask(value: unknown) {
+function summarizeTask(value: unknown): Record<string, any> {
   const task = asRecord(value);
   return {
     ...pickTextFields(
@@ -106,7 +106,7 @@ export function buildCoFounderContext(startupInput: unknown, userInput: unknown)
   const startup = asRecord(startupInput);
   const user = asRecord(userInput);
 
-  const startupContext = {
+  const startupContext: Record<string, any> = {
     identity: pickTextFields(startup, [
       "name", "tagline", "industry", "stage", "pitch", "website", "foundedYear",
       "founderName", "location",
@@ -135,7 +135,7 @@ export function buildCoFounderContext(startupInput: unknown, userInput: unknown)
     },
   };
 
-  const userContext = {
+  const userContext: Record<string, any> = {
     ...pickTextFields(user, [
       "name", "role", "title", "bio", "hourlyRate", "equityPreference",
     ], 1400),
