@@ -320,10 +320,29 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     if (!userId) return null;
 
-    // Query only by participant so private chat does not depend on a
-    // multi-field composite index. Filter the exact room client-side.
+    // Firestore rules authorize room reads using the document's room identity.
+    // Keep those identity fields in the query so Firestore can prove every
+    // returned document belongs to this exact conversation.
+    const roomFilters = [
+      where('roomId', '==', room.id),
+      where('roomType', '==', room.kind),
+    ];
+
+    if (room.kind === 'startup') {
+      const startupId = room.startup?.id;
+      if (!startupId) return null;
+
+      return query(
+        collection(db, 'messages'),
+        ...roomFilters,
+        where('startupId', '==', startupId),
+        where('participants', 'array-contains', userId),
+      );
+    }
+
     return query(
       collection(db, 'messages'),
+      ...roomFilters,
       where('participants', 'array-contains', userId),
     );
   };
@@ -373,23 +392,24 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       }
     }
 
-    // One participant listener fans out previews for every private/startup room.
+    // Use a room-scoped listener for each conversation. A broad
+    // participants-only query can include startup messages from rooms where
+    // membership must be checked separately, so Firestore correctly rejects it.
     if (userId && privateRooms.length > 0) {
-      const participantQuery = query(
-        collection(db, 'messages'),
-        where('participants', 'array-contains', userId),
-      );
+      privateRooms.forEach((room) => {
+        const roomQuery = messagesQueryForRoom(room);
+        if (!roomQuery) return;
 
-      unsubscribes.push(
-        onSnapshot(
-          participantQuery,
-          (snapshot) => {
-            const messages = snapshot.docs.map(toMessage);
-            privateRooms.forEach((room) => applyLatestPreview(room, messages));
-          },
-          (error) => console.error('Room preview error:', error),
-        ),
-      );
+        unsubscribes.push(
+          onSnapshot(
+            roomQuery,
+            (snapshot) => {
+              applyLatestPreview(room, snapshot.docs.map(toMessage));
+            },
+            (error) => console.error(`Room preview error (${room.id}):`, error),
+          ),
+        );
+      });
     }
 
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
@@ -445,7 +465,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
         const messageText = String(error.message || '');
         setChatError(
           code === 'permission-denied'
-            ? 'Firebase blocked reading messages (permission-denied). Deploy the latest firestore.rules for project themorn-ai, then refresh while signed in.'
+            ? activeRoom.kind === 'startup'
+              ? 'You cannot read this startup chat because your account is not recognized as a member. Ask the founder to verify your startup membership and confirm the latest Firestore rules are deployed.'
+              : 'Firebase denied access to this conversation. Confirm that you are signed in and that the latest Firestore rules are deployed for project themorn-ai.'
             : code === 'failed-precondition' || messageText.includes('index')
               ? 'Firestore needs an index for this chat query. Deploy firestore.indexes.json, or open the index link in the browser console.'
               : messageText || 'Unable to connect to the message service.',
