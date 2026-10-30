@@ -37,7 +37,23 @@ const ONBOARDING_FIELDS = [
 ];
 
 function summarizeOnboarding(value: unknown) {
-  return pickTextFields(asRecord(value), ONBOARDING_FIELDS, 700);
+  return pickTextFields(asRecord(value), ONBOARDING_FIELDS, 450);
+}
+
+function truncateStringsInPlace(value: unknown, maxLength: number): void {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    value.forEach((entry) => truncateStringsInPlace(entry, maxLength));
+    return;
+  }
+
+  for (const [key, entry] of Object.entries(value as DataRecord)) {
+    if (typeof entry === "string" && entry.length > maxLength) {
+      (value as DataRecord)[key] = entry.slice(0, maxLength);
+    } else if (entry && typeof entry === "object") {
+      truncateStringsInPlace(entry, maxLength);
+    }
+  }
 }
 
 function summarizeMember(value: unknown): Record<string, any> {
@@ -163,6 +179,12 @@ export function buildCoFounderContext(startupInput: unknown, userInput: unknown)
     } else {
       break;
     }
+  }
+
+  for (const maxLength of [600, 400, 250, 150]) {
+    if (JSON.stringify({ startup: startupContext, user: userContext }).length <= 20_000) break;
+    truncateStringsInPlace(startupContext, maxLength);
+    truncateStringsInPlace(userContext, maxLength);
   }
 
   return { startup: startupContext, user: userContext };
