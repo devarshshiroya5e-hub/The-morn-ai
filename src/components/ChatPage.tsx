@@ -217,8 +217,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       .filter((startup) =>
         startup.persisted &&
         (
-          startup.founderId === currentUser.id ||
-          startup.memberIds?.includes(currentUser.id) ||
+          startup.founderId === currentUser.id ||          startup.memberIds?.includes(currentUser.id) ||
           startup.members?.some((member) => member.userId === currentUser.id && member.status === 'active')
         ),
       )
@@ -320,10 +319,29 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
 
     if (!userId) return null;
 
-    // Query only by participant so private chat does not depend on a
-    // multi-field composite index. Filter the exact room client-side.
+    // Firestore rules authorize room reads using the document's room identity.
+    // Keep those identity fields in the query so Firestore can prove every
+    // returned document belongs to this exact conversation.
+    const roomFilters = [
+      where('roomId', '==', room.id),
+      where('roomType', '==', room.kind),
+    ];
+
+    if (room.kind === 'startup') {
+      const startupId = room.startup?.id;
+      if (!startupId) return null;
+
+      return query(
+        collection(db, 'messages'),
+        ...roomFilters,
+        where('startupId', '==', startupId),
+        where('participants', 'array-contains', userId),
+      );
+    }
+
     return query(
       collection(db, 'messages'),
+      ...roomFilters,
       where('participants', 'array-contains', userId),
     );
   };
@@ -373,23 +391,24 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
       }
     }
 
-    // One participant listener fans out previews for every private/startup room.
+    // Use a room-scoped listener for each conversation. A broad
+    // participants-only query can include startup messages from rooms where
+    // membership must be checked separately, so Firestore correctly rejects it.
     if (userId && privateRooms.length > 0) {
-      const participantQuery = query(
-        collection(db, 'messages'),
-        where('participants', 'array-contains', userId),
-      );
+      privateRooms.forEach((room) => {
+        const roomQuery = messagesQueryForRoom(room);
+        if (!roomQuery) return;
 
-      unsubscribes.push(
-        onSnapshot(
-          participantQuery,
-          (snapshot) => {
-            const messages = snapshot.docs.map(toMessage);
-            privateRooms.forEach((room) => applyLatestPreview(room, messages));
-          },
-          (error) => console.error('Room preview error:', error),
-        ),
-      );
+        unsubscribes.push(
+          onSnapshot(
+            roomQuery,
+            (snapshot) => {
+              applyLatestPreview(room, snapshot.docs.map(toMessage));
+            },
+            (error) => console.error(`Room preview error (${room.id}):`, error),
+          ),
+        );
+      });
     }
 
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
@@ -437,15 +456,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
           );
         });
         setChatError(null);
-        setIsLoadingMessages(false);
-      },
+        setIsLoadingMessages(false);      },
       (error) => {
         console.error('Chat subscription error:', error);
         const code = String((error as { code?: string })?.code || '');
         const messageText = String(error.message || '');
         setChatError(
           code === 'permission-denied'
-            ? 'Firebase blocked reading messages (permission-denied). Deploy the latest firestore.rules for project themorn-ai, then refresh while signed in.'
+            ? activeRoom.kind === 'startup'
+              ? 'You cannot read this startup chat because your account is not recognized as a member. Ask the founder to verify your startup membership and confirm the latest Firestore rules are deployed.'
+              : 'Firebase denied access to this conversation. Confirm that you are signed in and that the latest Firestore rules are deployed for project themorn-ai.'
             : code === 'failed-precondition' || messageText.includes('index')
               ? 'Firestore needs an index for this chat query. Deploy firestore.indexes.json, or open the index link in the browser console.'
               : messageText || 'Unable to connect to the message service.',
@@ -657,8 +677,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
             ? 'Firestore needs an index for this chat query. Deploy firestore.indexes.json, or open the index link shown in the browser console.'
             : messageText || 'Unable to send the message. Please try again.',
       );
-    } finally {
-      setIsSending(false);
+    } finally {      setIsSending(false);
     }
   };
 
@@ -898,115 +917,3 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, startups, conne
                             <div className="w-8 shrink-0">
                               {!grouped && !mine && (
                                 <InitialAvatar
-                                  name={message.senderName}
-                                  src={message.senderAvatar}
-                                  className="h-8 w-8 rounded-xl"
-                                  textClassName="text-[10px] font-black"
-                                />
-                              )}
-                            </div>
-
-                            <div className="min-w-0">
-                              {!grouped && !mine && (
-                                <p className="mb-1 ml-1 text-[10px] font-extrabold text-violet-600">
-                                  {message.senderName}
-                                </p>
-                              )}
-
-                              <div
-                                className={`rounded-[22px] px-4 py-3 shadow-sm transition-shadow ${
-                                  mine
-                                    ? 'rounded-br-md bg-[linear-gradient(135deg,#5b21b6_0%,#7c3aed_65%,#9333ea_100%)] text-white shadow-[0_10px_28px_rgba(124,58,237,.18)]'
-                                    : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'
-                                } ${message.status === 'failed' ? 'ring-2 ring-rose-200 ring-offset-2' : ''}`}
-                              >
-                                <p className="whitespace-pre-wrap break-words text-xs leading-6">{message.text}</p>
-                                <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-semibold ${
-                                  mine ? 'text-violet-100' : 'text-slate-400'
-                                }`}>
-                                  <span>{formatTime(message.createdAt)}</span>
-                                  {mine && (
-                                    <>
-                                      {message.status === 'sending' && <Clock3 className="h-3 w-3" />}
-                                      {message.status === 'sent' && <CheckCheck className="h-3 w-3" />}
-                                      {message.status === 'failed' && <AlertCircle className="h-3 w-3 text-rose-200" />}
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-
-                              {message.status === 'failed' && (
-                                <button
-                                  type="button"
-                                  onClick={() => void sendMessage(message)}
-                                  className="mt-1 flex items-center gap-1 text-[9px] font-extrabold text-rose-600 hover:text-rose-700"
-                                >
-                                  <RotateCw className="h-3 w-3" /> Tap to retry
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div ref={bottomRef} />
-
-              <AnimatePresence>
-                {showScrollToLatest && (
-                  <motion.button
-                    type="button"
-                    initial={{ opacity: 0, y: 8, scale: .96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: .96 }}
-                    onClick={scrollToLatest}
-                    className="sticky bottom-3 left-1/2 z-10 mx-auto flex -translate-x-1/2 items-center gap-2 rounded-full border border-violet-200 bg-white/95 px-3.5 py-2 text-[10px] font-extrabold text-violet-700 shadow-lg backdrop-blur-xl"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5" /> Jump to latest
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-            <div className="mornai-chat-composer px-2 pt-2 sm:px-4 sm:pt-2.5">
-              <div className="mx-auto max-w-3xl">
-                <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50/95 px-2 py-1.5 shadow-sm transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_10px_28px_rgba(124,58,237,.08)]">
-                  <textarea
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        void sendMessage();
-                      }
-                    }}
-                    rows={1}
-                    placeholder={activeRoom?.kind === 'world' ? 'Message everyone…' : 'Write a message…'}
-                    className="min-h-9 max-h-24 w-full resize-none border-0 bg-transparent px-2 py-1.5 text-xs leading-5 text-slate-900 outline-none placeholder:text-slate-400"
-                    aria-label="Message"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void sendMessage()}
-                    disabled={!draft.trim() || !activeRoom || isSending}
-                    className="mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-slate-950 text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-35"
-                    aria-label="Send message"
-                  >
-                    {isSending ? <RotateCw className="h-3.5 w-3.5 animate-spin" /> : <SendHorizontal className="h-3.5 w-3.5" />}
-                  </button>
-                </div>
-                <p className={`mt-1 px-1 pb-0.5 text-[8px] font-semibold sm:text-[9px] ${
-                  draft.length > MAX_MESSAGE_LENGTH * .9 ? 'text-amber-600' : 'text-slate-400'
-                }`}>
-                  {draft.length.toLocaleString()}/{MAX_MESSAGE_LENGTH.toLocaleString()} • Enter to send
-                </p>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-};
