@@ -709,7 +709,7 @@ app.post("/api/ai/co-founder-chat", async (req, res) => {
   const body = req.body || {};
   const startup = body.startup;
   const userProfile = body.userProfile;
-  const message = String(body.message || body.userPrompt || "").trim().slice(0, 5000);
+  const message = String(body.message || body.userPrompt || "").trim().slice(0, 2500);
   const isContributor = userProfile?.role === "employee";
   const isFounder = userProfile?.role === "founder";
 
@@ -739,9 +739,9 @@ app.post("/api/ai/co-founder-chat", async (req, res) => {
   const startupName = String((context.startup.identity as Record<string, unknown>)?.name || "your startup");
   const founderName = String(context.user.name || "Founder");
   const safeHistory = Array.isArray(body.chatHistory)
-    ? body.chatHistory.slice(-6).map((entry: any) => ({
+    ? body.chatHistory.slice(-4).map((entry: any) => ({
         sender: entry?.sender === "ai" ? "ai" : "user",
-        text: String(entry?.text || "").slice(-1000),
+        text: String(entry?.text || "").slice(-450),
       }))
     : [];
   const ai = getAiClient();
