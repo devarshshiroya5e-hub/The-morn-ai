@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import { transform } from "esbuild";
 import { parseGeneratedWebsiteResponse, validateGeneratedWebsite } from "./src/lib/websiteCodeGenerator";
 import { buildHeuristicMatchAnalysis } from "./src/lib/matchAnalysis";
+import { GROQ_FAST_TEXT_MODEL, buildGroqChatCompletionBody, extractGroqChatCompletionText } from "./src/lib/groqAi";
 import {
   WEBSITE_GENERATION_FALLBACK_TIMEOUT_MS,
   WEBSITE_GENERATION_MAX_TOKENS,
@@ -451,6 +452,64 @@ async function openRouterGenerateContent(options: AiGenerateOptions) {
     ? lastError
     : new Error("OpenRouter request failed");
 }
+
+async function groqGenerateContent(options: AiGenerateOptions) {
+  const apiKey = String(process.env.GROQ_API_KEY || "").trim();
+  if (!apiKey) throw new Error("GROQ_API_KEY is not configured.");
+
+  const controller = new AbortController();
+  const timeoutMs = options.config?.requestTimeoutMs ?? 12_000;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const groqMessages = normalizeMessages(options.contents).map((message: any) => ({
+      role: message.role === "assistant" ? ("assistant" as const) : ("user" as const),
+      content: String(message.content || ""),
+    }));
+    const body = buildGroqChatCompletionBody(groqMessages, {
+      maxCompletionTokens: options.config?.maxTokens ?? 800,
+      temperature: options.config?.temperature ?? 0.2,
+      json: options.config?.responseMimeType === "application/json" && !options.config?.suppressJsonMode,
+    });
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const payload: any = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const message = String(payload?.error?.message || "Groq request failed (" + response.status + ")");
+      lastAiProviderFailure = {
+        at: new Date().toISOString(),
+        model: GROQ_FAST_TEXT_MODEL,
+        status: response.status,
+        message: message.slice(0, 500),
+      };
+      throw new Error(message);
+    }
+
+    const text = extractGroqChatCompletionText(payload);
+    if (!text) throw new Error("Groq returned an empty response.");
+    return { text };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    lastAiProviderFailure = {
+      at: new Date().toISOString(),
+      model: GROQ_FAST_TEXT_MODEL,
+      message: (error instanceof Error && error.name === "AbortError" ? "Groq request timed out: " : "") + message.slice(0, 500),
+    };
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function resolveModel(requested: string) {
   if (requested === "mornai-ultra") return MODEL_IDS.ultra;
   if (requested === "mornai-super") return MODEL_IDS.super;
@@ -474,27 +533,40 @@ function modelFallbacks(model: string, _needsJson = false) {
   return [model, superModel, ultra];
 }
 function getAiClient() {
+  const hasGroq = Boolean(String(process.env.GROQ_API_KEY || "").trim());
   const hasOpenRouter = hasAnyOpenRouterKey();
   const hasGemini = Boolean(process.env.GEMINI_API_KEY);
 
-  if (!hasOpenRouter && !hasGemini) return null;
+  if (!hasGroq && !hasOpenRouter && !hasGemini) return null;
 
   return {
     models: {
       generateContent: async (options: AiGenerateOptions) => {
         const model = resolveModel(options.model);
+        const wantsGroq = model === GROQ_FAST_TEXT_MODEL;
 
-        if (hasOpenRouter) {
+        if (wantsGroq && hasGroq) {
           try {
-            return await openRouterGenerateContent({ ...options, model });
+            return await groqGenerateContent({ ...options, model: GROQ_FAST_TEXT_MODEL });
           } catch (error) {
-            console.error("OpenRouter AI request failed:", error);
+            console.error("Groq fast AI request failed:", error);
+          }
+        }
+
+        // Keep the fast assistant usable if Groq is temporarily unavailable.
+        // Do not send the Groq model ID to a different provider.
+        if (hasOpenRouter) {
+          const fallbackModel = wantsGroq ? FAST_FREE_TEXT_MODEL : model;
+          try {
+            return await openRouterGenerateContent({ ...options, model: fallbackModel });
+          } catch (error) {
+            console.error("OpenRouter AI fallback failed:", error);
             if (options.config?.skipGeminiFallback) throw error;
           }
         }
 
         if (options.config?.skipGeminiFallback) {
-          throw new Error("Website generation is configured for the free OpenRouter coding model. Check that an OpenRouter API key is set in Render.");
+          throw new Error("The fast AI provider is unavailable. Check GROQ_API_KEY in Render and retry.");
         }
         const gemini = getGeminiClient();
         if (gemini) {
@@ -550,6 +622,7 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api/ai/status", (_req, res) => {
   const keyStatus = {
+    groq: Boolean(String(process.env.GROQ_API_KEY || "").trim()),
     generic: Boolean(process.env.OPENROUTER_API_KEY),
     secondary: Boolean(process.env.OPENROUTER_API_KEY_1),
     gemma: Boolean(process.env.OPENROUTER_API_KEY_GEMMA),
@@ -565,8 +638,9 @@ app.get("/api/ai/status", (_req, res) => {
   };
 
   res.json({
-    status: hasAnyOpenRouterKey() || keyStatus.geminiFallback ? "configured" : "not-configured",
-    provider: hasAnyOpenRouterKey() ? "openrouter" : keyStatus.geminiFallback ? "gemini" : "none",
+    status: keyStatus.groq || hasAnyOpenRouterKey() || keyStatus.geminiFallback ? "configured" : "not-configured",
+    provider: keyStatus.groq ? "groq" : hasAnyOpenRouterKey() ? "openrouter" : keyStatus.geminiFallback ? "gemini" : "none",
+    fastAssistantModel: keyStatus.groq ? GROQ_FAST_TEXT_MODEL : FAST_FREE_TEXT_MODEL,
     mode: MODEL_IDS === FREE_MODEL_IDS ? "free" : "paid",
     keys: keyStatus,
     models: {
@@ -739,10 +813,7 @@ Rules:
       },
     ];
 
-    const chatModel =
-      process.env.MORNAI_USE_PAID_MODELS === "true"
-        ? MODEL_IDS.ultra
-        : FAST_FREE_TEXT_MODEL;
+    const chatModel = GROQ_FAST_TEXT_MODEL;
 
     const response = await ai.models.generateContent({
       model: chatModel,
@@ -753,8 +824,8 @@ Rules:
         // degraded reply rather than waiting on an unbounded Gemini fallback.
         maxTokens: 500,
         temperature: 0.12,
-        requestTimeoutMs: 10_000,
-        fallbackRequestTimeoutMs: 6_000,
+        requestTimeoutMs: 12_000,
+        fallbackRequestTimeoutMs: 7_000,
         maxKeyAttempts: 1,
         stopOnTimeout: true,
         skipGeminiFallback: true,
@@ -1364,21 +1435,24 @@ app.post("/api/ai/writing-assist", async (req, res) => {
     let response;
     try {
       response = await ai.models.generateContent({
-        model: "mornai-gemma",
+        model: GROQ_FAST_TEXT_MODEL,
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           maxTokens: softMax,
-          temperature: 0.35,
+          temperature: 0.25,
+          requestTimeoutMs: 10_000,
         },
       });
     } catch {
+      // Retain the existing free OpenRouter/Gemini path as a backup only.
       response = await ai.models.generateContent({
         model: FAST_FREE_TEXT_MODEL,
         contents: prompt + "\nReturn only JSON like {\"text\":\"...\"}.",
         config: {
           maxTokens: softMax,
-          temperature: 0.35,
+          temperature: 0.25,
+          requestTimeoutMs: 10_000,
         },
       });
     }

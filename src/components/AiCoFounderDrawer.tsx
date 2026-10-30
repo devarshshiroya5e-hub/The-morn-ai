@@ -118,7 +118,9 @@ const TypedAiBubble: React.FC<{
     setDisplayed('');
     setDone(false);
     let index = 0;
-    const step = Math.max(1, Math.floor(fullText.length / 180));
+    // Keep the type-on effect subtle; the previous 180-step animation added
+    // several seconds after the model had already completed its response.
+    const step = Math.max(4, Math.ceil(fullText.length / 80));
     const id = window.setInterval(() => {
       index = Math.min(fullText.length, index + step);
       setDisplayed(fullText.slice(0, index));
@@ -126,7 +128,7 @@ const TypedAiBubble: React.FC<{
         window.clearInterval(id);
         setDone(true);
       }
-    }, 16);
+    }, 8);
 
     return () => window.clearInterval(id);
   }, [fullText, animate]);
