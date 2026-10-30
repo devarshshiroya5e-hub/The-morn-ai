@@ -148,10 +148,21 @@ export function buildCoFounderContext(startupInput: unknown, userInput: unknown)
   // Keep the serialized context predictable for the Groq free-tier input budget.
   // Oldest history records are dropped first; current role/task/roadmap data stays.
   while (
-    JSON.stringify({ startup: startupContext, user: userContext }).length > 25_000 &&
-    startupContext.historyAndMilestones.length > 3
+    JSON.stringify({ startup: startupContext, user: userContext }).length > 20_000
   ) {
-    startupContext.historyAndMilestones.shift();
+    if (startupContext.historyAndMilestones.length > 2) {
+      startupContext.historyAndMilestones.shift();
+    } else if (startupContext.currentTasks.length > 6) {
+      startupContext.currentTasks.pop();
+    } else if (startupContext.openRoles.length > 8) {
+      startupContext.openRoles.pop();
+    } else if (startupContext.roadmap.length > 6) {
+      startupContext.roadmap.pop();
+    } else if (startupContext.team.length > 8) {
+      startupContext.team.pop();
+    } else {
+      break;
+    }
   }
 
   return { startup: startupContext, user: userContext };
