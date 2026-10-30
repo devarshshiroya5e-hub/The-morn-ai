@@ -50,3 +50,41 @@ test("Co-Founder context safely handles missing or malformed profile data", () =
   assert.equal(context.user.name, "Founder");
   assert.deepEqual(context.user.skills, []);
 });
+
+
+test("large startup context is trimmed to a predictable prompt size", () => {
+  const longText = "Detailed startup context. ".repeat(150);
+  const context = buildCoFounderContext(
+    {
+      name: "Large Context Startup",
+      problem: longText,
+      solution: longText,
+      targetCustomer: longText,
+      businessModel: longText,
+      tractionDetails: longText,
+      competitiveAdvantage: longText,
+      foundingStory: longText,
+      vision: longText,
+      currentChallenges: longText,
+      historyLogs: Array.from({ length: 30 }, (_, index) => ({
+        title: "History " + index,
+        description: longText,
+        impact: longText,
+      })),
+      tasks: Array.from({ length: 30 }, (_, index) => ({
+        title: "Task " + index,
+        description: longText,
+        actionItems: [longText, longText],
+      })),
+    },
+    {
+      name: "Founder",
+      bio: longText,
+      onboarding: { story: longText, goal: longText, achievements: longText },
+    },
+  );
+
+  assert.ok(JSON.stringify(context).length <= 20_000);
+  assert.equal(context.startup.identity.name, "Large Context Startup");
+  assert.equal(context.user.name, "Founder");
+});
