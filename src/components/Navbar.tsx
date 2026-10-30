@@ -103,6 +103,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            {currentUser.role === 'founder' && (
+              <button
+                id="tablet-register-startup-btn"
+                type="button"
+                onClick={onOpenRegisterStartup}
+                aria-label="Create startup"
+                title="Create startup"
+                className="mornai-app-ghost-btn hidden h-9 w-9 place-items-center rounded-xl md:grid lg:hidden"
+              >
+                <PlusCircle className="h-4 w-4 text-indigo-600" />
+              </button>
+            )}
             <button
               id="header-register-startup-btn"
               onClick={onOpenRegisterStartup}
@@ -231,6 +243,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="max-w-full truncate">{label}</span>
           </button>
         ))}
+        {currentUser.role === 'founder' && (
+          <button
+            id="mobile-register-startup-btn"
+            type="button"
+            onClick={onOpenRegisterStartup}
+            aria-label="Create startup"
+            className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10px] font-extrabold text-indigo-600 transition-all duration-200 active:scale-[.97]"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span className="max-w-full truncate">Create</span>
+          </button>
+        )}
       </nav>
     </>
   );
