@@ -528,26 +528,30 @@ export const StartupRegistrationModal: React.FC<StartupRegistrationModalProps> =
     <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/55 p-2 backdrop-blur-sm sm:p-4">
       <div className="relative mx-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2rem)]">
         
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-white/10 p-2 text-white/80 backdrop-blur-md transition-colors hover:bg-white/20 hover:text-white sm:right-4 sm:top-4"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Header */}
-        <div className="shrink-0 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-5 text-white sm:p-6">
-          <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-1">
-            <Rocket className="w-4 h-4" />
-            Founder Onboarding
+        {/* Keep the registration introduction at the very top and the close
+            control inside the header layout so it cannot drift or clip on mobile. */}
+        <div className="relative flex shrink-0 items-start gap-3 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-4 text-white sm:gap-4 sm:p-6">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-300">
+              <Rocket className="h-4 w-4 shrink-0" />
+              <span>Founder Onboarding</span>
+            </div>
+            <h3 className="font-['Outfit'] text-xl font-extrabold leading-tight sm:text-2xl">
+              Register Your Ongoing Startup
+            </h3>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-indigo-200 sm:text-sm">
+              Publish your startup to the THE MORN AI community, enable skilled talent appointments, and activate your automated AI Co-Founder.
+            </p>
           </div>
-          <h3 className="text-xl font-extrabold font-['Outfit']">
-            Register Your Ongoing Startup
-          </h3>
-          <p className="text-xs text-indigo-200 mt-1">
-            Publish your startup to the THE MORN AI community, enable skilled talent appointments, and activate your automated AI Co-Founder.
-          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close startup registration"
+            title="Close"
+            className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/10 text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Form */}
