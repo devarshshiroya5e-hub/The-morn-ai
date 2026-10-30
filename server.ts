@@ -462,7 +462,11 @@ async function groqGenerateContent(options: AiGenerateOptions) {
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const body = buildGroqChatCompletionBody(normalizeMessages(options.contents), {
+    const groqMessages = normalizeMessages(options.contents).map((message: any) => ({
+      role: message.role === "assistant" ? ("assistant" as const) : ("user" as const),
+      content: String(message.content || ""),
+    }));
+    const body = buildGroqChatCompletionBody(groqMessages, {
       maxCompletionTokens: options.config?.maxTokens ?? 800,
       temperature: options.config?.temperature ?? 0.2,
       json: options.config?.responseMimeType === "application/json" && !options.config?.suppressJsonMode,
