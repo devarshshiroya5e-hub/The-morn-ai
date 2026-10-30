@@ -315,7 +315,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateU
             </div>
 
             <EditorArea label="What you can contribute" value={onboardingState.contribution || ''} onChange={(v) => setField('contribution', v)} min={40} rows={4} />
-            <EditorArea label="90-day goal" value={onboardingState.goal || ''} onChange={(v) => setField('goal', v)} min={30} rows={3} />
+            <EditorArea label="90-day goal" value={onboardingState.goal || ''} onChange={(v) => setField('goal', v)} min={30} rows={3} fixedHeight />
             <EditorArea label="Why startups?" value={onboardingState.motivation || ''} onChange={(v) => setField('motivation', v)} min={30} rows={3} />
           </div>
 
@@ -408,11 +408,20 @@ const EditorField = ({ label, value, onChange, min = 0, showAi = true }: any) =>
   </label>
 );
 
-const EditorArea = ({ label, value, onChange, min = 0, rows = 4 }: any) => (
-  <label className="mt-4 block">
+const EditorArea = ({ label, value, onChange, min = 0, rows = 4, fixedHeight = false }: any) => (
+  <label className="mt-4 block min-w-0">
     <span className="mb-2 block text-xs font-bold text-slate-500">{label}{min ? ' • minimum ' + min + ' characters' : ''}</span>
-    <div className="relative">
-      <textarea minLength={min} required value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 pb-10 pr-16 text-sm leading-6 text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)]" />
+    <div className="relative min-w-0">
+      <textarea
+        minLength={min}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        className={`w-full rounded-2xl border border-indigo-200/80 bg-white/[.62] px-4 py-3.5 pb-10 pr-16 text-sm leading-6 text-slate-900 outline-none backdrop-blur-xl shadow-[0_0_0_1px_rgba(99,102,241,.16),0_0_20px_rgba(99,102,241,.10)] transition-shadow focus:border-indigo-400 focus:bg-white focus:shadow-[0_0_0_1px_rgba(99,102,241,.32),0_0_26px_rgba(99,102,241,.18)] ${
+          fixedHeight ? 'h-32 min-h-32 max-h-32 resize-none overflow-y-auto overscroll-contain' : ''
+        }`}
+      />
       <AiAssistButton value={value} onComplete={onChange} field={label} label={`AI assist: ${label}`} />
     </div>
   </label>
