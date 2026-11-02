@@ -70,6 +70,17 @@ Required action:
 2. Enable enforcement for Firestore and Storage only after confirming all production clients obtain valid App Check tokens.
 3. If App Check is required for Render AI endpoints, explicitly send the App Check token from the client and verify it server-side (for example with Firebase Admin App Check verification). Do not treat CORS as API authentication.
 
+### P2 — Content Security Policy is not configured
+
+Evidence:
+- The global Firebase Hosting headers do not currently include `Content-Security-Policy` or `Content-Security-Policy-Report-Only`.
+- The public HTML uses inline JSON-LD and loads Google Fonts; the app also relies on Firebase and external API origins.
+
+Required action:
+1. Inventory every script, style, font, image, connection, and frame origin used by the production app.
+2. Deploy a narrowly scoped `Content-Security-Policy-Report-Only` first and review browser violation reports.
+3. Move or hash/nonce inline scripts where practical, then enforce a tested policy. Do not paste in a generic restrictive policy that could break Firebase Auth, Google sign-in, or AI calls.
+
 ### P2 — Rate limiting is process-local
 
 Evidence:
