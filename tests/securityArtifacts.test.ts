@@ -10,6 +10,7 @@ const storageRules = fs.readFileSync(path.join(root, "storage.rules"), "utf8");
 const aiClient = fs.readFileSync(path.join(root, "src", "lib", "mornaiAi.ts"), "utf8");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const packageLock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
+const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
 
 test("AI API requires a Firebase bearer token and sends it from the client", () => {
   assert.match(server, /app\.use\("\/api\/ai",\s*requireFirebaseAuth\)/);
@@ -45,6 +46,26 @@ test("Firestore keeps collaboration participant lists immutable on updates", () 
 });
 
 test("Storage uploads are limited to supported raster images and ten megabytes", () => {
+  assert.match(storageRules, /request\.resource\.size <= 10 \* 1024 \* 1024/);
+  assert.match(storageRules, /contentType\.matches\('image\/\(png\|jpeg\|webp\)'\)/);
+});
+
+
+test("Firebase Hosting applies a one-year HSTS policy", () => {
+  const globalHeaders = firebaseConfig.hosting.headers.find(
+    (entry: { source: string }) => entry.source === "**",
+  )?.headers ?? [];
+  const hsts = globalHeaders.find(
+    (header: { key: string }) => header.key.toLowerCase() === "strict-transport-security",
+  );
+
+  assert.equal(hsts?.value, "max-age=31536000");
+});
+
+test("Storage rules are configured and restrict uploads to the startup founder", () => {
+  assert.equal(firebaseConfig.storage?.rules, "storage.rules");
+  assert.match(storageRules, /request\.auth != null/);
+  assert.match(storageRules, /data\.founderId == request\.auth\.uid/);
   assert.match(storageRules, /request\.resource\.size <= 10 \* 1024 \* 1024/);
   assert.match(storageRules, /contentType\.matches\('image\/\(png\|jpeg\|webp\)'\)/);
 });
