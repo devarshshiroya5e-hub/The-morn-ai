@@ -116,27 +116,75 @@ jobs:
           assert "no-store" in cache_control, f"index.html cache policy is not no-store: {cache_control!r}"
           print("PASS index.html uses no-store cache policy")
 
-          status, _, robots = get(BASE + "/robots.txt")
+          status, robots_headers, robots = get(BASE + "/robots.txt")
           robots_text = robots.decode("utf-8", "replace")
           assert status == 200, f"robots.txt returned HTTP {status}"
           assert "User-agent: *" in robots_text
-          assert f"Sitemap: {BASE}/sitemap.xml" in robots_text
-          print("PASS robots.txt advertises the production sitemap")
+          assert f"Sitemap: {BASE}/sitemap_index.xml" in robots_text
+          print("PASS robots.txt advertises the production sitemap index")
 
-          status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml")
-          assert status == 200, f"sitemap.xml returned HTTP {status}"
-          assert "xml" in sitemap_headers.get("content-type", "").lower()
-          root = ET.fromstring(sitemap_body)
-          ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-          urls = [node.text.strip() for node in root.findall("sm:url/sm:loc", ns) if node.text]
-          assert len(urls) == len(set(urls)), "sitemap includes duplicate URLs"
+          status, index_headers, index_body = get(BASE + "/sitemap_index.xml")
+          assert status == 200, f"sitemap_index.xml returned HTTP {status}"
+          assert "xml" in index_headers.get("content-type", "").lower()
+          index_root = ET.fromstring(index_body)
+          expected_index_tag = "{http://www.sitemaps.org/schemas/sitemap/0.9}sitemapindex"
+          assert index_root.tag == expected_index_tag, f"unexpected sitemap index root: {index_root.tag!r}"
+          sitemap_locations = [
+              node.text.strip()
+              for node in index_root.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}sitemap/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
+              if node.text
+          ]
+          expected_sitemap_locations = {
+              f"{BASE}/page-sitemap.xml",
+              f"{BASE}/guide-sitemap.xml",
+          }
+          assert set(sitemap_locations) == expected_sitemap_locations, f"unexpected child sitemap references: {sitemap_locations!r}"
+          print("PASS sitemap_index.xml contains the two expected child sitemaps")
+
+          ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+          discovered_urls = []
+          for sitemap_url in sorted(expected_sitemap_locations):
+              status, child_headers, child_body = get(sitemap_url)
+              assert status == 200, f"{sitemap_url} returned HTTP {status}"
+              assert "xml" in child_headers.get("content-type", "").lower()
+              child_root = ET.fromstring(child_body)
+              assert child_root.tag == ns + "urlset", f"unexpected child sitemap root at {sitemap_url}: {child_root.tag!r}"
+              child_urls = [
+                  node.text.strip()
+                  for node in child_root.findall(ns + "url/" + ns + "loc")
+                  if node.text
+              ]
+              assert child_urls, f"{sitemap_url} contains no page URLs"
+              assert len(child_urls) == len(set(child_urls)), f"{sitemap_url} contains duplicate URLs"
+              discovered_urls.extend(child_urls)
+              print(f"PASS child sitemap {sitemap_url} contains {len(child_urls)} URLs")
+
+          assert len(discovered_urls) == len(set(discovered_urls)), "child sitemaps contain duplicate URLs"
           paths = set()
-          for url in urls:
+          for url in discovered_urls:
               match = re.fullmatch(r"https://themorn-ai\.web\.app(/.*)", url)
               assert match, f"unexpected sitemap host or protocol: {url}"
               paths.add(match.group(1))
-          assert paths == EXPECTED_PATHS, f"sitemap paths differ: found {sorted(paths)}"
-          print(f"PASS sitemap.xml contains {len(urls)} unique production URLs")
+          assert paths == EXPECTED_PATHS, f"child sitemap paths differ: found {sorted(paths)}"
+          print(f"PASS sitemap index resolves to {len(discovered_urls)} unique production URLs")
+
+          status, legacy_headers, legacy_body = get(BASE + "/sitemap.xml")
+          assert status == 200, f"legacy sitemap.xml returned HTTP {status}"
+          assert "xml" in legacy_headers.get("content-type", "").lower()
+          legacy_root = ET.fromstring(legacy_body)
+          assert legacy_root.tag == ns + "urlset", "legacy sitemap.xml is not a urlset"
+          legacy_urls = [
+              node.text.strip()
+              for node in legacy_root.findall(ns + "url/" + ns + "loc")
+              if node.text
+          ]
+          assert set(legacy_urls) == set(discovered_urls), "legacy sitemap.xml does not match the sitemap index URLs"
+          print("PASS legacy sitemap.xml remains available and matches the sitemap index")
+
+          status, xsl_headers, xsl_body = get(BASE + "/sitemap-style.xsl")
+          assert status == 200, f"sitemap stylesheet returned HTTP {status}"
+          assert b"<xsl:stylesheet" in xsl_body, "sitemap stylesheet content is not an XSLT stylesheet"
+          print("PASS browser sitemap stylesheet is publicly available")
 
           for path in sorted(EXPECTED_PATHS):
               url = BASE + path
