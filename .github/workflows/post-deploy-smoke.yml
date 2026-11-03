@@ -181,10 +181,22 @@ jobs:
           assert set(legacy_urls) == set(discovered_urls), "legacy sitemap.xml does not match the sitemap index URLs"
           print("PASS legacy sitemap.xml remains available and matches the sitemap index")
 
+          for sitemap_label, sitemap_document in [
+              ("sitemap index", index_body),
+              ("page sitemap", get(BASE + "/page-sitemap.xml")[2]),
+              ("guide sitemap", get(BASE + "/guide-sitemap.xml")[2]),
+              ("legacy sitemap", legacy_body),
+          ]:
+              assert b'<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>' in sitemap_document, f"{sitemap_label} is missing the browser stylesheet reference"
+
           status, xsl_headers, xsl_body = get(BASE + "/sitemap-style.xsl")
           assert status == 200, f"sitemap stylesheet returned HTTP {status}"
-          assert b"<xsl:stylesheet" in xsl_body, "sitemap stylesheet content is not an XSLT stylesheet"
-          print("PASS browser sitemap stylesheet is publicly available")
+          assert "xsl" in xsl_headers.get("content-type", "").lower(), f"unexpected stylesheet content type: {xsl_headers.get('content-type')!r}"
+          xsl_root = ET.fromstring(xsl_body)
+          expected_xsl_tag = "{http://www.w3.org/1999/XSL/Transform}stylesheet"
+          assert xsl_root.tag == expected_xsl_tag, f"invalid XSLT root element: {xsl_root.tag!r}"
+          assert xsl_root.attrib.get("version") == "1.0", "sitemap stylesheet must use XSLT 1.0"
+          print("PASS sitemap XML files reference a valid, publicly served XSLT stylesheet")
 
           for path in sorted(EXPECTED_PATHS):
               url = BASE + path
