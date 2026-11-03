@@ -8,7 +8,7 @@
     ],
     "rewrites": [
       {
-        "source": "!/@(sitemap.xml|sitemap_index.xml|page-sitemap.xml|guide-sitemap.xml|robots.txt|sitemap-style.xsl)",
+        "source": "**",
         "destination": "/index.html"
       }
     ],
@@ -56,7 +56,7 @@
           },
           {
             "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
+            "value": "public, max-age=300, must-revalidate"
           }
         ]
       },
@@ -69,59 +69,7 @@
           },
           {
             "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/sitemap_index.xml",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "application/xml; charset=utf-8"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/page-sitemap.xml",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "application/xml; charset=utf-8"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/guide-sitemap.xml",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "application/xml; charset=utf-8"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/sitemap-style.xsl",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "text/xsl; charset=utf-8"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
+            "value": "public, max-age=300, must-revalidate"
           }
         ]
       }

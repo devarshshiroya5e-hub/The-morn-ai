@@ -22,16 +22,7 @@ function run(command, args) {
 
 run("vite", ["build"]);
 
-const crawlerFiles = [
-  "sitemap.xml",
-  "sitemap_index.xml",
-  "page-sitemap.xml",
-  "guide-sitemap.xml",
-  "sitemap-style.xsl",
-  "robots.txt",
-];
-
-for (const file of crawlerFiles) {
+for (const file of ["sitemap.xml", "robots.txt"]) {
   const outputPath = "dist/" + file;
   if (!fs.existsSync(outputPath)) {
     console.error("Build verification failed: " + outputPath + " is missing. Ensure public/" + file + " exists so Vite copies it into dist.");
@@ -39,95 +30,77 @@ for (const file of crawlerFiles) {
   }
 }
 
-function readSitemap(file) {
-  const raw = fs.readFileSync("dist/" + file, "utf8");
-  const withoutBom = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
-  const body = withoutBom
-    .replace(/^\s*<\?xml[^?]*\?>\s*/i, "")
-    .replace(/^\s*<\?xml-stylesheet[^?]*\?>\s*/i, "")
-    .trim();
-  if (!/^\s*<\?xml\s+version=/i.test(withoutBom) ||
-      !/^\s*<\?xml[^?]*\?>\s*<\?xml-stylesheet[^?]*\?>/i.test(withoutBom) ||
-      !raw.includes('href="/sitemap-style.xsl"')) {
-    console.error("Build verification failed: " + file + " must start with an XML declaration and reference /sitemap-style.xsl.");
-    process.exit(1);
-  }
-  return body;
+const sitemapPath = "dist/sitemap.xml";
+const sitemap = fs.readFileSync(sitemapPath, "utf8");
+const declaration = '<?xml version="1.0" encoding="UTF-8"?>';
+if (sitemap.charCodeAt(0) === 0xfeff ||
+    !sitemap.startsWith(declaration + "\n") ||
+    sitemap.includes("xml-stylesheet") ||
+    /<!DOCTYPE/i.test(sitemap)) {
+  console.error("Build verification failed: sitemap.xml must be plain UTF-8 XML with the XML declaration as its first bytes and no stylesheet or DOCTYPE.");
+  process.exit(1);
 }
 
 const namespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
-const expectedPages = [
+const expectedUrls = [
   "https://themorn-ai.web.app/",
+  "https://themorn-ai.web.app/founders/",
   "https://themorn-ai.web.app/for-startup-founders/",
+  "https://themorn-ai.web.app/freelancers/",
   "https://themorn-ai.web.app/for-skilled-contributors/",
-];
-const expectedGuides = [
   "https://themorn-ai.web.app/guides/build-your-startup-team/",
   "https://themorn-ai.web.app/guides/video-editors-startup-work/",
 ];
-const expectedSitemaps = [
-  "https://themorn-ai.web.app/page-sitemap.xml",
-  "https://themorn-ai.web.app/guide-sitemap.xml",
-];
 
-function extractUrlEntries(xmlBody, file) {
-  if (!xmlBody.startsWith("<urlset " + namespace + ">") || !xmlBody.endsWith("</urlset>")) {
-    console.error("Build verification failed: " + file + " must have a valid urlset root and closing tag.");
-    process.exit(1);
-  }
-  const entries = [...xmlBody.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<\/url>/g)].map(match => match[1]);
-  const openCount = (xmlBody.match(/<url>/g) || []).length;
-  const closeCount = (xmlBody.match(/<\/url>/g) || []).length;
-  if (!entries.length || entries.length !== openCount || entries.length !== closeCount) {
-    console.error("Build verification failed: " + file + " contains a malformed or empty URL list.");
-    process.exit(1);
-  }
-  if (new Set(entries).size !== entries.length || entries.some(url => !url.startsWith("https://themorn-ai.web.app/"))) {
-    console.error("Build verification failed: " + file + " contains duplicate URLs or a URL outside the production host.");
-    process.exit(1);
-  }
-  return entries;
-}
-
-function assertExactUrls(file, actual, expected) {
-  const sortedActual = [...actual].sort();
-  const sortedExpected = [...expected].sort();
-  if (sortedActual.length !== sortedExpected.length ||
-      sortedActual.some((url, index) => url !== sortedExpected[index])) {
-    console.error("Build verification failed: " + file + " does not contain the exact expected canonical URL set. Found: " + actual.join(", "));
-    process.exit(1);
-  }
-}
-
-const indexBody = readSitemap("sitemap_index.xml");
-if (!indexBody.startsWith("<sitemapindex " + namespace + ">") || !indexBody.endsWith("</sitemapindex>")) {
-  console.error("Build verification failed: sitemap_index.xml must have a sitemapindex root.");
+const openTag = "<urlset " + namespace + ">";
+const bodyStart = sitemap.indexOf(openTag);
+const bodyEnd = sitemap.lastIndexOf("</urlset>");
+if (bodyStart < 0 || bodyEnd < bodyStart || sitemap.slice(bodyEnd + "</urlset>".length).trim() !== "") {
+  console.error("Build verification failed: sitemap.xml must contain one urlset root with the standard sitemap namespace.");
   process.exit(1);
 }
-const sitemapRefs = [...indexBody.matchAll(/<sitemap>\s*<loc>([^<]+)<\/loc>\s*<\/sitemap>/g)].map(match => match[1]);
-const sitemapOpenCount = (indexBody.match(/<sitemap>/g) || []).length;
-const sitemapCloseCount = (indexBody.match(/<\/sitemap>/g) || []).length;
-if (sitemapRefs.length !== sitemapOpenCount || sitemapRefs.length !== sitemapCloseCount) {
-  console.error("Build verification failed: sitemap_index.xml contains malformed sitemap entries.");
+
+const xmlBody = sitemap.slice(bodyStart + openTag.length, bodyEnd);
+const entries = [...xmlBody.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<\/url>/g)].map(match => match[1].trim());
+const openCount = (xmlBody.match(/<url>/g) || []).length;
+const closeCount = (xmlBody.match(/<\/url>/g) || []).length;
+if (!entries.length || entries.length !== openCount || entries.length !== closeCount) {
+  console.error("Build verification failed: sitemap.xml contains malformed or empty URL entries.");
   process.exit(1);
 }
-assertExactUrls("sitemap_index.xml", sitemapRefs, expectedSitemaps);
-
-const pages = extractUrlEntries(readSitemap("page-sitemap.xml"), "page-sitemap.xml");
-const guides = extractUrlEntries(readSitemap("guide-sitemap.xml"), "guide-sitemap.xml");
-assertExactUrls("page-sitemap.xml", pages, expectedPages);
-assertExactUrls("guide-sitemap.xml", guides, expectedGuides);
-const allUrls = [...pages, ...guides];
-const legacy = extractUrlEntries(readSitemap("sitemap.xml"), "sitemap.xml");
-assertExactUrls("sitemap.xml (legacy compatibility)", legacy, allUrls);
+if (new Set(entries).size !== entries.length) {
+  console.error("Build verification failed: sitemap.xml contains duplicate URLs.");
+  process.exit(1);
+}
+for (const url of entries) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    console.error("Build verification failed: sitemap.xml contains an invalid URL: " + url);
+    process.exit(1);
+  }
+  if (parsed.origin !== "https://themorn-ai.web.app" || parsed.search || parsed.hash) {
+    console.error("Build verification failed: sitemap.xml contains a URL outside the production origin or with query/fragment: " + url);
+    process.exit(1);
+  }
+}
+const sortedEntries = [...entries].sort();
+const sortedExpected = [...expectedUrls].sort();
+if (sortedEntries.length !== sortedExpected.length ||
+    sortedEntries.some((url, index) => url !== sortedExpected[index])) {
+  console.error("Build verification failed: sitemap.xml does not contain the exact expected canonical URL set. Found: " + entries.join(", "));
+  process.exit(1);
+}
 
 const robots = fs.readFileSync("dist/robots.txt", "utf8");
-if (!/^Sitemap:\s*https:\/\/themorn-ai\.web\.app\/sitemap_index\.xml\s*$/im.test(robots)) {
-  console.error("Build verification failed: robots.txt must point to https://themorn-ai.web.app/sitemap_index.xml.");
+const sitemapDirectives = robots.split(/\r?\n/).map(line => line.trim()).filter(line => /^Sitemap:/i.test(line));
+if (sitemapDirectives.length !== 1 || sitemapDirectives[0] !== "Sitemap: https://themorn-ai.web.app/sitemap.xml") {
+  console.error("Build verification failed: robots.txt must advertise only https://themorn-ai.web.app/sitemap.xml.");
   process.exit(1);
 }
 
-console.log("Verified sitemap index (2 child sitemaps), page sitemap (" + pages.length + " URLs), guide sitemap (" + guides.length + " URLs), legacy sitemap, stylesheet, and robots.txt.");
+console.log("Verified the single plain XML sitemap (7 canonical URLs) and robots.txt.");
 run("esbuild", [
   "server.ts",
   "--bundle",
