@@ -69,7 +69,9 @@ test("each indexed sitemap URL resolves to a static page with a matching canonic
     const relativePage = pathname === "/"
       ? "index.html"
       : path.join(pathname.replace(/^\\/+|\\/+$/g, ""), "index.html");
-    const pagePath = path.join(publicDir, relativePage);
+    const pagePath = pathname === "/"
+      ? path.join(root, "index.html")
+      : path.join(publicDir, relativePage);
 
     assert.ok(fs.existsSync(pagePath), "missing static page for " + url + ": " + relativePage);
     const html = fs.readFileSync(pagePath, "utf8");
