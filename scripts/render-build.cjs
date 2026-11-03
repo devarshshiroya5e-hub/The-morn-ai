@@ -22,49 +22,112 @@ function run(command, args) {
 
 run("vite", ["build"]);
 
-// Fail the build if crawler files are missing or the sitemap is malformed.
-for (const file of ["sitemap.xml", "robots.txt"]) {
-  const outputPath = `dist/${file}`;
+const crawlerFiles = [
+  "sitemap.xml",
+  "sitemap_index.xml",
+  "page-sitemap.xml",
+  "guide-sitemap.xml",
+  "sitemap-style.xsl",
+  "robots.txt",
+];
+
+for (const file of crawlerFiles) {
+  const outputPath = "dist/" + file;
   if (!fs.existsSync(outputPath)) {
-    console.error(`Build verification failed: ${outputPath} is missing. Ensure public/${file} exists so Vite copies it into dist.`);
+    console.error("Build verification failed: " + outputPath + " is missing. Ensure public/" + file + " exists so Vite copies it into dist.");
     process.exit(1);
   }
 }
 
-const sitemapPath = "dist/sitemap.xml";
-const sitemap = fs.readFileSync(sitemapPath, "utf8");
-const sitemapWithoutBom = sitemap.charCodeAt(0) === 0xfeff ? sitemap.slice(1) : sitemap;
-const sitemapBody = sitemapWithoutBom.replace(/^<\?xml[^?]*\?>\s*/i, "");
-const sitemapNamespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
-const sitemapLocations = [...sitemapBody.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-const expectedSitemapHost = "https://themorn-ai.web.app/";
-const expectedSitemapUrls = [
+function readSitemap(file) {
+  const raw = fs.readFileSync("dist/" + file, "utf8");
+  const withoutBom = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+  const body = withoutBom
+    .replace(/^\s*<\?xml[^?]*\?>\s*/i, "")
+    .replace(/^\s*<\?xml-stylesheet[^?]*\?>\s*/i, "")
+    .trim();
+  if (!/^\s*<\?xml\s+version=/i.test(withoutBom) ||
+      !/^\s*<\?xml[^?]*\?>\s*<\?xml-stylesheet[^?]*\?>/i.test(withoutBom) ||
+      !raw.includes('href="/sitemap-style.xsl"')) {
+    console.error("Build verification failed: " + file + " must start with an XML declaration and reference /sitemap-style.xsl.");
+    process.exit(1);
+  }
+  return body;
+}
+
+const namespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
+const expectedPages = [
   "https://themorn-ai.web.app/",
   "https://themorn-ai.web.app/for-startup-founders/",
   "https://themorn-ai.web.app/for-skilled-contributors/",
+];
+const expectedGuides = [
   "https://themorn-ai.web.app/guides/build-your-startup-team/",
   "https://themorn-ai.web.app/guides/video-editors-startup-work/",
 ];
-const normalizedSitemapUrls = [...sitemapLocations].sort();
-const expectedNormalizedSitemapUrls = [...expectedSitemapUrls].sort();
-const robots = fs.readFileSync("dist/robots.txt", "utf8");
-const robotsPointsToSitemap = /^Sitemap:\s*https:\/\/themorn-ai\.web\.app\/sitemap\.xml\s*$/im.test(robots);
+const expectedSitemaps = [
+  "https://themorn-ai.web.app/page-sitemap.xml",
+  "https://themorn-ai.web.app/guide-sitemap.xml",
+];
 
-if (
-  !sitemapBody.startsWith("<urlset " + sitemapNamespace + ">") ||
-  !sitemapBody.trimEnd().endsWith("</urlset>") ||
-  !sitemapBody.includes("<url>") ||
-  !sitemapBody.includes("</url>") ||
-  sitemapLocations.length !== expectedSitemapUrls.length ||
-  new Set(sitemapLocations).size !== sitemapLocations.length ||
-  sitemapLocations.some((url) => !url.startsWith(expectedSitemapHost)) ||
-  normalizedSitemapUrls.some((url, index) => url !== expectedNormalizedSitemapUrls[index]) ||
-  !robotsPointsToSitemap
-) {
-  console.error("Build verification failed: sitemap.xml must be valid XML, contain exactly the five canonical MornAI SEO URLs, and robots.txt must advertise this sitemap.");
+function extractUrlEntries(xmlBody, file) {
+  if (!xmlBody.startsWith("<urlset " + namespace + ">") || !xmlBody.endsWith("</urlset>")) {
+    console.error("Build verification failed: " + file + " must have a valid urlset root and closing tag.");
+    process.exit(1);
+  }
+  const entries = [...xmlBody.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<\/url>/g)].map(match => match[1]);
+  const openCount = (xmlBody.match(/<url>/g) || []).length;
+  const closeCount = (xmlBody.match(/<\/url>/g) || []).length;
+  if (!entries.length || entries.length !== openCount || entries.length !== closeCount) {
+    console.error("Build verification failed: " + file + " contains a malformed or empty URL list.");
+    process.exit(1);
+  }
+  if (new Set(entries).size !== entries.length || entries.some(url => !url.startsWith("https://themorn-ai.web.app/"))) {
+    console.error("Build verification failed: " + file + " contains duplicate URLs or a URL outside the production host.");
+    process.exit(1);
+  }
+  return entries;
+}
+
+function assertExactUrls(file, actual, expected) {
+  const sortedActual = [...actual].sort();
+  const sortedExpected = [...expected].sort();
+  if (sortedActual.length !== sortedExpected.length ||
+      sortedActual.some((url, index) => url !== sortedExpected[index])) {
+    console.error("Build verification failed: " + file + " does not contain the exact expected canonical URL set. Found: " + actual.join(", "));
+    process.exit(1);
+  }
+}
+
+const indexBody = readSitemap("sitemap_index.xml");
+if (!indexBody.startsWith("<sitemapindex " + namespace + ">") || !indexBody.endsWith("</sitemapindex>")) {
+  console.error("Build verification failed: sitemap_index.xml must have a sitemapindex root.");
   process.exit(1);
 }
-console.log("Verified sitemap.xml (" + sitemapLocations.length + " expected URLs) and robots.txt are present in dist/");
+const sitemapRefs = [...indexBody.matchAll(/<sitemap>\s*<loc>([^<]+)<\/loc>\s*<\/sitemap>/g)].map(match => match[1]);
+const sitemapOpenCount = (indexBody.match(/<sitemap>/g) || []).length;
+const sitemapCloseCount = (indexBody.match(/<\/sitemap>/g) || []).length;
+if (sitemapRefs.length !== sitemapOpenCount || sitemapRefs.length !== sitemapCloseCount) {
+  console.error("Build verification failed: sitemap_index.xml contains malformed sitemap entries.");
+  process.exit(1);
+}
+assertExactUrls("sitemap_index.xml", sitemapRefs, expectedSitemaps);
+
+const pages = extractUrlEntries(readSitemap("page-sitemap.xml"), "page-sitemap.xml");
+const guides = extractUrlEntries(readSitemap("guide-sitemap.xml"), "guide-sitemap.xml");
+assertExactUrls("page-sitemap.xml", pages, expectedPages);
+assertExactUrls("guide-sitemap.xml", guides, expectedGuides);
+const allUrls = [...pages, ...guides];
+const legacy = extractUrlEntries(readSitemap("sitemap.xml"), "sitemap.xml");
+assertExactUrls("sitemap.xml (legacy compatibility)", legacy, allUrls);
+
+const robots = fs.readFileSync("dist/robots.txt", "utf8");
+if (!/^Sitemap:\s*https:\/\/themorn-ai\.web\.app\/sitemap_index\.xml\s*$/im.test(robots)) {
+  console.error("Build verification failed: robots.txt must point to https://themorn-ai.web.app/sitemap_index.xml.");
+  process.exit(1);
+}
+
+console.log("Verified sitemap index (2 child sitemaps), page sitemap (" + pages.length + " URLs), guide sitemap (" + guides.length + " URLs), legacy sitemap, stylesheet, and robots.txt.");
 run("esbuild", [
   "server.ts",
   "--bundle",
