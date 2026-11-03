@@ -44,15 +44,15 @@ const indexSitemaps = extractLocs(sitemapIndex, "sitemap");
 const allChildUrls = [...pageUrls, ...guideUrls];
 
 test("sitemap index references the page and guide sitemaps on the production origin", () => {
-  assert.match(sitemapIndex, /<sitemapindex\\s+xmlns=["']http:\/\/www\\.sitemaps\\.org\/schemas\/sitemap\/0\\.9["']>/);
+  assert.match(sitemapIndex, /<sitemapindex\s+xmlns=["']http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9["']>/);
   assertExactValues(indexSitemaps, expectedSitemaps, "sitemap index");
   assert.ok(fs.existsSync(path.join(publicDir, "page-sitemap.xml")), "page sitemap must exist");
   assert.ok(fs.existsSync(path.join(publicDir, "guide-sitemap.xml")), "guide sitemap must exist");
 });
 
 test("page and guide sitemaps contain unique absolute HTTPS canonical URLs", () => {
-  assert.match(pageSitemap, /<urlset\\s+xmlns=/);
-  assert.match(guideSitemap, /<urlset\\s+xmlns=/);
+  assert.match(pageSitemap, /<urlset\s+xmlns=/);
+  assert.match(guideSitemap, /<urlset\s+xmlns=/);
   assertExactValues(pageUrls, expectedPageUrls, "page sitemap");
   assertExactValues(guideUrls, expectedGuideUrls, "guide sitemap");
 
@@ -68,38 +68,38 @@ test("each indexed sitemap URL resolves to a static page with a matching canonic
     const pathname = new URL(url).pathname;
     const relativePage = pathname === "/"
       ? "index.html"
-      : path.join(pathname.replace(/^\\/+|\\/+$/g, ""), "index.html");
+      : path.join(pathname.replace(/^\/+|\/+$/g, ""), "index.html");
     const pagePath = pathname === "/"
       ? path.join(root, "index.html")
       : path.join(publicDir, relativePage);
 
     assert.ok(fs.existsSync(pagePath), "missing static page for " + url + ": " + relativePage);
     const html = fs.readFileSync(pagePath, "utf8");
-    const canonical = html.match(/<link\\s+rel=["']canonical["']\\s+href=["']([^"']+)["']/i)?.[1];
+    const canonical = html.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']/i)?.[1];
 
     assert.ok(canonical, "missing canonical URL in " + relativePage);
     assert.equal(canonical, url, "canonical does not match sitemap URL for " + relativePage);
-    assert.match(html, /<meta\\s+name=["']description["']\\s+content=["'][^"']+["']/i, "missing meta description in " + relativePage);
+    assert.match(html, /<meta\s+name=["']description["']\s+content=["'][^"']+["']/i, "missing meta description in " + relativePage);
   }
 });
 
 test("legacy sitemap.xml remains a valid direct sitemap with the same URLs", () => {
-  assert.match(legacySitemap, /<urlset\\s+xmlns=/);
+  assert.match(legacySitemap, /<urlset\s+xmlns=/);
   assertExactValues(legacyUrls, allChildUrls, "legacy sitemap");
 });
 
 test("all sitemap XML files use the shared browser stylesheet", () => {
   for (const xml of [sitemapIndex, pageSitemap, guideSitemap, legacySitemap]) {
-    assert.match(xml, /^<\\?xml version=["']1\\.0["'] encoding=["']UTF-8["']\\?>\\s*<\\?xml-stylesheet type=["']text\/xsl["'] href=["']\/sitemap-style\\.xsl["']\\?>/);
+    assert.match(xml, /^<\?xml version=["']1\.0["'] encoding=["']UTF-8["']\?>\s*<\?xml-stylesheet type=["']text\/xsl["'] href=["']\/sitemap-style\.xsl["']\?>/);
   }
-  assert.match(stylesheet, /<xsl:stylesheet\\s+/);
+  assert.match(stylesheet, /<xsl:stylesheet\s+/);
   assert.match(stylesheet, /sitemapindex/);
   assert.match(stylesheet, /urlset/);
 });
 
 test("robots.txt advertises the sitemap index at the same site origin", () => {
   assert.ok(
-    robots.split(/\\r?\\n/).some((line) => line.trim() === "Sitemap: " + siteOrigin + "/sitemap_index.xml"),
+    robots.split(/\r?\n/).some((line) => line.trim() === "Sitemap: " + siteOrigin + "/sitemap_index.xml"),
     "robots.txt must advertise sitemap_index.xml",
   );
 });
