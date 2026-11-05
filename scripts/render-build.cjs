@@ -1,7 +1,7 @@
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 
-const maxOldSpace = process.env.NODE_OPTIONS?.match(/--max-old-space-size=\\S+/)?.[0] || "--max-old-space-size=384";
+const maxOldSpace = process.env.NODE_OPTIONS?.match(/--max-old-space-size=\S+/)?.[0] || "--max-old-space-size=384";
 const env = {
   ...process.env,
   NODE_OPTIONS: maxOldSpace,
@@ -35,7 +35,7 @@ const sitemap = fs.readFileSync(sitemapPath, "utf8");
 const declaration = '<?xml version="1.0" encoding="UTF-8"?>';
 if (
   sitemap.charCodeAt(0) === 0xfeff ||
-  !sitemap.startsWith(declaration + "\\n") ||
+  !sitemap.startsWith(declaration + "\n") ||
   sitemap.includes("xml-stylesheet") ||
   /<!DOCTYPE/i.test(sitemap)
 ) {
@@ -68,15 +68,15 @@ if (
 }
 
 const xmlBody = sitemap.slice(bodyStart + openTag.length, bodyEnd);
-const blocks = [...xmlBody.matchAll(/<url>([\\s\\S]*?)<\\/url>/g)].map((match) => match[1]);
+const blocks = [...xmlBody.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((match) => match[1]);
 const openCount = (xmlBody.match(/<url>/g) || []).length;
-const closeCount = (xmlBody.match(/<\\/url>/g) || []).length;
+const closeCount = (xmlBody.match(/<\/url>/g) || []).length;
 if (!blocks.length || blocks.length !== openCount || blocks.length !== closeCount) {
   console.error("Build verification failed: sitemap.xml contains malformed or empty URL entries.");
   process.exit(1);
 }
 
-const entryPattern = /^\\s*<loc>([^<]+)<\\/loc>\\s*<changefreq>daily<\\/changefreq>\\s*<lastmod>(\\d{4}-\\d{2}-\\d{2})<\\/lastmod>\\s*$/;
+const entryPattern = /^\s*<loc>([^<]+)<\/loc>\s*<changefreq>daily<\/changefreq>\s*<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>\s*$/;
 const entries = blocks.map((block) => {
   const match = block.match(entryPattern);
   if (!match) {
@@ -127,7 +127,7 @@ if (
 
 const robots = fs.readFileSync("dist/robots.txt", "utf8");
 const sitemapDirectives = robots
-  .split(/\\r?\\n/)
+  .split(/\r?\n/)
   .map((line) => line.trim())
   .filter((line) => /^Sitemap:/i.test(line));
 if (
