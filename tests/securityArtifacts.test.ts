@@ -48,3 +48,53 @@ test("Storage uploads are limited to supported raster images and ten megabytes",
   assert.match(storageRules, /request\.resource\.size <= 10 \* 1024 \* 1024/);
   assert.match(storageRules, /contentType\.matches\('image\/\(png\|jpeg\|webp\)'\)/);
 });
+
+
+const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
+const firebaseDeployWorkflow = fs.readFileSync(
+  path.join(root, ".github", "workflows", "firebase-deploy.yml"),
+  "utf8",
+);
+const postDeploySmokeWorkflow = fs.readFileSync(
+  path.join(root, ".github", "workflows", "post-deploy-smoke.yml"),
+  "utf8",
+);
+
+test("Firebase Hosting applies a one-year HSTS policy", () => {
+  const globalHeaders = firebaseConfig.hosting.headers.find(
+    (entry: { source: string }) => entry.source === "**",
+  )?.headers ?? [];
+  const hsts = globalHeaders.find(
+    (header: { key: string }) => header.key.toLowerCase() === "strict-transport-security",
+  );
+
+  assert.equal(hsts?.value, "max-age=31536000");
+});
+
+test("Storage rules are wired and restrict uploads to the startup founder", () => {
+  assert.equal(firebaseConfig.storage?.rules, "storage.rules");
+  assert.match(storageRules, /request\\.auth != null/);
+  assert.match(storageRules, /data\\.founderId == request\\.auth\\.uid/);
+  assert.match(storageRules, /request\\.resource\\.size <= 10 \\* 1024 \\* 1024/);
+  assert.match(storageRules, /contentType\\.matches\\('image\\/\\(png\\|jpeg\\|webp\\)'\\)/);
+});
+
+test("Storage deployment errors fail before Hosting and Firestore deploy", () => {
+  const storageStepStart = firebaseDeployWorkflow.indexOf("- name: Deploy Storage rules");
+  const hostingStepStart = firebaseDeployWorkflow.indexOf("- name: Deploy Hosting and Firestore");
+  assert.ok(storageStepStart >= 0, "Storage deployment step must exist");
+  assert.ok(hostingStepStart > storageStepStart, "Storage rules must deploy before Hosting and Firestore");
+  const storageStep = firebaseDeployWorkflow.slice(storageStepStart, hostingStepStart);
+  assert.match(storageStep, /::error::/);
+  assert.match(storageStep, /exit "\\$result"/);
+  assert.doesNotMatch(storageStep, /::warning::/);
+});
+
+test("live smoke checks run after failed deploy attempts and verify HSTS", () => {
+  assert.match(postDeploySmokeWorkflow, /types:\\s*\\[completed\\]/);
+  assert.doesNotMatch(
+    postDeploySmokeWorkflow,
+    /if:\\s*\\$\\{\\{[^}]*workflow_run\\.conclusion\\s*==\\s*'success'/,
+  );
+  assert.match(postDeploySmokeWorkflow, /strict-transport-security/);
+});
