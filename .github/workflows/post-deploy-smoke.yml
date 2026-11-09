@@ -10,9 +10,10 @@ on:
 permissions:
   contents: read
 
+# Run after every completed deploy attempt, including failures: Storage can block a release
+# before Hosting changes, and the live checks must report the actual production state.
 jobs:
   firebase-hosting:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify live sitemap, crawl pages, and security headers
@@ -106,6 +107,7 @@ jobs:
           for header, expected in {
               "x-content-type-options": "nosniff",
               "x-frame-options": "DENY",
+              "strict-transport-security": "max-age=31536000",
               "referrer-policy": "strict-origin-when-cross-origin",
               "cross-origin-opener-policy": "same-origin-allow-popups",
           }.items():
@@ -172,7 +174,6 @@ jobs:
           PY
 
   render-api:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify Render API health, CORS, Firebase config, and auth guard
