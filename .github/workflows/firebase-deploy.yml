@@ -51,7 +51,7 @@ jobs:
           set +e
           output="$(npx firebase-tools@latest deploy --project themorn-ai --only storage --non-interactive 2>&1)"
           result=$?
-          printf '%s\\n' "$output"
+          printf '%s\n' "$output"
 
           if [ "$result" -eq 0 ]; then
             echo "Firebase Storage rules deployed."
