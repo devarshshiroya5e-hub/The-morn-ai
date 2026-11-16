@@ -98,3 +98,12 @@ test("live smoke checks run after failed deploy attempts and verify HSTS", () =>
   );
   assert.match(postDeploySmokeWorkflow, /strict-transport-security/);
 });
+
+test("live smoke checks robots MIME, reports soft-404 risk, and probes the CORS allowlist", () => {
+  assert.match(postDeploySmokeWorkflow, /robots_content_type = robots_headers\.get\("content-type", ""\)\.lower\(\)/);
+  assert.match(postDeploySmokeWorkflow, /__mornai_missing_route_probe__/);
+  assert.match(postDeploySmokeWorkflow, /potential soft-404/);
+  assert.match(postDeploySmokeWorkflow, /request\("\/api\/health", method="OPTIONS"\)/);
+  assert.match(postDeploySmokeWorkflow, /mornai-cors-probe\.invalid/);
+  assert.doesNotMatch(postDeploySmokeWorkflow, /production sitemap index/);
+});

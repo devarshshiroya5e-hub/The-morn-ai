@@ -56,6 +56,18 @@ jobs:
                           time.sleep(delay)
               raise RuntimeError(f"Unable to fetch {url} after {attempts} attempts: {last_error}")
 
+          def get_once(url):
+              req = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "Googlebot", "Cache-Control": "no-cache"},
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as response:
+                      return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read()
+              except urllib.error.HTTPError as exc:
+                  return exc.code, {k.lower(): v for k, v in exc.headers.items()}, exc.read()
+
+
           class PageParser(HTMLParser):
               def __init__(self):
                   super().__init__(convert_charrefs=True)
@@ -124,10 +136,12 @@ jobs:
           status, robots_headers, robots = get(BASE + "/robots.txt")
           robots_text = robots.decode("utf-8", "replace")
           assert status == 200, f"robots.txt returned HTTP {status}"
+          robots_content_type = robots_headers.get("content-type", "").lower()
+          assert robots_content_type.startswith("text/plain"), f"unexpected robots.txt content type: {robots_content_type!r}"
           assert "User-agent: *" in robots_text
           assert f"Sitemap: {BASE}/sitemap.xml" in robots_text
           assert len([line for line in robots_text.splitlines() if line.strip().lower().startswith("sitemap:")]) == 1
-          print("PASS robots.txt advertises the production sitemap index")
+          print("PASS robots.txt advertises the production sitemap")
 
           status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml")
           assert status == 200, f"sitemap.xml returned HTTP {status}"
@@ -170,6 +184,15 @@ jobs:
                   assert parser.json_scripts, f"{url} has no JSON-LD structured data"
               print(f"PASS crawl page {url}")
 
+          missing_path = "/__mornai_missing_route_probe__"
+          probe_status, _, _ = get_once(BASE + missing_path)
+          if probe_status == 404:
+              print("PASS unknown URL returns HTTP 404")
+          elif probe_status == 200:
+              print("::warning::Unknown URL returned HTTP 200; inspect the Firebase SPA fallback for a potential soft-404.")
+          else:
+              print(f"::warning::Unknown URL returned HTTP {probe_status}; inspect fallback behavior.")
+
           print("Firebase Hosting smoke checks passed.")
           PY
 
@@ -188,13 +211,13 @@ jobs:
           BASE = "https://the-morn-ai.onrender.com"
           ORIGIN = "https://themorn-ai.web.app"
 
-          def request(path, method="GET", attempts=12, delay=10):
+          def request(path, method="GET", origin=ORIGIN, attempts=12, delay=10):
               last_error = None
               for attempt in range(attempts):
                   req = urllib.request.Request(
                       BASE + path,
                       method=method,
-                      headers={"Origin": ORIGIN, "Accept": "application/json"},
+                      headers={"Origin": origin, "Accept": "application/json"},
                   )
                   try:
                       with urllib.request.urlopen(req, timeout=25) as response:
@@ -214,9 +237,21 @@ jobs:
           status, headers, body = request("/api/health")
           assert status == 200, f"/api/health returned HTTP {status}: {body[:200]!r}"
           assert headers.get("access-control-allow-origin") == ORIGIN, "API CORS did not allow the production frontend origin"
+          assert headers.get("vary", "").lower() == "origin", "API CORS response must vary by Origin"
           health = json.loads(body)
           assert health.get("status") == "ok", f"unexpected health payload: {health!r}"
           print("PASS Render /api/health and production CORS")
+
+          status, preflight_headers, _ = request("/api/health", method="OPTIONS")
+          assert status == 204, f"production CORS preflight should return 204; got HTTP {status}"
+          assert preflight_headers.get("access-control-allow-origin") == ORIGIN, "CORS preflight did not allow the production frontend"
+          assert "authorization" in preflight_headers.get("access-control-allow-headers", "").lower(), "CORS preflight did not allow Authorization"
+          print("PASS Render production CORS preflight")
+
+          status, unlisted_headers, _ = request("/api/health", origin="https://mornai-cors-probe.invalid")
+          assert status == 200, f"/api/health with unlisted Origin returned HTTP {status}"
+          assert "access-control-allow-origin" not in unlisted_headers, "API granted CORS access to an unlisted origin"
+          print("PASS Render omits Access-Control-Allow-Origin for an unlisted origin")
 
           status, _, body = request("/api/firebase-config")
           assert status == 200, f"/api/firebase-config returned HTTP {status}: {body[:200]!r}"
