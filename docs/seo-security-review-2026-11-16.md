@@ -147,7 +147,8 @@ This is technical crawlability evidence from 2026-11-05, not proof of Google ind
 
 - Main CI run #809 (2026-11-05): 44 tests passed, lint/build passed, npm audit reported 0 vulnerabilities.
 - PR #34 CI run #810 (2026-11-09): 48 tests passed, lint/build passed, npm audit reported 0 vulnerabilities across all severities.
-- These are dated snapshots. The new PR commit must trigger a fresh audit before merge.
+- Updated PR #34 head CI run #811 (2026-11-16): 49 tests passed, lint/build passed, npm audit reported 0 vulnerabilities across all severities.
+- These are dated snapshots; rerun CI after any further dependency or code changes before merge.
 - Logs include deprecation warnings for Node's `punycode`, legacy `url.parse()` use in tooling, and GitHub Actions' Node 20 runtime transition. No vulnerability was reported by npm audit in the recorded run.
 
 ## Changes added to PR #34 in this review
