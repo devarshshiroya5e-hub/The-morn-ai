@@ -135,7 +135,7 @@ jobs:
           print("PASS robots.txt advertises the production sitemap")
 
           # Fetch with an ordinary browser user agent as well as Googlebot.
-          # These must receive the same plain XML file, not a cached HTML sitemap.
+          # These must receive the same XML file; the XSL stylesheet only changes browser presentation.
           browser_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
           status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml", user_agent=browser_agent)
           assert status == 200, f"sitemap.xml returned HTTP {status}"
@@ -147,7 +147,15 @@ jobs:
           sitemap_cache = sitemap_headers.get("cache-control", "").lower()
           assert "no-store" in sitemap_cache, f"sitemap cache policy must prevent stale content: {sitemap_cache!r}"
           assert sitemap_body.startswith(b'<?xml version="1.0" encoding="UTF-8"?>'), "sitemap must begin with a UTF-8 XML declaration"
-          assert b"xml-stylesheet" not in sitemap_body.lower(), "sitemap must not depend on an XSL transform"
+          assert b'<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>' in sitemap_body, "sitemap must reference its browser presentation stylesheet"
+          xsl_status, xsl_headers, xsl_body = get(BASE + "/sitemap.xsl", user_agent=browser_agent)
+          assert xsl_status == 200, f"sitemap.xsl returned HTTP {xsl_status}"
+          xsl_type = xsl_headers.get("content-type", "").lower()
+          assert xsl_type.startswith("text/xsl"), f"unexpected sitemap.xsl content type: {xsl_type!r}"
+          assert b'href="{sitemap:loc}"' in xsl_body, "sitemap.xsl must render each URL as a clickable link"
+          assert b"Search engine discovery" in xsl_body and b"XML Sitemap" in xsl_body
+          assert b"themorn-ai.web.app" not in xsl_body, "sitemap stylesheet contains an old Firebase link"
+          print("PASS sitemap.xsl provides the MornAI design and clickable custom-domain URLs")
           sitemap_root = ET.fromstring(sitemap_body)
           ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
           assert sitemap_root.tag == ns + "urlset", f"unexpected sitemap root: {sitemap_root.tag!r}"
@@ -163,7 +171,7 @@ jobs:
               parsed = urllib.parse.urlparse(url)
               assert parsed.scheme == "https" and parsed.netloc == "mornai.work.gd", f"unexpected sitemap URL: {url}"
               assert not parsed.query and not parsed.fragment, f"sitemap URL contains query/fragment: {url}"
-          print(f"PASS plain sitemap.xml contains {len(discovered_urls)} unique canonical URLs with valid XML")
+          print(f"PASS XML sitemap contains {len(discovered_urls)} unique canonical URLs with valid XML")
 
           for path in sorted(EXPECTED_PATHS):
               url = BASE + path

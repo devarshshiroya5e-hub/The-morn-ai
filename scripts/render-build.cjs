@@ -22,7 +22,7 @@ function run(command, args) {
 
 run("vite", ["build"]);
 
-for (const file of ["sitemap.xml", "robots.txt"]) {
+for (const file of ["sitemap.xml", "sitemap.xsl", "robots.txt"]) {
   const outputPath = "dist/" + file;
   if (!fs.existsSync(outputPath)) {
     console.error("Build verification failed: " + outputPath + " is missing. Ensure public/" + file + " exists so Vite copies it into dist.");
@@ -33,13 +33,30 @@ for (const file of ["sitemap.xml", "robots.txt"]) {
 const sitemapPath = "dist/sitemap.xml";
 const sitemap = fs.readFileSync(sitemapPath, "utf8");
 const declaration = '<?xml version="1.0" encoding="UTF-8"?>';
+const stylesheetInstruction = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';
+const expectedPrelude = declaration + "\n" + stylesheetInstruction + "\n";
 if (
   sitemap.charCodeAt(0) === 0xfeff ||
-  !sitemap.startsWith(declaration + "\n") ||
-  sitemap.includes("xml-stylesheet") ||
+  !sitemap.startsWith(expectedPrelude) ||
+  (sitemap.split("<?xml-stylesheet").length - 1) !== 1 || !sitemap.includes(stylesheetInstruction) ||
   /<!DOCTYPE/i.test(sitemap)
 ) {
-  console.error("Build verification failed: sitemap.xml must be plain UTF-8 XML with the XML declaration as its first bytes and no stylesheet or DOCTYPE.");
+  console.error("Build verification failed: sitemap.xml must be UTF-8 XML with the expected same-origin XSL presentation instruction and no DOCTYPE.");
+  process.exit(1);
+}
+
+const stylesheetPath = "dist/sitemap.xsl";
+const sitemapStylesheet = fs.readFileSync(stylesheetPath, "utf8");
+if (
+  !sitemapStylesheet.startsWith('<?xml version="1.0" encoding="UTF-8"?>') ||
+  !sitemapStylesheet.includes('<xsl:stylesheet') ||
+  !sitemapStylesheet.includes('xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9"') ||
+  !sitemapStylesheet.includes('href="{sitemap:loc}"') ||
+  !sitemapStylesheet.includes("Search engine discovery") ||
+  !sitemapStylesheet.includes("https://mornai.work.gd/") ||
+  sitemapStylesheet.includes("themorn-ai.web.app")
+) {
+  console.error("Build verification failed: sitemap.xsl must render clickable links using only the canonical MornAI domain.");
   process.exit(1);
 }
 
@@ -61,7 +78,7 @@ if (
   bodyStart < 0 ||
   bodyEnd < bodyStart ||
   sitemap.slice(bodyEnd + "</urlset>".length).trim() !== "" ||
-  sitemap.slice(0, bodyStart).trim() !== declaration
+  sitemap.slice(0, bodyStart).trim() !== declaration + "\n" + stylesheetInstruction
 ) {
   console.error("Build verification failed: sitemap.xml must contain one urlset root with the standard sitemap namespace.");
   process.exit(1);
@@ -138,7 +155,7 @@ if (
   process.exit(1);
 }
 
-console.log("Verified the plain XML sitemap (" + urls.length + " canonical URLs with daily changefreq and valid lastmod dates) and robots.txt.");
+console.log("Verified the styled XML sitemap (" + urls.length + " canonical URLs with daily changefreq, valid lastmod dates, and clickable browser links) and robots.txt.");
 run("esbuild", [
   "server.ts",
   "--bundle",

@@ -7,6 +7,7 @@ const root = process.cwd();
 const siteOrigin = "https://mornai.work.gd";
 const publicDir = path.join(root, "public");
 const sitemap = fs.readFileSync(path.join(publicDir, "sitemap.xml"), "utf8");
+const sitemapStylesheet = fs.readFileSync(path.join(publicDir, "sitemap.xsl"), "utf8");
 const robots = fs.readFileSync(path.join(publicDir, "robots.txt"), "utf8");
 
 const expectedUrls = [
@@ -53,7 +54,8 @@ test("sitemap.xml uses the requested plain XML structure", () => {
     sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n'),
     "XML declaration must be the first content"
   );
-  assert.doesNotMatch(sitemap, /xml-stylesheet|<!DOCTYPE/i, "sitemap must not depend on an XSL transform or DTD");
+  assert.ok(sitemap.includes('<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>'), "sitemap must reference its same-origin browser stylesheet");
+  assert.doesNotMatch(sitemap, /<!DOCTYPE/i, "sitemap must not contain a DOCTYPE");
   assert.match(
     sitemap,
     /<urlset\s+xmlns=["']http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9["']>/
@@ -140,4 +142,27 @@ test("robots.txt and sitemap.xml request revalidation without stale caching", ()
 
   assert.match(sitemapHeader ?? "", /no-store/i);
   assert.match(robotsHeader ?? "", /no-store/i);
+});
+
+test("sitemap browser stylesheet displays clickable custom-domain links", () => {
+  assert.ok(sitemapStylesheet.includes('<xsl:stylesheet'));
+  assert.ok(sitemapStylesheet.includes('xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9"'));
+  assert.ok(sitemapStylesheet.includes('href="{sitemap:loc}"'), "each sitemap URL must render as a clickable link");
+  assert.ok(sitemapStylesheet.includes('<xsl:value-of select="sitemap:loc"'));
+  assert.ok(sitemapStylesheet.includes("Search engine discovery"));
+  assert.ok(sitemapStylesheet.includes("XML Sitemap"));
+  assert.ok(sitemapStylesheet.includes("Last Modified"));
+  assert.ok(sitemapStylesheet.includes('href="https://mornai.work.gd/"'));
+  assert.ok(!sitemapStylesheet.includes("themorn-ai.web.app"));
+});
+
+test("Firebase serves the sitemap stylesheet with an XSL content type", () => {
+  const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
+  const headers = firebaseConfig.hosting.headers;
+  const xslHeaders = headers.find((entry) => entry.source === "/sitemap.xsl")?.headers ?? [];
+  const contentType = xslHeaders.find((entry) => entry.key.toLowerCase() === "content-type")?.value ?? "";
+  const cacheControl = xslHeaders.find((entry) => entry.key.toLowerCase() === "cache-control")?.value ?? "";
+
+  assert.ok(contentType.startsWith("text/xsl"), "sitemap stylesheet must be served as XSL");
+  assert.ok(cacheControl.includes("no-store"), "sitemap stylesheet should not be served stale");
 });
