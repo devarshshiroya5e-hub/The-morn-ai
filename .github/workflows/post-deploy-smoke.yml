@@ -113,6 +113,13 @@ jobs:
               assert actual.lower() == expected.lower(), f"{header}: expected {expected!r}, got {actual!r}"
           print("PASS homepage HTTP 200 and browser security headers")
 
+          status, favicon_headers, favicon_body = get(BASE + "/mornai-logo.jpg")
+          assert status == 200, f"favicon returned HTTP {status}"
+          favicon_type = favicon_headers.get("content-type", "").lower()
+          assert favicon_type.startswith("image/jpeg"), f"unexpected favicon content type: {favicon_type!r}"
+          assert favicon_body.startswith(bytes([0xff, 0xd8])), "MornAI favicon is not a valid JPEG image"
+          print("PASS MornAI favicon is publicly crawlable and served as JPEG")
+
           status, index_headers, index_html = get(BASE + "/index.html")
           assert status == 200, f"index.html returned HTTP {status}"
           cache_control = index_headers.get("cache-control", "").lower()

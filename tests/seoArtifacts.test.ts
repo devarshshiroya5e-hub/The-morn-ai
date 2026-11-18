@@ -115,3 +115,17 @@ test("robots.txt advertises exactly one sitemap at the canonical root URL", () =
   assert.deepEqual(directives, ["Sitemap: " + siteOrigin + "/sitemap.xml"]);
   assert.match(robots, /^User-agent: \*\s*\r?\nAllow: \/$/m);
 });
+
+test("homepage exposes the crawlable square MornAI favicon on the canonical host", () => {
+  const homepage = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const faviconPath = path.join(publicDir, "mornai-logo.jpg");
+  assert.ok(fs.existsSync(faviconPath), "MornAI favicon image must exist in public/");
+  const faviconLink = homepage.split("\n").find((line) => line.includes('rel="icon"')) ?? "";
+  assert.ok(faviconLink.includes('type="image/jpeg"'), "favicon must declare JPEG content type");
+  assert.ok(faviconLink.includes('sizes="877x877"'), "favicon must declare its square dimensions");
+  assert.ok(faviconLink.includes('href="https://mornai.work.gd/mornai-logo.jpg"'), "favicon must use the canonical domain");
+  const faviconBytes = fs.readFileSync(faviconPath);
+  assert.equal(faviconBytes[0], 0xff, "favicon must be a valid JPEG file");
+  assert.equal(faviconBytes[1], 0xd8, "favicon must begin with the JPEG SOI marker");
+  assert.ok(homepage.includes('"url": "https://mornai.work.gd/mornai-logo.jpg"'), "Organization schema must use the new-domain logo");
+});
