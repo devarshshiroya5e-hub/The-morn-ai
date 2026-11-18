@@ -45,13 +45,13 @@ if (
 
 const namespace = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
 const expectedUrls = [
-  "https://themorn-ai.web.app/",
-  "https://themorn-ai.web.app/founders/",
-  "https://themorn-ai.web.app/for-startup-founders/",
-  "https://themorn-ai.web.app/freelancers/",
-  "https://themorn-ai.web.app/for-skilled-contributors/",
-  "https://themorn-ai.web.app/guides/build-your-startup-team/",
-  "https://themorn-ai.web.app/guides/video-editors-startup-work/",
+  "https://mornai.work.gd/",
+  "https://mornai.work.gd/founders/",
+  "https://mornai.work.gd/for-startup-founders/",
+  "https://mornai.work.gd/freelancers/",
+  "https://mornai.work.gd/for-skilled-contributors/",
+  "https://mornai.work.gd/guides/build-your-startup-team/",
+  "https://mornai.work.gd/guides/video-editors-startup-work/",
 ];
 
 const openTag = "<urlset " + namespace + ">";
@@ -109,7 +109,7 @@ for (const url of urls) {
     process.exit(1);
   }
 
-  if (parsed.origin !== "https://themorn-ai.web.app" || parsed.search || parsed.hash) {
+  if (parsed.origin !== "https://mornai.work.gd" || parsed.search || parsed.hash) {
     console.error("Build verification failed: sitemap.xml contains a URL outside the production origin or with query/fragment: " + url);
     process.exit(1);
   }
@@ -132,9 +132,9 @@ const sitemapDirectives = robots
   .filter((line) => /^Sitemap:/i.test(line));
 if (
   sitemapDirectives.length !== 1 ||
-  sitemapDirectives[0] !== "Sitemap: https://themorn-ai.web.app/sitemap.xml"
+  sitemapDirectives[0] !== "Sitemap: https://mornai.work.gd/sitemap.xml"
 ) {
-  console.error("Build verification failed: robots.txt must advertise only https://themorn-ai.web.app/sitemap.xml.");
+  console.error("Build verification failed: robots.txt must advertise only https://mornai.work.gd/sitemap.xml.");
   process.exit(1);
 }
 

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const siteOrigin = "https://themorn-ai.web.app";
+const siteOrigin = "https://mornai.work.gd";
 const publicDir = path.join(root, "public");
 const sitemap = fs.readFileSync(path.join(publicDir, "sitemap.xml"), "utf8");
 const robots = fs.readFileSync(path.join(publicDir, "robots.txt"), "utf8");
