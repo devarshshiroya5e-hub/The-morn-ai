@@ -129,3 +129,15 @@ test("homepage exposes the crawlable square MornAI favicon on the canonical host
   assert.equal(faviconBytes[1], 0xd8, "favicon must begin with the JPEG SOI marker");
   assert.ok(homepage.includes('"url": "https://mornai.work.gd/mornai-logo.jpg"'), "Organization schema must use the new-domain logo");
 });
+
+test("robots.txt and sitemap.xml request revalidation without stale caching", () => {
+  const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
+  const headers = firebaseConfig.hosting.headers;
+  const sitemapHeader = headers.find((entry) => entry.source === "/sitemap.xml")
+    ?.headers.find((entry) => entry.key.toLowerCase() === "cache-control")?.value;
+  const robotsHeader = headers.find((entry) => entry.source === "/robots.txt")
+    ?.headers.find((entry) => entry.key.toLowerCase() === "cache-control")?.value;
+
+  assert.match(sitemapHeader ?? "", /no-store/i);
+  assert.match(robotsHeader ?? "", /no-store/i);
+});

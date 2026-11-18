@@ -39,13 +39,13 @@ jobs:
               "/freelancers/",
           }
 
-          def get(url, attempts=6, delay=4):
+          def get(url, user_agent="Googlebot", attempts=6, delay=4):
               last_error = None
               for attempt in range(attempts):
                   try:
                       req = urllib.request.Request(
                           url,
-                          headers={"User-Agent": "Googlebot", "Cache-Control": "no-cache"},
+                          headers={"User-Agent": user_agent, "Cache-Control": "no-cache"},
                       )
                       with urllib.request.urlopen(req, timeout=20) as response:
                           return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read()
@@ -134,10 +134,18 @@ jobs:
           assert len([line for line in robots_text.splitlines() if line.strip().lower().startswith("sitemap:")]) == 1
           print("PASS robots.txt advertises the production sitemap")
 
-          status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml")
+          # Fetch with an ordinary browser user agent as well as Googlebot.
+          # These must receive the same plain XML file, not a cached HTML sitemap.
+          browser_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+          status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml", user_agent=browser_agent)
           assert status == 200, f"sitemap.xml returned HTTP {status}"
+          google_status, google_headers, google_sitemap_body = get(BASE + "/sitemap.xml", user_agent="Googlebot")
+          assert google_status == 200, f"Googlebot sitemap.xml returned HTTP {google_status}"
+          assert google_sitemap_body == sitemap_body, "browser and Googlebot received different sitemap content"
           content_type = sitemap_headers.get("content-type", "").lower()
           assert content_type.startswith(("application/xml", "text/xml")), f"unexpected sitemap content type: {content_type!r}"
+          sitemap_cache = sitemap_headers.get("cache-control", "").lower()
+          assert "no-store" in sitemap_cache, f"sitemap cache policy must prevent stale content: {sitemap_cache!r}"
           assert sitemap_body.startswith(b'<?xml version="1.0" encoding="UTF-8"?>'), "sitemap must begin with a UTF-8 XML declaration"
           assert b"xml-stylesheet" not in sitemap_body.lower(), "sitemap must not depend on an XSL transform"
           sitemap_root = ET.fromstring(sitemap_body)
