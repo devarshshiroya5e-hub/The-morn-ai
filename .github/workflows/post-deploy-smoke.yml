@@ -28,7 +28,7 @@ jobs:
           import xml.etree.ElementTree as ET
           from html.parser import HTMLParser
 
-          BASE = "https://themorn-ai.web.app"
+          BASE = "https://mornai.work.gd"
           EXPECTED_PATHS = {
               "/",
               "/for-startup-founders/",
@@ -125,7 +125,7 @@ jobs:
           assert "User-agent: *" in robots_text
           assert f"Sitemap: {BASE}/sitemap.xml" in robots_text
           assert len([line for line in robots_text.splitlines() if line.strip().lower().startswith("sitemap:")]) == 1
-          print("PASS robots.txt advertises the production sitemap index")
+          print("PASS robots.txt advertises the production sitemap")
 
           status, sitemap_headers, sitemap_body = get(BASE + "/sitemap.xml")
           assert status == 200, f"sitemap.xml returned HTTP {status}"
@@ -146,7 +146,7 @@ jobs:
           assert set(discovered_urls) == expected_urls, f"sitemap URL set differs: found {sorted(discovered_urls)}"
           for url in discovered_urls:
               parsed = urllib.parse.urlparse(url)
-              assert parsed.scheme == "https" and parsed.netloc == "themorn-ai.web.app", f"unexpected sitemap URL: {url}"
+              assert parsed.scheme == "https" and parsed.netloc == "mornai.work.gd", f"unexpected sitemap URL: {url}"
               assert not parsed.query and not parsed.fragment, f"sitemap URL contains query/fragment: {url}"
           print(f"PASS plain sitemap.xml contains {len(discovered_urls)} unique canonical URLs with valid XML")
 
@@ -185,7 +185,7 @@ jobs:
           import urllib.request
 
           BASE = "https://the-morn-ai.onrender.com"
-          ORIGIN = "https://themorn-ai.web.app"
+          ORIGIN = "https://mornai.work.gd"
 
           def request(path, method="GET", attempts=12, delay=10):
               last_error = None

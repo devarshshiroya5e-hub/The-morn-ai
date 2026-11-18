@@ -54,6 +54,7 @@ app.use((req, res, next) => {
   // production origins in Render; local origins are allowed only in development.
   const allowedOrigins = new Set([
     "https://themorn-ai.web.app",
+    "https://mornai.work.gd",
     "https://themorn-ai.firebaseapp.com",
     ...configuredOrigins,
   ]);
