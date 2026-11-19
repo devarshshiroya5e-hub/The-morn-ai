@@ -1,7 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+    <script id="mornai-domain-migration">
+    (function () {
+      if (window.location.hostname === "themorn-ai.web.app") {
+        window.location.replace(
+          "https://mornai.work.gd" +
+          window.location.pathname +
+          window.location.search +
+          window.location.hash
+        );
+      }
+    })();
+  </script>
+<meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Find Startup Opportunities for Freelancers | MornAI</title>
   <meta name="description" content="Discover startup opportunities and connect with founders on MornAI. Showcase your skills and find early-stage teams seeking developers, designers, video editors, marketers, and other specialists.">

@@ -113,6 +113,18 @@ jobs:
               assert actual.lower() == expected.lower(), f"{header}: expected {expected!r}, got {actual!r}"
           print("PASS homepage HTTP 200 and browser security headers")
 
+          # Firebase's default .web.app host serves the same Hosting site.
+          # Confirm every legacy HTML entry point contains the host-only migration redirect.
+          LEGACY = "https://themorn-ai.web.app"
+          for path in sorted(EXPECTED_PATHS):
+              legacy_status, _, legacy_html = get(LEGACY + path)
+              assert legacy_status == 200, f"legacy URL {path} returned HTTP {legacy_status}"
+              legacy_text = legacy_html.decode("utf-8", "replace")
+              assert 'id="mornai-domain-migration"' in legacy_text, f"legacy URL {path} is missing the domain migration redirect"
+              assert 'window.location.hostname === "themorn-ai.web.app"' in legacy_text, f"legacy URL {path} redirect is not restricted to the old web.app hostname"
+              assert 'window.location.replace(' in legacy_text and '"https://mornai.work.gd"' in legacy_text, f"legacy URL {path} does not redirect to the custom domain"
+          print("PASS all legacy web.app pages redirect to matching custom-domain paths")
+
           status, favicon_headers, favicon_body = get(BASE + "/mornai-logo.jpg")
           assert status == 200, f"favicon returned HTTP {status}"
           favicon_type = favicon_headers.get("content-type", "").lower()

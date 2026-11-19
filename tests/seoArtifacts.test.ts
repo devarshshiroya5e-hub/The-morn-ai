@@ -166,3 +166,25 @@ test("Firebase serves the sitemap stylesheet with an XSL content type", () => {
   assert.ok(contentType.startsWith("text/xsl"), "sitemap stylesheet must be served as XSL");
   assert.ok(cacheControl.includes("no-store"), "sitemap stylesheet should not be served stale");
 });
+
+test("legacy Firebase web.app URLs redirect to the custom domain and preserve the full URL", () => {
+  const pages = [
+    path.join(root, "index.html"),
+    path.join(publicDir, "founders", "index.html"),
+    path.join(publicDir, "freelancers", "index.html"),
+    path.join(publicDir, "for-startup-founders", "index.html"),
+    path.join(publicDir, "for-skilled-contributors", "index.html"),
+    path.join(publicDir, "guides", "build-your-startup-team", "index.html"),
+    path.join(publicDir, "guides", "video-editors-startup-work", "index.html"),
+  ];
+
+  for (const pagePath of pages) {
+    const html = fs.readFileSync(pagePath, "utf8");
+    assert.ok(html.includes('id="mornai-domain-migration"'), "missing legacy-domain redirect in " + pagePath);
+    assert.ok(html.includes('window.location.hostname === "themorn-ai.web.app"'), "redirect must target only the old web.app hostname in " + pagePath);
+    assert.ok(html.includes('window.location.replace('), "legacy URL must be replaced in browser history in " + pagePath);
+    assert.ok(html.includes('"https://mornai.work.gd"'), "redirect target must be the custom domain in " + pagePath);
+    assert.ok(html.includes("window.location.pathname") && html.includes("window.location.search") && html.includes("window.location.hash"), "redirect must preserve path, query and hash in " + pagePath);
+    assert.ok(!html.includes('hostname === "themorn-ai.firebaseapp.com"'), "do not redirect Firebase Auth callback hostname in " + pagePath);
+  }
+});

@@ -1,7 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+    <script id="mornai-domain-migration">
+    (function () {
+      if (window.location.hostname === "themorn-ai.web.app") {
+        window.location.replace(
+          "https://mornai.work.gd" +
+          window.location.pathname +
+          window.location.search +
+          window.location.hash
+        );
+      }
+    })();
+  </script>
+<meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Find Startup Team Members &amp; Co-Builders | MornAI</title>
   <meta name="description" content="Connect your startup with skilled contributors. Describe roles, discover potential collaborators, and keep startup work organized with AI-assisted context." />

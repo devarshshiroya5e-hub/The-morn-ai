@@ -1,7 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+    <script id="mornai-domain-migration">
+    (function () {
+      if (window.location.hostname === "themorn-ai.web.app") {
+        window.location.replace(
+          "https://mornai.work.gd" +
+          window.location.pathname +
+          window.location.search +
+          window.location.hash
+        );
+      }
+    })();
+  </script>
+<meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>How Video Editors Can Find Startup Work | MornAI</title>
   <meta name="description" content="Learn how video editors can approach startups, build a focused portfolio, evaluate project scope, and discuss fair terms before accepting work." />
