@@ -28,7 +28,8 @@ jobs:
           import xml.etree.ElementTree as ET
           from html.parser import HTMLParser
 
-          BASE = "https://mornai.work.gd"
+          BASE = "https://mornai-primary.web.app"
+          CANONICAL = "https://mornai.work.gd"
           EXPECTED_PATHS = {
               "/",
               "/for-startup-founders/",
@@ -113,18 +114,6 @@ jobs:
               assert actual.lower() == expected.lower(), f"{header}: expected {expected!r}, got {actual!r}"
           print("PASS homepage HTTP 200 and browser security headers")
 
-          # Firebase's default .web.app host serves the same Hosting site.
-          # Confirm every legacy HTML entry point contains the host-only migration redirect.
-          LEGACY = "https://themorn-ai.web.app"
-          for path in sorted(EXPECTED_PATHS):
-              legacy_status, _, legacy_html = get(LEGACY + path)
-              assert legacy_status == 200, f"legacy URL {path} returned HTTP {legacy_status}"
-              legacy_text = legacy_html.decode("utf-8", "replace")
-              assert 'id="mornai-domain-migration"' in legacy_text, f"legacy URL {path} is missing the domain migration redirect"
-              assert 'window.location.hostname === "themorn-ai.web.app"' in legacy_text, f"legacy URL {path} redirect is not restricted to the old web.app hostname"
-              assert 'window.location.replace(' in legacy_text and '"https://mornai.work.gd"' in legacy_text, f"legacy URL {path} does not redirect to the custom domain"
-          print("PASS all legacy web.app pages redirect to matching custom-domain paths")
-
           status, favicon_headers, favicon_body = get(BASE + "/mornai-logo.jpg")
           assert status == 200, f"favicon returned HTTP {status}"
           favicon_type = favicon_headers.get("content-type", "").lower()
@@ -142,7 +131,7 @@ jobs:
           robots_text = robots.decode("utf-8", "replace")
           assert status == 200, f"robots.txt returned HTTP {status}"
           assert "User-agent: *" in robots_text
-          assert f"Sitemap: {BASE}/sitemap.xml" in robots_text
+          assert f"Sitemap: {CANONICAL}/sitemap.xml" in robots_text
           assert len([line for line in robots_text.splitlines() if line.strip().lower().startswith("sitemap:")]) == 1
           print("PASS robots.txt advertises the production sitemap")
 
@@ -177,7 +166,7 @@ jobs:
               if node.text
           ]
           assert len(discovered_urls) == len(set(discovered_urls)), "sitemap contains duplicate URLs"
-          expected_urls = {BASE + path for path in EXPECTED_PATHS}
+          expected_urls = {CANONICAL + path for path in EXPECTED_PATHS}
           assert set(discovered_urls) == expected_urls, f"sitemap URL set differs: found {sorted(discovered_urls)}"
           for url in discovered_urls:
               parsed = urllib.parse.urlparse(url)
@@ -193,7 +182,7 @@ jobs:
               parser.feed(html.decode("utf-8", "replace"))
               assert parser.title_text, f"{url} is missing a title"
               assert parser.description, f"{url} is missing a meta description"
-              expected_canonical = url if path != "/" else BASE + "/"
+              expected_canonical = CANONICAL + path
               assert parser.canonical == expected_canonical, f"{url} canonical mismatch: {parser.canonical!r}"
               if path != "/":
                   assert parser.h1_count >= 1, f"{url} is missing an H1"

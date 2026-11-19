@@ -3,6 +3,17 @@
     "default": "themorn-ai",
     "dist": "themorn-ai"
   },
-  "targets": {},
+  "targets": {
+    "themorn-ai": {
+      "hosting": {
+        "primary": [
+          "mornai-primary"
+        ],
+        "legacy": [
+          "themorn-ai"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

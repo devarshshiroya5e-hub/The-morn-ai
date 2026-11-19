@@ -1,0 +1,75 @@
+name: Deploy legacy MornAI permanent redirects
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_custom_domain_moved:
+        description: Confirm mornai.work.gd is connected to the mornai-primary Firebase Hosting site
+        required: true
+        type: choice
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-legacy-redirect:
+    if: ${{ inputs.confirm_custom_domain_moved == 'yes' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy 301 redirects to the old Firebase Hosting site
+        run: |
+          npx firebase-tools@latest deploy --project themorn-ai --only hosting:legacy --non-interactive
+
+      - name: Verify old domains redirect permanently and custom domain stays live
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.error
+          import urllib.request
+
+          CANONICAL = "https://mornai.work.gd"
+          LEGACY_HOSTS = [
+              "https://themorn-ai.web.app",
+              "https://themorn-ai.firebaseapp.com",
+          ]
+          PATHS = ["/", "/founders/", "/freelancers/", "/for-startup-founders/", "/for-skilled-contributors/"]
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          opener = urllib.request.build_opener(NoRedirect)
+          for base in LEGACY_HOSTS:
+              for path in PATHS:
+                  request = urllib.request.Request(base + path, headers={"User-Agent": "Googlebot"})
+                  try:
+                      response = opener.open(request, timeout=25)
+                      status, headers = response.status, response.headers
+                  except urllib.error.HTTPError as error:
+                      status, headers = error.code, error.headers
+                  expected = CANONICAL + path
+                  location = headers.get("Location", "")
+                  assert status == 301, f"{base + path} returned HTTP {status}, expected 301"
+                  assert location.rstrip("/") == expected.rstrip("/"), f"{base + path} redirected to {location!r}, expected {expected!r}"
+              print(f"PASS permanent redirects for {base}")
+
+          for path in ["/", "/founders/"]:
+              request = urllib.request.Request(CANONICAL + path, headers={"User-Agent": "Googlebot"})
+              with urllib.request.urlopen(request, timeout=25) as response:
+                  assert response.status == 200, f"{CANONICAL + path} returned HTTP {response.status}"
+                  body = response.read().decode("utf-8", "replace")
+                  assert f'href="{CANONICAL + path}"' in body, f"canonical missing or incorrect on {path}"
+          print("PASS custom domain serves the app with self-referencing canonical URLs")
+          PY

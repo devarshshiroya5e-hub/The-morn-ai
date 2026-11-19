@@ -7,6 +7,8 @@ on:
       - "src/**"
       - "index.html"
       - "firebase.json"
+      - ".firebaserc"
+      - "legacy-redirect/**"
       - "firestore.rules"
       - "storage.rules"
       - "firestore.indexes.json"
@@ -45,7 +47,7 @@ jobs:
 
       - name: Deploy Hosting and Firestore
         run: |
-          npx firebase-tools@latest deploy --project themorn-ai --only hosting,firestore:rules,firestore:indexes --non-interactive
+          npx firebase-tools@latest deploy --project themorn-ai --only hosting:primary,firestore:rules,firestore:indexes --non-interactive
 
       - name: Deploy Storage rules when the project API is enabled
         shell: bash

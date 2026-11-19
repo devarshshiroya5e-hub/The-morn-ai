@@ -134,7 +134,9 @@ test("homepage exposes the crawlable square MornAI favicon on the canonical host
 
 test("robots.txt and sitemap.xml request revalidation without stale caching", () => {
   const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
-  const headers = firebaseConfig.hosting.headers;
+  const hostingSites = Array.isArray(firebaseConfig.hosting) ? firebaseConfig.hosting : [firebaseConfig.hosting];
+  const primaryHosting = hostingSites.find((entry) => entry.target === "primary");
+  const headers = primaryHosting?.headers ?? [];
   const sitemapHeader = headers.find((entry) => entry.source === "/sitemap.xml")
     ?.headers.find((entry) => entry.key.toLowerCase() === "cache-control")?.value;
   const robotsHeader = headers.find((entry) => entry.source === "/robots.txt")
@@ -158,7 +160,9 @@ test("sitemap browser stylesheet displays clickable custom-domain links", () => 
 
 test("Firebase serves the sitemap stylesheet with an XSL content type", () => {
   const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
-  const headers = firebaseConfig.hosting.headers;
+  const hostingSites = Array.isArray(firebaseConfig.hosting) ? firebaseConfig.hosting : [firebaseConfig.hosting];
+  const primaryHosting = hostingSites.find((entry) => entry.target === "primary");
+  const headers = primaryHosting?.headers ?? [];
   const xslHeaders = headers.find((entry) => entry.source === "/sitemap.xsl")?.headers ?? [];
   const contentType = xslHeaders.find((entry) => entry.key.toLowerCase() === "content-type")?.value ?? "";
   const cacheControl = xslHeaders.find((entry) => entry.key.toLowerCase() === "cache-control")?.value ?? "";
