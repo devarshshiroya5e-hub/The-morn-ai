@@ -125,7 +125,7 @@ Build warns that the Firebase vendor chunk is approximately 736 kB minified, abo
 
 ### GitHub branch protection
 
-Repository rulesets endpoint returned an empty array. The branch-protection endpoint returned 403 `Resource not accessible by integration`, so branch protection itself could not be independently verified in this run. Do not carry forward a claim that main is unprotected without fresh authorized evidence.
+The GitHub branch metadata endpoint returned `protected: false` for `main` on 2026-11-23. The repository rulesets endpoint returned an empty array. The branch-protection details endpoint returned 403 `Resource not accessible by integration`, so no required-check rules could be inspected. This confirms that GitHub's branch object currently reports main as unprotected; configure required PR/CI protection in repository settings.
 
 ## Repository changes in refresh PR
 
