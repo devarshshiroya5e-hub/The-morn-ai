@@ -84,6 +84,7 @@ test("Storage rules deploy before Hosting and a Storage failure cannot be swallo
 test("post-deploy smoke runs after failed releases and checks canonical host HSTS", () => {
   assert.match(postDeploySmokeWorkflow, /types:\s*\[completed\]/);
   assert.match(postDeploySmokeWorkflow, /firebase-hosting:\s*\n\s+runs-on:/);
+  assert.match(postDeploySmokeWorkflow, /render-api:\s*\n\s+runs-on:/);
   assert.doesNotMatch(
     postDeploySmokeWorkflow,
     /firebase-hosting:\s*\n\s+if:\s*\$\{\{[^}]*conclusion == 'success'/,
