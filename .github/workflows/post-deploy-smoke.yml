@@ -207,7 +207,6 @@ jobs:
           PY
 
   render-api:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify Render API health, CORS, Firebase config, and auth guard
