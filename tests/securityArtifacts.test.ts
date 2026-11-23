@@ -48,3 +48,48 @@ test("Storage uploads are limited to supported raster images and ten megabytes",
   assert.match(storageRules, /request\.resource\.size <= 10 \* 1024 \* 1024/);
   assert.match(storageRules, /contentType\.matches\('image\/\(png\|jpeg\|webp\)'\)/);
 });
+
+const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
+const firebaseDeployWorkflow = fs.readFileSync(
+  path.join(root, ".github", "workflows", "firebase-deploy.yml"),
+  "utf8",
+);
+const postDeploySmokeWorkflow = fs.readFileSync(
+  path.join(root, ".github", "workflows", "post-deploy-smoke.yml"),
+  "utf8",
+);
+
+test("Firebase Hosting config includes a one-year HSTS header", () => {
+  const headers = firebaseConfig.hosting[0].headers.find(
+    (entry: { source: string }) => entry.source === "**",
+  )?.headers ?? [];
+  const hsts = headers.find(
+    (header: { key: string }) => header.key.toLowerCase() === "strict-transport-security",
+  );
+
+  assert.equal(hsts?.value, "max-age=31536000");
+});
+
+test("Storage rules deploy before Hosting and a Storage failure cannot be swallowed", () => {
+  const storageStep = firebaseDeployWorkflow.indexOf("Deploy Storage rules (required)");
+  const hostingStep = firebaseDeployWorkflow.indexOf("Deploy Hosting and Firestore");
+
+  assert.ok(storageStep >= 0, "required Storage deployment step is missing");
+  assert.ok(hostingStep > storageStep, "Hosting/Firestore must deploy after Storage rules");
+  assert.match(firebaseDeployWorkflow, /--only storage --non-interactive/);
+  assert.doesNotMatch(firebaseDeployWorkflow, /::warning::.*Storage rules/i);
+  assert.doesNotMatch(firebaseDeployWorkflow, /exit 0/);
+});
+
+test("post-deploy smoke runs after failed releases and checks canonical host HSTS", () => {
+  assert.match(postDeploySmokeWorkflow, /types:\s*\[completed\]/);
+  assert.match(postDeploySmokeWorkflow, /firebase-hosting:\s*\n\s+runs-on:/);
+  assert.match(postDeploySmokeWorkflow, /render-api:\s*\n\s+runs-on:/);
+  assert.doesNotMatch(
+    postDeploySmokeWorkflow,
+    /firebase-hosting:\s*\n\s+if:\s*\$\{\{[^}]*conclusion == 'success'/,
+  );
+  assert.match(postDeploySmokeWorkflow, /strict-transport-security/);
+  assert.match(postDeploySmokeWorkflow, /canonical_status, canonical_headers, canonical_html = get\(CANONICAL \+ "\/"\)/);
+  assert.match(postDeploySmokeWorkflow, /canonical homepage returned HTTP/);
+});

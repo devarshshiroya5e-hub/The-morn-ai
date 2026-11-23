@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   firebase-hosting:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify live sitemap, crawl pages, and security headers
@@ -104,11 +103,23 @@ jobs:
 
           status, root_headers, root_html = get(BASE + "/")
           assert status == 200, f"homepage returned HTTP {status}"
+
+          # Check the canonical hostname itself, not only Firebase's generated
+          # hosting hostname. The canonical domain has previously returned 404.
+          canonical_status, canonical_headers, canonical_html = get(CANONICAL + "/")
+          assert canonical_status == 200, f"canonical homepage returned HTTP {canonical_status}"
+          canonical_parser = PageParser()
+          canonical_parser.feed(canonical_html.decode("utf-8", "replace"))
+          assert canonical_parser.canonical == CANONICAL + "/", (
+              f"canonical hostname homepage has incorrect canonical: {canonical_parser.canonical!r}"
+          )
+          print("PASS canonical custom domain serves HTTP 200 with a self-canonical")
           for header, expected in {
               "x-content-type-options": "nosniff",
               "x-frame-options": "DENY",
               "referrer-policy": "strict-origin-when-cross-origin",
               "cross-origin-opener-policy": "same-origin-allow-popups",
+              "strict-transport-security": "max-age=31536000",
           }.items():
               actual = root_headers.get(header, "")
               assert actual.lower() == expected.lower(), f"{header}: expected {expected!r}, got {actual!r}"
@@ -196,7 +207,6 @@ jobs:
           PY
 
   render-api:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify Render API health, CORS, Firebase config, and auth guard
