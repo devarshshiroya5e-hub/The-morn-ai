@@ -21,6 +21,9 @@ on:
       - ".github/workflows/post-deploy-smoke.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -35,7 +38,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build frontend
         run: npm run build
@@ -45,31 +48,14 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Hosting and Firestore
-        run: |
-          npx firebase-tools@latest deploy --project themorn-ai --only hosting:primary,firestore:rules,firestore:indexes --non-interactive
-
-      - name: Deploy Storage rules when the project API is enabled
+      # Storage rules are required for a complete release. Deploy them first so
+      # an IAM/default-bucket failure cannot publish a partial Hosting release.
+      - name: Deploy Storage rules (required)
         shell: bash
         run: |
-          set +e
-          output="$(npx firebase-tools@latest deploy --project themorn-ai --only storage --non-interactive 2>&1)"
-          result=$?
-          printf '%s\n' "$output"
+          set -euo pipefail
+          npx firebase-tools@latest deploy --project themorn-ai --only storage --non-interactive
 
-          if [ "$result" -eq 0 ]; then
-            echo "Firebase Storage rules deployed."
-            exit 0
-          fi
-
-          if printf '%s' "$output" | grep -Fqi "Permissions denied enabling firebasestorage.googleapis.com"; then
-            echo "::warning::Hosting and Firestore were deployed, but Storage rules were skipped because the Firebase Storage API is not enabled and this deploy identity cannot enable it. A project owner must enable the API in Google Cloud Console, then rerun this workflow."
-            exit 0
-          fi
-
-          if printf '%s' "$output" | grep -Fqi "Permission 'firebasestorage.defaultBucket.get' denied"; then
-            echo "::warning::Hosting and Firestore were deployed successfully, but this deploy identity lacks permission to read the Firebase default Storage bucket. Storage rules were not deployed, and the post-deploy Hosting smoke tests should still run. Grant the deploy service account the required Firebase Storage bucket access, or verify Storage is configured for this project."
-            exit 0
-          fi
-
-          exit "$result"
+      - name: Deploy Hosting and Firestore
+        run: |
+          npx firebase-tools@latest deploy --project themorn-ai --only hosting,firestore:rules,firestore:indexes --non-interactive
